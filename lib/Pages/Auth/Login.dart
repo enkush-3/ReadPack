@@ -12,40 +12,106 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   bool _isPasswordObscured = true;
 
+  // Өнгөний тогтмолууд (давхардлаас сэргийлж)
+  final Color primaryColor = const Color(0xFF425CAC);
+  final Color bgColor = const Color(0xFFF8F9FA);
+  final Color textSecondary = const Color(0xFF6B7280);
+
   Widget buildAppTitle() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text("Read", style: GoogleFonts.playfairDisplay(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.black)),
-        SizedBox(width: 4),
-        Text("Pact", style: GoogleFonts.playfairDisplay(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF425CAC))),
+        // Ном уншдаг апп гэдгийг илтгэх ICON
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(Icons.auto_stories, color: primaryColor, size: 36),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Read",
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 38,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+                letterSpacing: -1,
+              ),
+            ),
+            Text(
+              "Pact",
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 38,
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
+                letterSpacing: -1,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-  Widget buildEmailField() {
+  // Дахин ашиглаж болохуйц гоё Input Field функц
+  Widget buildInputField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    bool isPassword = false,
+    bool isObscured = false,
+    VoidCallback? onToggleVisibility,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("И-мэйл", style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic, color: Color(0xFF425CAC))),
-        SizedBox(height: 8),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: primaryColor,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 10),
         Container(
-          height: 50,
-          constraints: BoxConstraints(maxWidth: 380),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Color(0xFF425CAC), width: 1.5),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))],
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withOpacity(0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: TextField(
-            controller: emailController,
-            keyboardType: TextInputType.emailAddress,
+            controller: controller,
+            obscureText: isPassword ? isObscured : false,
+            keyboardType: isPassword ? TextInputType.visiblePassword : TextInputType.emailAddress,
             decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 12),
-              hintText: "И-мэйл хаягаа оруулна уу",
-              hintStyle: GoogleFonts.inter(fontSize: 16, color: Colors.grey[500]),
+              hintText: hint,
+              hintStyle: GoogleFonts.inter(fontSize: 15, color: Colors.grey[400]),
               border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              suffixIcon: isPassword
+                  ? IconButton(
+                icon: Icon(
+                  isObscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: primaryColor,
+                  size: 22,
+                ),
+                onPressed: onToggleVisibility,
+              )
+                  : null,
             ),
           ),
         ),
@@ -53,64 +119,47 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget buildPasswordField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("Нууц үг", style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic, color: Color(0xFF425CAC))),
-        SizedBox(height: 8),
-        Container(
-          height: 50,
-          constraints: BoxConstraints(maxWidth: 380),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Color(0xFF425CAC), width: 1.5),
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3))],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: passwordController,
-                  obscureText: _isPasswordObscured,
-                  decoration: InputDecoration(
-                    contentPadding: EdgeInsets.only(left: 12, right: 8),
-                    hintText: "Нууц үгээ оруулна уу",
-                    hintStyle: GoogleFonts.inter(fontSize: 16, color: Colors.grey[500]),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-              IconButton(
-                splashColor: Colors.transparent,
-                highlightColor: Colors.transparent,
-                icon: Icon(_isPasswordObscured ? Icons.visibility_off : Icons.visibility, color: Color(0xFF425CAC)),
-                onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
-              ),
-            ],
-          ),
-        )
-      ],
-    );
-  }
-
   Widget buildLoginButton() {
     return Container(
-      width: 380,
-      height: 50,
+      width: double.infinity,
+      height: 56,
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF425CAC), Color(0xFF5A73C9)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          elevation: 4,
-          backgroundColor: Color(0xFF425CAC),
-          shadowColor: Colors.black26,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         onPressed: () {
           print("Email: ${emailController.text}");
           print("Password: ${passwordController.text}");
         },
-        child: Text("Нэвтрэх", style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              "Нэвтрэх",
+              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+          ],
+        ),
       ),
     );
   }
@@ -119,43 +168,29 @@ class _LoginPageState extends State<LoginPage> {
     return Column(
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Expanded(child: Text("Нэвтрэх", textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF425CAC)))),
-            Expanded(child: Text("Бүртгүүлэх", textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFB0B0B0)))),
-          ],
-        ),
-        SizedBox(height: 5),
-        Row(
-          children: [
-            Expanded(child: Container(height: 3, color: Color(0xFF425CAC))),
-            Expanded(child: Container(height: 3, color: Color(0xFFD9D9D9))),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget buildLoginUI() {
-    return Column(
-      children: [
-        buildLoginHeader(),
-        SizedBox(height: 50),
-        buildEmailField(),
-        SizedBox(height: 16),
-        buildPasswordField(),
-        SizedBox(height: 24),
-        buildLoginButton(),
-        SizedBox(height: 16),
-        Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Бүртгэл байхгүй бол", style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFFD9D9D9))),
-            SizedBox(width: 4),
+            // Идэвхтэй таб
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Text(
+                "Нэвтрэх",
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: primaryColor),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Идэвхгүй таб (дарж болох)
             GestureDetector(
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterPage())),
-              child: Text("Бүртгүүлэх", style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF425CAC))),
-            )
+              child: Text(
+                "Бүртгүүлэх",
+                style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: textSecondary),
+              ),
+            ),
           ],
         ),
       ],
@@ -165,16 +200,63 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+      backgroundColor: bgColor,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(height: 120),
+              const SizedBox(height: 40),
               buildAppTitle(),
-              SizedBox(height: 120),
-              buildLoginUI(),
+              const SizedBox(height: 60),
+              buildLoginHeader(),
+              const SizedBox(height: 40),
+              buildInputField(
+                label: "И-мэйл хаяг",
+                hint: "Жишээ нь: yourname@example.com",
+                controller: emailController,
+              ),
+              const SizedBox(height: 24),
+              buildInputField(
+                label: "Нууц үг",
+                hint: "Нууц үгээ оруулна уу",
+                controller: passwordController,
+                isPassword: true,
+                isObscured: _isPasswordObscured,
+                onToggleVisibility: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
+              ),
+              const SizedBox(height: 12),
+              // Нууц үг мартсан холбоос (нэмэлт гоё элемент)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {},
+                  child: Text(
+                    "Нууц үг мартсан уу?",
+                    style: GoogleFonts.inter(fontSize: 14, color: textSecondary, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              buildLoginButton(),
+              const SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Бүртгэл байхгүй бол ",
+                    style: GoogleFonts.inter(fontSize: 15, color: textSecondary),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterPage())),
+                    child: Text(
+                      "Энд дарж бүртгүүлнэ үү",
+                      style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: primaryColor),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
