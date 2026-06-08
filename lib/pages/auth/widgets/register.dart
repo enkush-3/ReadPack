@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'widgets.dart';
+import 'Verify.dart';
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -9,10 +11,12 @@ class RegisterForm extends StatefulWidget {
 
 class _RegisterFormState extends State<RegisterForm> {
   final _formKey = GlobalKey<FormState>();
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   bool _isPasswordObscured = true;
   bool _isConfirmPasswordObscured = true;
 
@@ -27,9 +31,15 @@ class _RegisterFormState extends State<RegisterForm> {
 
   void _handleRegister() {
     if (_formKey.currentState?.validate() ?? false) {
-      debugPrint('Name: ${_nameController.text}');
-      debugPrint('Email: ${_emailController.text}');
-      debugPrint('Password: ${_passwordController.text}');
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VerificationPage(
+            email: _emailController.text,
+            name: _nameController.text,
+          ),
+        ),
+      );
     }
   }
 
@@ -55,20 +65,28 @@ class _RegisterFormState extends State<RegisterForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildInputField(
-                  label: "Нэр",
-                  hint: "Өөрийн нэрээ оруулна уу",
+                buildInputField(
+                  context,
+                  label: "Таны нэр",
+                  hint: "Таны нэр",
                   controller: _nameController,
+                  keyboardType: TextInputType.name,
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Нэрээ оруулна уу';
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Нэрээ оруулна уу';
+                    }
+                    if (value.trim().length < 2) {
+                      return 'Нэр 2-оос дээш тэмдэгттэй байх ёстой';
+                    }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
 
-                _buildInputField(
+                buildInputField(
+                  context,
                   label: "И-мэйл хаяг",
-                  hint: "Жишээ нь: yourname@example.com",
+                  hint: "email@example.com",
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
@@ -79,7 +97,8 @@ class _RegisterFormState extends State<RegisterForm> {
                 ),
                 const SizedBox(height: 16),
 
-                _buildInputField(
+                buildInputField(
+                  context,
                   label: "Нууц үг",
                   hint: "Нууц үгээ оруулна уу",
                   controller: _passwordController,
@@ -94,7 +113,8 @@ class _RegisterFormState extends State<RegisterForm> {
                 ),
                 const SizedBox(height: 16),
 
-                _buildInputField(
+                buildInputField(
+                  context,
                   label: "Нууц үг давтах",
                   hint: "Нууц үгээ дахин оруулна уу",
                   controller: _confirmPasswordController,
@@ -111,115 +131,8 @@ class _RegisterFormState extends State<RegisterForm> {
             ),
           ),
           const SizedBox(height: 24),
-          _buildSubmitButton(text: 'Бүртгүүлэх', onPressed: _handleRegister),
+          buildSubmitButton(context, text: 'Бүртгүүлэх', onPressed: _handleRegister),
         ],
-      ),
-    );
-  }
-
-  Widget _buildInputField({
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    bool isPassword = false,
-    bool isObscured = false,
-    VoidCallback? onToggleVisibility,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return TextFormField(
-      controller: controller,
-      obscureText: isPassword ? isObscured : false,
-      keyboardType: keyboardType ?? TextInputType.text,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        floatingLabelBehavior: FloatingLabelBehavior.auto,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.error, width: 1),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.error, width: 1.5),
-        ),
-        filled: true,
-        fillColor: colorScheme.surface,
-        suffixIcon: isPassword
-            ? IconButton(
-          icon: Icon(
-            isObscured ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            size: 20,
-            color: colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
-          onPressed: onToggleVisibility,
-        )
-            : null,
-      ),
-    );
-  }
-
-  Widget _buildSubmitButton({required String text, required VoidCallback onPressed}) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: SizedBox(
-        height: 48,
-        width: double.infinity,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: LinearGradient(
-              colors: [
-                colorScheme.primary,
-                colorScheme.primary.withValues(alpha: 0.8),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: colorScheme.primary.withValues(alpha: 0.25),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: onPressed,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                const SizedBox(width: 6),
-                const Icon(Icons.arrow_forward_rounded, size: 18),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
