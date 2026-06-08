@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../home/home.dart';
 
 class VerificationPage extends StatefulWidget {
   final String email;
+  final String name;
 
-  const VerificationPage({super.key, required this.email});
+  const VerificationPage({super.key, required this.email, required this.name});
 
   @override
   State<VerificationPage> createState() => _VerificationPageState();
@@ -78,7 +80,6 @@ class _VerificationPageState extends State<VerificationPage> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Backend руу код илгээх
       await Future.delayed(const Duration(seconds: 2));
 
       if (code == '123456') {
@@ -89,7 +90,17 @@ class _VerificationPageState extends State<VerificationPage> {
               backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
-          // Нүүр хуудас руу шилжих
+          await Future.delayed(const Duration(milliseconds: 1500));
+
+          if (mounted) {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const HomePage(),
+              ),
+                  (route) => false,
+            );
+          }
         }
       } else {
         throw Exception('Буруу код');
@@ -120,7 +131,6 @@ class _VerificationPageState extends State<VerificationPage> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Backend руу дахин код илгээх хүсэлт
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
@@ -156,11 +166,10 @@ class _VerificationPageState extends State<VerificationPage> {
             children: [
               const SizedBox(height: 40),
 
-              // Icon
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -172,7 +181,6 @@ class _VerificationPageState extends State<VerificationPage> {
 
               const SizedBox(height: 32),
 
-              // Title
               Text(
                 'Имэйлээ баталгаажуулна уу',
                 style: GoogleFonts.playfairDisplay(
@@ -185,12 +193,11 @@ class _VerificationPageState extends State<VerificationPage> {
 
               const SizedBox(height: 12),
 
-              // Subtitle
               Text(
                 'Бид ${_maskEmail(widget.email)} хаяг руу\n6 оронтой код илгээлээ',
                 style: TextStyle(
                   fontSize: 15,
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
@@ -198,7 +205,6 @@ class _VerificationPageState extends State<VerificationPage> {
 
               const SizedBox(height: 48),
 
-              // Code Input Fields
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(6, (index) {
@@ -223,17 +229,17 @@ class _VerificationPageState extends State<VerificationPage> {
                       decoration: InputDecoration(
                         counterText: '',
                         filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: colorScheme.outline.withOpacity(0.3),
+                            color: colorScheme.outline.withValues(alpha: 0.3),
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: colorScheme.outline.withOpacity(0.3),
+                            color: colorScheme.outline.withValues(alpha: 0.3),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -257,7 +263,6 @@ class _VerificationPageState extends State<VerificationPage> {
 
               const SizedBox(height: 48),
 
-              // Verify Button
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -267,14 +272,14 @@ class _VerificationPageState extends State<VerificationPage> {
                     gradient: LinearGradient(
                       colors: [
                         colorScheme.primary,
-                        colorScheme.primary.withOpacity(0.8),
+                        colorScheme.primary.withValues(alpha: 0.8),
                       ],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: colorScheme.primary.withOpacity(0.25),
+                        color: colorScheme.primary.withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -321,7 +326,6 @@ class _VerificationPageState extends State<VerificationPage> {
 
               const SizedBox(height: 24),
 
-              // Resend Code
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -329,7 +333,7 @@ class _VerificationPageState extends State<VerificationPage> {
                     'Код ирээгүй юу? ',
                     style: TextStyle(
                       fontSize: 14,
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   GestureDetector(
@@ -343,7 +347,7 @@ class _VerificationPageState extends State<VerificationPage> {
                         fontWeight: FontWeight.w600,
                         color: _canResend
                             ? colorScheme.primary
-                            : colorScheme.onSurface.withOpacity(0.3),
+                            : colorScheme.onSurface.withValues(alpha: 0.3),
                       ),
                     ),
                   ),
