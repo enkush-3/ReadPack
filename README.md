@@ -1,7 +1,52 @@
 
 ---
+# Энэхүү app нь бүрэн хөгжүүлэгдэж дуусаагүй болно
 
-# 📱 ReadPact - Нэгдсэн Бүтэц ба Дизайны Загвар
+
+---
+# Demo Images
+# 📱 ReadPact App - Дэлгэцийн зураг
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-23-40.png" width="200" /><br>
+      <b>Нүүр хуудас</b>
+    </td>
+    <td align="center">
+      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-23-51.png" width="200" /><br>
+      <b>Хайлтын хуудас</b>
+    </td>
+    <td align="center">
+      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-23-56.png" width="200" /><br>
+      <b>Хадгалсан номын хуудас</b>
+    </td>
+    <td align="center">
+      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-00.png" width="200" /><br>
+      <b>Профайл хуудас</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-13.png" width="200" /><br>
+      <b>Номын мэдээллийн хуудас</b>
+    </td>
+    <td align="center">
+      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-25.png" width="200" /><br>
+      <b>Мэдэгдэлийн хуудас</b>
+    </td>
+    <td align="center">
+      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-33.png" width="200" /><br>
+      <b>Шүүлтүүрийн хуудас</b>
+    </td>
+    <td align="center">
+      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-46.png" width="200" /><br>
+      <b>Профайл засах хуудас</b>
+    </td>
+  </tr>
+</table>
+
+# 📱 ReadPact
 
 ## 🧭 Үндсэн Навигаци (Bottom Navigation Bar)
 Аппликейшний доод хэсэгт байрлах үндсэн 4 цэс:
@@ -119,45 +164,3 @@
 4. **Typography:** Монгол хэлний үсэг (ө, ү) зөв, гоё харагдах, уншихад нүдэнд ээлтэй фонт сонгох (Жишээ нь: *Inter, Roboto, эсвэл Монгол хэл дэмжсэн Serif фонт*).
 
 ---
-# Demo Images
-
-# 📱 ReadPact App - Дэлгэцийн зураг
-
-<table>
-  <tr>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-23-40.png" width="200" /><br>
-      <b>Нүүр хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-23-51.png" width="200" /><br>
-      <b>Хайлтын хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-23-56.png" width="200" /><br>
-      <b>Хадгалсан номын хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-00.png" width="200" /><br>
-      <b>Профайл хуудас</b>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-13.png" width="200" /><br>
-      <b>Номын мэдээллийн хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-25.png" width="200" /><br>
-      <b>Мэдэгдэлийн хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-33.png" width="200" /><br>
-      <b>Шүүлтүүрийн хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-46.png" width="200" /><br>
-      <b>Профайл засах хуудас</b>
-    </td>
-  </tr>
-</table>
