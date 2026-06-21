@@ -1,0 +1,82 @@
+{
+  "app": {
+    "name": "ReadPack",
+    "read": "Read",
+    "pack": "Pack"
+  },
+
+  "common": {
+    "or_continue_with": "or continue with",
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "save": "Save",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "search": "Search",
+    "settings": "Settings"
+  },
+
+  "auth": {
+    "welcome": "Welcome",
+    "welcome_back": "Welcome Back",
+    "signin": "Sign In",
+    "signup": "Sign Up",
+    "forgot_password": "Forgot Password?",
+    "remember_me": "Remember me",
+
+    "email_label": "Email Address",
+    "email_hint": "Enter your email",
+    "password_label": "Password",
+    "password_hint": "Enter your password",
+    "confirm_password_label": "Confirm Password",
+    "confirm_password_hint": "Re-enter your password",
+    "full_name_label": "Full Name",
+    "full_name_hint": "Enter your full name",
+    "phone_label": "Phone Number",
+    "phone_hint": "Enter your phone number",
+
+    "logout": "Logout",
+
+    "no_account": "Don't have an account?",
+    "have_account": "Already have an account?",
+
+    "reset_password_title": "Reset Password",
+    "reset_password_desc": "Enter your email address. We'll send you a link to reset your password.",
+    "send_reset_link": "Send Reset Link",
+    "back_to_login": "Back to Login"
+  },
+
+  "validation": {
+    "required": "This field is required",
+    "email_invalid": "Invalid email address",
+    "password_too_short": "Password must be at least 8 characters",
+    "password_mismatch": "Passwords do not match",
+    "username_too_short": "Username must be at least 3 characters",
+    "phone_invalid": "Invalid phone number",
+    "name_too_short": "Name must be at least 2 characters"
+  },
+
+  "error": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Please check your internet connection",
+    "server": "Server error. Please try again later.",
+    "invalid_credentials": "Invalid email or password",
+    "email_exists": "An account with this email already exists",
+    "account_locked": "Your account has been temporarily locked",
+    "session_expired": "Session expired. Please login again"
+  },
+
+  "success": {
+    "login": "Successfully logged in",
+    "signup": "Successfully signed up",
+    "logout": "Successfully logged out",
+    "password_reset_sent": "Password reset link has been sent",
+    "password_changed": "Password changed successfully",
+    "profile_updated": "Profile updated successfully"
+  }
+}
