@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide IconButton;
 import 'package:readpack/shared/widgets/inputfield.dart';
 import 'package:readpack/shared/widgets/submitbutton.dart';
 import 'package:readpack/shared/widgets/linktext.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/iconbutton.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key, required this.onSwitchToLogin});
@@ -38,17 +39,32 @@ class SignUpPage extends StatelessWidget {
           icon: Icons.lock_outline_rounded,
           isPassword: true,
         ),
-        const SizedBox(height: 14),
-        InputField(
-          hint: l10n.t('auth.confirm_password_hint'),
-          icon: Icons.lock_outline_rounded,
-          isPassword: true,
-        ),
         const SizedBox(height: 28),
 
         SubmitButton(
           label: l10n.t('auth.signup'),
           onPressed: () {},
+        ),
+        const SizedBox(height: 24),
+        const SizedBox(height: 20),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              logolink: 'assets/public/logos/google.png',
+              action: () {
+                print('Google дарсан');
+              },
+            ),
+            const SizedBox(width: 10),
+            IconButton(
+              logolink: 'assets/public/logos/facebook.png',
+              action: () {
+                print('Facebook дарсан');
+              },
+            ),
+          ],
         ),
         const SizedBox(height: 28),
 
