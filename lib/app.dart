@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       
-      locale: const Locale('mn'), // Анхны хэл
+      locale: const Locale('en'),
       supportedLocales: const [
         Locale('mn'),
         Locale('en'),
@@ -23,12 +23,12 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-
-      theme: AuthTheme.lightTheme,
-      darkTheme: AuthTheme.darkTheme,
+      
+      theme: BookTheme.lightTheme,
+      darkTheme: BookTheme.darkTheme,
       themeMode: ThemeMode.system,
 
-      initialRoute: Routes.home,
+      initialRoute: Routes.auth,
       onGenerateRoute: Routes.generateRoute,
       
     );
