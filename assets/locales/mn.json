@@ -4,6 +4,17 @@
     "read": "Read",
     "pack": "Pack"
   },
+  "book": {
+    "feature": "Онцлох номнууд",
+    "read": "Унших",
+    "categories": {
+      "all": "Бүгд",
+      "romance": "Роман",
+      "history": "Түүх",
+      "business": "Бизнес",
+      "adventure": "Адал явдал"
+    }
+  },
 
   "common": {
     "or_continue_with": "эсвэл үргэлжлүүлэх",

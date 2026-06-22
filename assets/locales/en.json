@@ -4,6 +4,18 @@
     "read": "Read",
     "pack": "Pack"
   },
+  "book": {
+    "feature": "Feature books",
+    "read": "Read",
+    "categories": {
+      "all": "All",
+      "romance": "Romance",
+      "history": "History",
+      "science": "Science",
+      "business": "Business",
+      "adventure": "Adventure"
+    }
+  },
 
   "common": {
     "or_continue_with": "or continue with",
