@@ -16,7 +16,7 @@ class ReadPackLogo extends StatelessWidget {
             ),
             child: Icon(
               Icons.auto_stories,
-              color: colorScheme.onPrimary,
+              color: colorScheme.primary.withValues(alpha: 0.8),
               size: 56,
             ),
           ),
@@ -31,7 +31,7 @@ class ReadPackLogo extends StatelessWidget {
                   fontFamily: 'Serif',
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
-                  color: colorScheme.onPrimary,
+                  color: colorScheme.primary.withValues(alpha: 0.8),
                   letterSpacing: -1,
                   height: 1.0,
                 ),
@@ -41,7 +41,7 @@ class ReadPackLogo extends StatelessWidget {
                 style: TextStyle(
                   fontFamily: 'Serif',
                   fontSize: 40,
-                  color: colorScheme.onPrimary,
+                  color: colorScheme.primary.withValues(alpha: 0.8),
                   letterSpacing: -1,
                   height: 1.0,
                 ),
