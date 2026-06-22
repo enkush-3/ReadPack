@@ -28,11 +28,6 @@ class _AuthInputFieldState extends State<InputField> {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-          width: 1,
-        ),
       ),
       child: TextField(
         controller: widget.controller,
