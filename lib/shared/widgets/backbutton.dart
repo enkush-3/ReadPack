@@ -19,7 +19,7 @@ class BackButton extends StatelessWidget {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: colorScheme.onPrimaryContainer,
+          color: colorScheme.primary.withValues(alpha: 0.8),
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: colorScheme.surface, size: 20),
