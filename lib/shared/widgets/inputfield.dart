@@ -63,11 +63,6 @@ class _AuthInputFieldState extends State<InputField> {
             },
           )
               : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 17,
-            horizontal: 16,
-          ),
         ),
       ),
     );
