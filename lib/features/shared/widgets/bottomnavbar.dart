@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/features/shared/widgets/navbutton.dart';
+import 'package:readpack/helper/translation.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int selectedIndex;
@@ -14,6 +15,7 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context){
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       decoration: BoxDecoration(
@@ -37,25 +39,25 @@ class BottomNavBar extends StatelessWidget {
               children: [
                 NavigationButton(
                   icon: Icons.home_rounded,
-                  label: 'Нүүр',
+                  label: l10n.t('app.navbar.home'),
                   isSelected: selectedIndex == 0,
                   onTap: () => onTap(0),
                 ),
                 NavigationButton(
                   icon: Icons.explore_rounded,
-                  label: 'Хайх',
+                  label: l10n.t('app.navbar.search'),
                   isSelected: selectedIndex == 1,
                   onTap: () => onTap(1),
                 ),
                 NavigationButton(
                   icon: Icons.bookmark_rounded,
-                  label: 'Хадгалсан',
+                  label: l10n.t('app.navbar.save'),
                   isSelected: selectedIndex == 2,
                   onTap: () => onTap(2),
                 ),
                 NavigationButton(
                   icon: Icons.person_rounded,
-                  label: 'Профайл',
+                  label: l10n.t('app.navbar.profile'),
                   isSelected: selectedIndex == 3,
                   onTap: () => onTap(3),
                 ),
@@ -67,7 +69,4 @@ class BottomNavBar extends StatelessWidget {
 
     );
   }
-
-
-
 }
