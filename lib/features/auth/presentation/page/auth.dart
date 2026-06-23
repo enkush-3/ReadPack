@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart' hide BackButton;
+import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/shared/readpacklogo.dart';
 import 'package:readpack/features/auth/widgets/signin.dart';
 import 'package:readpack/features/auth/widgets/signup.dart';
@@ -90,9 +91,7 @@ class _AuthPageState extends State<AuthPage>
       ),
     );
   }
-
-
-
+  
   Widget _buildTopNav() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
@@ -106,7 +105,7 @@ class _AuthPageState extends State<AuthPage>
             top: 0,
             child: BackButton(
               icon: Icons.arrow_back_ios_new_rounded,
-              onTap: () => Navigator.maybePop(context),
+              onTap: () => Navigator.of(context).pushNamed(Routes.appshell),
             ),
           ),
         ],
