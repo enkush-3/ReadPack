@@ -4,7 +4,6 @@ import 'package:readpack/features/home/widgets/categories.dart';
 import 'package:readpack/features/home/widgets/features_book.dart';
 import 'package:readpack/features/home/widgets/header.dart';
 import 'package:readpack/features/shared/common/refresh.dart';
-import 'package:readpack/features/shared/widgets/bottomnavbar.dart';
 import 'package:readpack/helper/translation.dart';
 
 class HomePage extends StatefulWidget{
@@ -17,8 +16,6 @@ class HomePage extends StatefulWidget{
 }
 
 class _StateHomePage extends State<HomePage> {
-
-  int _selectedIndex = 0;
   bool isRefresh = false;
 
   final List<Map<String, dynamic>> _featuredBooks = [
@@ -99,15 +96,6 @@ class _StateHomePage extends State<HomePage> {
       backgroundColor: colorScheme.surface,
       
       body: _HomeContent(),
-
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-      ),
     );
   }
 
@@ -115,8 +103,6 @@ class _StateHomePage extends State<HomePage> {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context)!;
     const userName = 'Enkush';
-
-    
     
     return RefreshWrapper(
       onRefresh: _onRefresh,
@@ -126,7 +112,7 @@ class _StateHomePage extends State<HomePage> {
           SliverToBoxAdapter(
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 50, 24, 10), // Дээд padding нэмэгдүүлсэн (status bar-аас зай)
-              child: PageHeader(userName: userName),
+              child: HomeHeader(userName: userName),
             ),
           ),
           
@@ -216,7 +202,6 @@ class _StateHomePage extends State<HomePage> {
                             child: BookCard(
                               title: _books[index]['title']!,
                               author: _books[index]['author']!,
-                              color: _books[index]['color']!,
                               rating: _books[index]['rating']!,
                               image: _books[index]['image']!,
                               // onTap: () => _openBook(_books[index]),
@@ -230,7 +215,6 @@ class _StateHomePage extends State<HomePage> {
               ],
             )
           ),
-
         ],
       ),
     );
