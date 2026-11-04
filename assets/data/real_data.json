@@ -1,0 +1,1067 @@
+[
+  {
+    "id": "book_atomic_habits",
+    "title": "Atomic Habits",
+    "author": "James Clear",
+    "description": "No matter your goals, Atomic Habits offers a proven framework for improving every day. James Clear, one of the world's leading experts on habit formation, reveals practical strategies that will teach you exactly how to form good habits, break bad ones, and master the tiny behaviors that lead to remarkable results.",
+    "rating": 4.75,
+    "reviewsCount": 1484,
+    "category": "book.categories.business",
+    "pages": 320,
+    "readTimeMinutes": 340,
+    "image": "assets/public/books/atomic_habits.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/12539702-L.jpg",
+    "openLibraryWorkId": "OL17930368W",
+    "openLibraryCoverId": 12539702,
+    "colorHex": 4293295650,
+    "progress": 0.65,
+    "currentPage": 208,
+    "currentChapterIndex": 1,
+    "isSaved": true,
+    "isFavorite": true,
+    "hasAudio": true,
+    "audioDurationMinutes": 340,
+    "keyTakeaways": [
+      "Өдөр бүр ердөө 1% сайжрах нь жилийн эцэст 37 дахин өсөлт авчирдаг.",
+      "Зорилгодоо бус өдөр тутмын систем, дадалд анхаарах нь амжилтын түлхүүр.",
+      "Дадал нь хүний өөрийгөө үнэлэх үнэлэмж, бие хүнтэй нягт уялдаатай байдаг."
+    ],
+    "tags": [
+      "Habits",
+      "Productivity",
+      "Self-Improvement",
+      "Psychology",
+      "Habit",
+      "Habit breaking"
+    ],
+    "reviews": [
+      {
+        "id": "rev_ah_1",
+        "userName": "Цэнгүүн О.",
+        "rating": 5.0,
+        "comment": "Миний амьдралыг өөрчилсөн шилдэг ном. Зөвлөгөөнүүд нь маш бодитой, шууд хэрэгжүүлэх боломжтой.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      },
+      {
+        "id": "rev_ah_2",
+        "userName": "Гантулга Д.",
+        "rating": 4.8,
+        "comment": "Өдөр тутмын жижиг үйлдлүүд хуримтлагдаж ямар их өөрчлөлт авчирдгийг шинжлэх ухааны үндэслэлтэй баталжээ.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: The Surprising Power of Atomic Habits",
+        "estimatedMinutes": 9,
+        "content": "The fate of British Cycling changed one day in 2003. The organization had recently hired Dave Brailsford as its new performance director.\n\nBrailsford had been committed to a strategy that he referred to as 'the aggregation of marginal gains,' which was the philosophy of searching for a tiny margin of improvement in everything you do.\n\nBrailsford said, 'The whole principle came from the idea that if you broke down everything you could think of that goes into riding a bike, and then improve it by 1 percent, you will get a significant increase when you put them all together.'\n\nWithin five years, the British Cycling team dominated the road and track cycling events at the 2008 Olympic Games in Beijing, winning an astonishing 60 percent of the gold medals available."
+      },
+      {
+        "id": "c2",
+        "title": "Chapter 2: How Your Habits Shape Your Identity",
+        "estimatedMinutes": 8,
+        "content": "Why is it so easy to repeat bad habits and so hard to form good ones? Few things can have a more powerful impact on your life than improving your daily habits.\n\nChanges that seem small and unimportant at first will compound into remarkable results if you are willing to stick with them for years.\n\nYour habits shape your identity, and your identity shapes your habits. The ultimate form of intrinsic motivation is when a habit becomes part of who you are."
+      }
+    ]
+  },
+  {
+    "id": "book_deep_work",
+    "title": "Deep Work",
+    "author": "Cal Newport",
+    "description": "One of the most valuable skills in our economy is becoming increasingly rare. If you master this skill, you'll achieve extraordinary results.\r\n\r\nDeep work is the ability to focus without distraction on a cognitively demanding task. It's a skill that allows you to quickly master complicated information and produce better results in less time. Deep work will make you better at what you do and provide the sense of true fulfillment that comes from craftsmanship. In short, deep work is like a super power in our increasingly competitive twenty-first century economy. And yet, most people have lost the ability to go deep-spending their days instead in a frantic blur of e-mail and social media, not even realizing there's a better way.\r\n\r\nIn DEEP WORK, author and professor Cal Newport flips the narrative on impact in a connected age. Instead of arguing distraction is bad, he instead celebrates the power of its opposite. Dividing this book into two parts, he first makes the case that in almost any profession, cultivating a deep work ethic will produce massive benefits. He then presents a rigorous training regimen, presented as a series of four \"rules,\" for transforming your mind and habits to support this skill.\r\n\r\nA mix of cultural criticism and actionable advice, DEEP WORK takes the reader on a journey through memorable stories -- from Carl Jung building a stone tower in the woods to focus his mind, to a social media pioneer buying a round-trip business class ticket to Tokyo to write a book free from distraction in the air -- and no-nonsense advice, such as the claim that most serious professionals should quit social media and that you should practice being bored. DEEP WORK is an indispensable guide to anyone seeking focused success in a distracted world.",
+    "rating": 4.75,
+    "reviewsCount": 207,
+    "category": "book.categories.business",
+    "pages": 304,
+    "readTimeMinutes": 310,
+    "image": "assets/public/books/deep_work.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/7988607-L.jpg",
+    "openLibraryWorkId": "OL17713267W",
+    "openLibraryCoverId": 7988607,
+    "colorHex": 4279672965,
+    "progress": 0.35,
+    "currentPage": 106,
+    "currentChapterIndex": 0,
+    "isSaved": true,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 310,
+    "keyTakeaways": [
+      "Сатааралгүй гүн төвлөрөх чадвар нь орчин үеийн мэдээллийн эдийн засагт хамгийн үнэтэй капитал.",
+      "Олон ажил зэрэг амжуулах гэж оролдох (multitasking) нь тархины гүйцэтгэлийг бууруулдаг.",
+      "Өдөр тутмын цагийн хуваарьтаа гүн төвлөрлийн блокуудыг хатуу хуваарилж хэвших шаардлагатай."
+    ],
+    "tags": [
+      "Focus",
+      "Career",
+      "Productivity",
+      "Mindfulness",
+      "Mental work",
+      "Distraction"
+    ],
+    "reviews": [
+      {
+        "id": "rev_dw_1",
+        "userName": "Бат-Эрдэнэ",
+        "rating": 4.9,
+        "comment": "Сошиал медиагийн сатаарлаас ангижирч, өндөр бүтээмжтэй ажиллахад хамгийн их тусалсан гарын авлага.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Introduction: The Deep Work Hypothesis",
+        "estimatedMinutes": 8,
+        "content": "In the 1920s, Carl Jung built a stone tower in Bollingen, near Zurich. It had no electricity, and he chopped his own wood. There, he produced some of the foundational theories of modern psychology.\n\nJung did not build Bollingen as an eccentric retreat. He built it as an engine for deep work—a state of distraction-free concentration that pushed his intellectual limits to their ultimate capacity.\n\nDeep work is the ability to focus without distraction on a cognitively demanding task. It's a skill that allows you to quickly master complicated information and produce better results in less time."
+      }
+    ]
+  },
+  {
+    "id": "book_thinking_fast_and_slow",
+    "title": "Thinking, Fast and Slow",
+    "author": "Daniel Kahneman",
+    "description": "In his mega bestseller, Thinking, Fast and Slow, Daniel Kahneman, world-famous psychologist and winner of the Nobel Prize in Economics, takes us on a groundbreaking tour of the mind and explains the two systems that drive the way we think.\r\n\r\nSystem 1 is fast, intuitive, and emotional; System 2 is slower, more deliberative, and more logical. The impact of overconfidence on corporate strategies, the difficulties of predicting what will make us happy in the future, the profound effect of cognitive biases on everything from playing the stock market to planning our next vacation―each of these can be understood only by knowing how the two systems shape our judgments and decisions.\r\n\r\nEngaging the reader in a lively conversation about how we think, Kahneman reveals where we can and cannot trust our intuitions and how we can tap into the benefits of slow thinking. He offers practical and enlightening insights into how choices are made in both our business and our personal lives―and how we can use different techniques to guard against the mental glitches that often get us into trouble. Topping bestseller lists for almost ten years, Thinking, Fast and Slow is a contemporary classic, an essential book that has changed the lives of millions of readers.",
+    "rating": 4.09,
+    "reviewsCount": 242,
+    "category": "book.categories.business",
+    "pages": 499,
+    "readTimeMinutes": 510,
+    "image": "assets/public/books/thinking_fast_and_slow.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/13290711-L.jpg",
+    "openLibraryWorkId": "OL15992072W",
+    "openLibraryCoverId": 13290711,
+    "colorHex": 4279979890,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 510,
+    "keyTakeaways": [
+      "Систем 1 нь түргэн, зөн совингоор шийдвэр гаргадаг ч танин мэдэхүйн алдаанд өртөмтгий.",
+      "Систем 2 нь логик, удаан эргэцүүлэл шаарддаг ба тархины их энерги зарцуулдаг.",
+      "Алдагдал хүлээхээс айх айдас нь ижил хэмжээний ашиг олох баяр баяслаас 2 дахин хүчтэй байдаг."
+    ],
+    "tags": [
+      "Behavioral Economics",
+      "Psychology",
+      "Cognitive Biases",
+      "Decision Making",
+      "Intuition",
+      "Thought and thinking"
+    ],
+    "reviews": [
+      {
+        "id": "rev_tfs_1",
+        "userName": "Төмөр-Очир",
+        "rating": 5.0,
+        "comment": "Шийдвэр гаргалтын механизмыг шинжлэх ухааны үндэслэлтэйгээр гайхалтай тайлбарласан Нобелийн шагналтны бүтээл.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Part 1: Two Systems",
+        "estimatedMinutes": 9,
+        "content": "To observe your mind in automatic mode, look at the picture of the angry person. You knew at a glance that she was angry, and you probably formed ideas about what she was about to say or do next. This is an instance of fast thinking (System 1).\n\nNow look at the following problem: 17 × 24. You knew immediately that this is a multiplication problem, but you could not solve it without slow, deliberate mental effort (System 2)."
+      }
+    ]
+  },
+  {
+    "id": "book_the_art_of_war",
+    "title": "The Art of War",
+    "author": "Sun Tzu",
+    "description": "The Art of War is an ancient Chinese military treatise dating from the Late Spring and Autumn Period. The work, which is attributed to the ancient Chinese military strategist Sun Tzu",
+    "rating": 4.08,
+    "reviewsCount": 168,
+    "category": "book.categories.business",
+    "pages": 112,
+    "readTimeMinutes": 140,
+    "image": "assets/public/books/the_art_of_war.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/4849549-L.jpg",
+    "openLibraryWorkId": "OL244537W",
+    "openLibraryCoverId": 4849549,
+    "colorHex": 4286064671,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 140,
+    "keyTakeaways": [
+      "Дайснаа болон өөрийгөө мэдвэл зуун тулаанд орсон ч аюул нүүрлэхгүй.",
+      "Хамгийн шилдэг ялалт бол тулалдахгүйгээр дайсны эсэргүүцлийг мохоох явдал юм.",
+      "Бэлтгэл ажил болон стратегийн байрлал нь тулааны хувь заяаг эхлэхээс нь өмнө шийддэг."
+    ],
+    "tags": [
+      "Strategy",
+      "Leadership",
+      "Business",
+      "Classics",
+      "Philosophy",
+      "Open Library Staff Picks"
+    ],
+    "reviews": [
+      {
+        "id": "rev_aow_1",
+        "userName": "Мөнх-Эрдэнэ",
+        "rating": 4.9,
+        "comment": "Менежмент, стратеги, бизнесийн хэлэлцээрийн ур чадварт суралцахад одоо ч хүчинтэй сонгодог бүтээл.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: Laying Plans",
+        "estimatedMinutes": 7,
+        "content": "Sun Tzu said: The art of war is of vital importance to the State. It is a matter of life and death, a road either to safety or to ruin. Hence it is a subject of inquiry which can on no account be neglected.\n\nThe moral law causes the people to be in complete accord with their ruler, so that they will follow him regardless of their lives, undismayed by any danger."
+      }
+    ]
+  },
+  {
+    "id": "book_1984",
+    "title": "1984",
+    "author": "George Orwell",
+    "description": "Nineteen Eighty-Four: A Novel, often referred to as 1984, is a dystopian social science fiction novel by the English novelist George Orwell (the pen name of Eric Arthur Blair). It was published on 8 June 1949 by Secker & Warburg as Orwell's ninth and final book completed in his lifetime. Thematically, Nineteen Eighty-Four centres on the consequences of totalitarianism, mass surveillance, and repressive regimentation of persons and behaviours within society. Orwell, himself a democratic socialist, modelled the authoritarian government in the novel after Stalinist Russia. More broadly, the novel examines the role of truth and facts within politics and the ways in which they are manipulated.\r\n\r\n----------\t\t\r\nAlso contained in:\t\t\r\n[Novels (Animal Farm / Burmese Days / Clergyman's Daughter / Coming Up for Air / Keep the Aspidistra Flying / Nineteen Eighty-Four)](https://openlibrary.org/works/OL1168045W)\t\t\r\n[Novels (Animal Farm / Nineteen Eighty-Four)](https://openlibrary.org/works/OL1167981W)\r\n[Orwell's Nineteen Eighty-Four: Text, Sources, Criticism](https://openlibrary.org/works/OL1168095W)",
+    "rating": 4.28,
+    "reviewsCount": 447,
+    "category": "book.categories.history",
+    "pages": 328,
+    "readTimeMinutes": 360,
+    "image": "assets/public/books/1984.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/9267242-L.jpg",
+    "openLibraryWorkId": "OL1168083W",
+    "openLibraryCoverId": 9267242,
+    "colorHex": 4281089616,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": true,
+    "isFavorite": true,
+    "hasAudio": true,
+    "audioDurationMinutes": 360,
+    "keyTakeaways": [
+      "Хяналт ба эрх мэдлийн төвлөрөл нь хувь хүний эрх чөлөө, үзэл бодлыг устгадаг.",
+      "Түүх болон хэлийг удирдан залах нь бодит байдлын талаарх ойлголтыг өөрчилдөг.",
+      "Хүний сэтгэл зүрх, хайр дурлал нь дарангуйллын эсрэг хамгийн хүчтэй тэмцэл юм."
+    ],
+    "tags": [
+      "Dystopia",
+      "Politics",
+      "Classics",
+      "History",
+      "Bestseller",
+      "futurology"
+    ],
+    "reviews": [
+      {
+        "id": "rev_1984_1",
+        "userName": "Билгүүн Т.",
+        "rating": 5.0,
+        "comment": "Хүн төрөлхтний заавал унших сонгодог бүтээл. Үзэл суртал, эрх мэдлийн талаар маш гүн бодрол төрүүлсэн.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Part 1: The Clock Strikes Thirteen",
+        "estimatedMinutes": 8,
+        "content": "It was a bright cold day in April, and the clocks were striking thirteen. Winston Smith, his chin nuzzled into his breast in an effort to escape the vile wind, slipped quickly through the glass doors of Victory Mansions, though not quickly enough to prevent a swirl of gritty dust from entering along with him.\n\nThe hallway smelt of boiled cabbage and old rag mats. At one end of it a coloured poster, too large for indoor display, had been tacked to the wall. BIG BROTHER IS WATCHING YOU, the caption beneath it ran."
+      }
+    ]
+  },
+  {
+    "id": "book_steve_jobs",
+    "title": "Steve Jobs",
+    "author": "Walter Isaacson",
+    "description": "Based on more than forty interviews with Jobs conducted over two years -- as well as interviews with more than a hundred family members, friends, adversaries, competitors, and colleagues -- Walter Isaacson has written a riveting story of the roller-coaster life and searingly intense personality of a creative entrepreneur whose passion for perfection and ferocious drive revolutionized six industries: personal computers, animated movies, music, phones, tablet computing, and digital publishing. At a time when America is seeking ways to sustain its innovative edge, and when societies around the world are trying to build digital-age economies, Jobs stands as the ultimate icon of inventiveness and applied imagination. He knew that the best way to create value in the twenty-first century was to connect creativity with technology. He built a company where leaps of the imagination were combined with remarkable feats of engineering. Although Jobs cooperated with this book, he asked for no control over what was written nor even the right to read it before it was published. He put nothing off-limits. He encouraged the people he knew to speak honestly. And Jobs speaks candidly, sometimes brutally so, about the people he worked with and competed against. His friends, foes, and colleagues provide an unvarnished view of the passions, perfectionism, obsessions, artistry, devilry, and compulsion for control that shaped his approach to business and the innovative products that resulted. Driven by demons, Jobs could drive those around him to fury and despair. But his personality and products were interrelated, just as Apple's hardware and software tended to be, as if part of an integrated system. His tale is instructive and cautionary, filled with lessons about innovation, character, leadership, and values. - Publisher.",
+    "rating": 4.19,
+    "reviewsCount": 176,
+    "category": "book.categories.history",
+    "pages": 656,
+    "readTimeMinutes": 620,
+    "image": "assets/public/books/steve_jobs.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/12374726-L.jpg",
+    "openLibraryWorkId": "OL16085155W",
+    "openLibraryCoverId": 12374726,
+    "colorHex": 4280364861,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 620,
+    "keyTakeaways": [
+      "Технологи ба хүмүүнлэгийн ухааны уулзвар дээр жинхэнэ инноваци төрдөг.",
+      "Энгийн байдал нь төвөгтэй байдлын хамгийн дээд зэрэг (Simplicity is the ultimate sophistication).",
+      "Бодит байдлыг гуйвуулах талбар (Reality Distortion Field) нь боломжгүйг боломжтой болгодог."
+    ],
+    "tags": [
+      "Biography",
+      "Tech",
+      "Innovation",
+      "Design",
+      "Apple",
+      "History"
+    ],
+    "reviews": [
+      {
+        "id": "rev_sj_1",
+        "userName": "Билгүүнбат",
+        "rating": 5.0,
+        "comment": "Дэлхийн технологийн түүхийг өөрчилсөн хүний тухай хором ч сатаарахгүй шимтэн унших гайхалтай намтар.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: Childhood: Abandoned and Chosen",
+        "estimatedMinutes": 8,
+        "content": "Paul Jobs was a salt-of-the-earth mechanic from Wisconsin who had dropped out of high school and spent time in the Coast Guard. In 1955 they adopted a baby boy named Steven Paul Jobs.\n\nSteve grew up in Silicon Valley when orchards were still turning into microchip fabrication hubs. His father taught him the value of craftsmanship: 'When you're a carpenter making a beautiful chest of drawers, you're not going to use a piece of plywood on the back, even though nobody will see it.'"
+      }
+    ]
+  },
+  {
+    "id": "book_meditations",
+    "title": "Meditations",
+    "author": "Marcus Aurelius",
+    "description": "Meditations is a collection of personal reflections and notes by the Roman Emperor Marcus Aurelius (reigned 161 to 180 AD), offering a profound look into the philosophy of Stoicism. It was never intended for publication, making it a raw and intimate self-help manual for the emperor during his campaigns and rule. The central theme revolves around living a good, rational, and virtuous life in harmony with nature and the cosmos.\r\nAurelius continually reminds himself that everything in the universe is constantly changing and fleeting, urging the reader to accept the impermanence of life and the inevitability of death. He stresses the importance of focusing on what one can control—namely, their own thoughts and actions—and accepting everything else with tranquility, including the behavior of others and external events. This inner fortress of the mind is the only true source of peace.\r\nThe book emphasizes duty and service to the greater community. As a rational being, one's purpose is to act justly and benevolently towards fellow humans. Aurelius encourages practicing humility, rising above petty insults, and viewing difficulties as opportunities for growth and the exercise of virtue. He advocates for an objective, detached perspective on all things, stripping away subjective judgment to see the world as it truly is. Ultimately, Meditations is a powerful, timeless guide on how to face adversity, manage emotions, maintain personal integrity, and find contentment through disciplined, rational self-examination and adherence to virtue.",
+    "rating": 4.1,
+    "reviewsCount": 150,
+    "category": "book.categories.history",
+    "pages": 256,
+    "readTimeMinutes": 250,
+    "image": "assets/public/books/meditations.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/211529-L.jpg",
+    "openLibraryWorkId": "OL1317211W",
+    "openLibraryCoverId": 211529,
+    "colorHex": 4283048794,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 250,
+    "keyTakeaways": [
+      "Өөрийн хянаж чадахгүй зүйлсийн төлөө сэтгэлээ чилээхээ больж, өөрийн үйлдэл, хандлагад анхаарах.",
+      "Өглөө сэрэх бүртээ амьд байх, амьсгалах, сэтгэх нь ховорхон хувь завшаан гэдгийг санах.",
+      "Бүх саад бэрхшээл нь урагшлах шинэ замыг нээж өгдөг (The obstacle is the way)."
+    ],
+    "tags": [
+      "Philosophy",
+      "Stoicism",
+      "History",
+      "Mindfulness",
+      "Classics",
+      "Nonfiction"
+    ],
+    "reviews": [
+      {
+        "id": "rev_med_1",
+        "userName": "Цэлмэг",
+        "rating": 5.0,
+        "comment": "Стоик философийн ноён оргил. Өдөр бүр эргэн харж, сэтгэлийн амар амгаланг олоход тусалдаг.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Book 1: Debts and Lessons",
+        "estimatedMinutes": 7,
+        "content": "From my grandfather Verus: decency and a mild temper.\n\nFrom the fame and memory of my father: integrity and a manly character.\n\nWhen you wake up in the morning, tell yourself: The people I deal with today will be meddling, ungrateful, arrogant, dishonest, jealous, and surly. They are like this because they cannot distinguish good from evil."
+      }
+    ]
+  },
+  {
+    "id": "book_guns_germs_and_steel",
+    "title": "Guns, Germs, and Steel",
+    "author": "Jared Diamond",
+    "description": "An epic detective story that offers a gripping expose on why the world is so unequal. Professor Jared Diamond traveled the globe for over 30 years trying to answer this question.",
+    "rating": 4.14,
+    "reviewsCount": 154,
+    "category": "book.categories.history",
+    "pages": 480,
+    "readTimeMinutes": 490,
+    "image": "assets/public/books/guns_germs_and_steel.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/7884018-L.jpg",
+    "openLibraryWorkId": "OL276558W",
+    "openLibraryCoverId": 7884018,
+    "colorHex": 4284312958,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 490,
+    "keyTakeaways": [
+      "Соёл иргэншлүүдийн ялгаатай хөгжил нь арьс өнгөний бус газар зүй, байгалийн нөөцийн ялгаанаас үүдэлтэй.",
+      "Тариалан эрхлэхэд тохиромжтой ургамал, амьтад цөөн хэдэн бүс нутагт төвлөрсөн байсан нь давуу тал олгосон.",
+      "Нян ба халдварт өвчин нь колоничлолын үед зэр зэвсгээс ч илүү хөнөөлтэй зэвсэг болсон."
+    ],
+    "tags": [
+      "Anthropology",
+      "World History",
+      "Geography",
+      "Pulitzer",
+      "prize:pulitzer=1998",
+      "Ethnology"
+    ],
+    "reviews": [
+      {
+        "id": "rev_ggs_1",
+        "userName": "Эрдэмбилэг",
+        "rating": 4.8,
+        "comment": "Хүн төрөлхтний 13,000 жилийн түүхийг газар зүй, экологийн талаас тайлбарласан сод бүтээл.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Prologue: Yali's Question",
+        "estimatedMinutes": 8,
+        "content": "In July 1972 I was walking along a beach on the tropical island of New Guinea, where as a biologist I study bird evolution. I was joined by a remarkable local politician named Yali.\n\nYali looked at me with his penetrating eyes and asked, 'Why is it that you white people developed so much cargo and brought it to New Guinea, but we black people had little cargo of our own?'\n\nThat deceptively simple question took twenty-five years of global historical and biological research to answer."
+      }
+    ]
+  },
+  {
+    "id": "book_sapiens",
+    "title": "Sapiens: A Brief History of Humankind",
+    "author": "Yuval Noah Harari",
+    "description": "From a renowned historian comes a groundbreaking narrative of humanity’s creation and evolution—a #1 international bestseller—that explores the ways in which biology and history have defined us and enhanced our understanding of what it means to be “human.”\r\n\r\nOne hundred thousand years ago, at least six different species of humans inhabited Earth. Yet today there is only one—homo sapiens. What happened to the others? And what may happen to us?\r\n\r\nMost books about the history of humanity pursue either a historical or a biological approach, but Dr. Yuval Noah Harari breaks the mold with this highly original book that begins about 70,000 years ago with the appearance of modern cognition. From examining the role evolving humans have played in the global ecosystem to charting the rise of empires, Sapiens integrates history and science to reconsider accepted narratives, connect past developments with contemporary concerns, and examine specific events within the context of larger ideas.\r\n\r\nDr. Harari also compels us to look ahead, because over the last few decades humans have begun to bend laws of natural selection that have governed life for the past four billion years. We are acquiring the ability to design not only the world around us, but also ourselves. Where is this leading us, and what do we want to become?\r\n\r\nFeaturing 27 photographs, 6 maps, and 25 illustrations/diagrams, this provocative and insightful work is sure to spark debate and is essential reading for aficionados of Jared Diamond, James Gleick, Matt Ridley, Robert Wright, and Sharon Moalem.",
+    "rating": 4.19,
+    "reviewsCount": 214,
+    "category": "book.categories.science",
+    "pages": 443,
+    "readTimeMinutes": 480,
+    "image": "assets/public/books/sapiens.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/8634250-L.jpg",
+    "openLibraryWorkId": "OL17075811W",
+    "openLibraryCoverId": 8634250,
+    "colorHex": 4287513773,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": true,
+    "isFavorite": true,
+    "hasAudio": true,
+    "audioDurationMinutes": 480,
+    "keyTakeaways": [
+      "Хүн төрөлхтнийг нэгтгэж буй хамгийн том хүчин зүйл бол зохиомол түүх, итгэл үнэмшил юм.",
+      "Газар тариалангийн хувьсгал нь хүний амьдралын чанарыг бус тоо толгойг л өсгөсөн.",
+      "Шинжлэх ухааны хувьсгал нь хүн мэдэхгүй зүйлээ хүлээн зөвшөөрснөөр эхэлсэн."
+    ],
+    "tags": [
+      "Anthropology",
+      "Evolution",
+      "History",
+      "Science",
+      "Philosophy",
+      "Human beings"
+    ],
+    "reviews": [
+      {
+        "id": "rev_sap_1",
+        "userName": "Номин-Эрдэнэ",
+        "rating": 5.0,
+        "comment": "Дэлхий ертөнц, хүний нийгмийн түүхийг цоо шинэ өнцгөөс харуулсан гайхамшигт бүтээл.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: An Animal of No Significance",
+        "estimatedMinutes": 8,
+        "content": "About 13.5 billion years ago, matter, energy, time and space came into being in what is known as the Big Bang.\n\nAbout 3.8 billion years ago, on planet Earth, certain molecules combined to form particularly large and intricate structures called organisms.\n\nWhat is most important to grasp is that Homo sapiens was once just an insignificant ape minding its own business in a corner of Africa alongside elephants, baboons, and chimpanzees."
+      }
+    ]
+  },
+  {
+    "id": "book_a_brief_history_of_time",
+    "title": "A Brief History of Time",
+    "author": "Stephen Hawking",
+    "description": "Stephen Hawking's ‘A Brief History of Time* has become an international publishing phenomenon. Translated into thirty languages, it has sold over ten million copies worldwide and lives on as a science book that continues to captivate and inspire new readers each year. When it was first published in 1988 the ideas discussed in it were at the cutting edge of what was then known about the universe. In the intervening twenty years there have been extraordinary advances in the technology of observing both the micro- and macro-cosmic world. Indeed, during that time cosmology and the theoretical sciences have entered a new golden age . Professor Hawking is one of the major scientists and thinkers to have contributed to this renaissance.",
+    "rating": 4.16,
+    "reviewsCount": 245,
+    "category": "book.categories.science",
+    "pages": 212,
+    "readTimeMinutes": 240,
+    "image": "assets/public/books/a_brief_history_of_time.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/10432365-L.jpg",
+    "openLibraryWorkId": "OL1892617W",
+    "openLibraryCoverId": 10432365,
+    "colorHex": 4280246669,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 240,
+    "keyTakeaways": [
+      "Цаг хугацаа нь эхлэлтэй байсан бөгөөд орон зайн хэмжигдэхүүнтэй салшгүй холбоотой.",
+      "Хар нүхнүүд нь бүрэн хар биш, квант механик үйлчлэлээр цацраг (Хокингийн цацраг) ялгаруулдаг.",
+      "Бүхнийг нэгтгэсэн онол (Theory of Everything) нь ертөнцийн хуулийг бүрэн тайлбарлах түлхүүр юм."
+    ],
+    "tags": [
+      "Cosmology",
+      "Physics",
+      "Black Holes",
+      "Universe",
+      "Science",
+      "Cosmologie"
+    ],
+    "reviews": [
+      {
+        "id": "rev_bhot_1",
+        "userName": "Чингүүн",
+        "rating": 4.9,
+        "comment": "Сансар огторгуй, хар нүх, цаг хугацааны нууцыг хүн бүрт ойлгомжтойгоор тайлбарласан физикийн шилдэг ном.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: Our Picture of the Universe",
+        "estimatedMinutes": 7,
+        "content": "A well-known scientist once gave a public lecture on astronomy. He described how the earth orbits around the sun and how the sun, in turn, orbits around the center of a vast collection of stars called our galaxy.\n\nAt the end of the lecture, a little old lady at the back of the room got up and said: 'What you have told us is rubbish. The world is really a flat plate supported on the back of a giant tortoise.'\n\nThe scientist gave a superior smile before replying, 'What is the tortoise standing on?'\n\n'You're very clever, young man, very clever,' said the old lady. 'But it's turtles all the way down!'"
+      }
+    ]
+  },
+  {
+    "id": "book_cosmos",
+    "title": "Cosmos",
+    "author": "Carl Sagan",
+    "description": "This book is about science in its broadest human context, how science and civilization grew up together. It is the story of our long journey of discovery and the forces and individuals who helped to shape modern science, including Democritus, Hypatia, Kepler, Newton, Huygens, Champollion, Lowell and Humason. The book also explores spacecraft missions of discovery of the nearby planets, the research in the Library of ancient Alexandria, the human brain, Egyptian hieroglyphics, the origin of life, the death of the Sun, the evolution of galaxies and the origins of matter, suns and worlds. The author retraces the fifteen billion years of cosmic evolution that have transformed matter into life and consciousness, enabling the cosmos to wonder about itself. He considers the latest findings on life elsewhere and how we might communicate with the beings of other worlds. ~ WorldCat.org",
+    "rating": 4.6,
+    "reviewsCount": 150,
+    "category": "book.categories.science",
+    "pages": 365,
+    "readTimeMinutes": 380,
+    "image": "assets/public/books/cosmos.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/8283901-L.jpg",
+    "openLibraryWorkId": "OL15829966W",
+    "openLibraryCoverId": 8283901,
+    "colorHex": 4279132753,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 380,
+    "keyTakeaways": [
+      "Бид бүгдээрээ оддын тоосноос бүтсэн (We are made of starstuff).",
+      "Шинжлэх ухаан бол зөвхөн мэдлэгийн цогц бус, аливааг эргэцүүлэн бодох онцгой арга барил юм.",
+      "Эх дэлхий бол сансар огторгуйн хязгааргүй далайд хөвөх өчүүхэн цэнхэр цэг."
+    ],
+    "tags": [
+      "Astronomy",
+      "Cosmology",
+      "Science",
+      "Planets",
+      "Astrophysics",
+      "Astronomie"
+    ],
+    "reviews": [
+      {
+        "id": "rev_cos_1",
+        "userName": "Ану",
+        "rating": 5.0,
+        "comment": "Шинжлэх ухааны уран яруу бичвэрийн хамгийн гайхалтай жишээ. Заавал унших ёстой.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: The Shores of the Cosmic Ocean",
+        "estimatedMinutes": 8,
+        "content": "The Cosmos is all that is or ever was or ever will be. Our feeblest contemplations of the Cosmos stir us—there is a tingling in the spine, a catch in the voice, a faint sensation, as if a distant memory, of falling from a height. We know we are approaching the greatest of mysteries.\n\nThe size and age of the Cosmos are beyond ordinary human understanding. Lost somewhere between immensity and eternity is our tiny planetary home."
+      }
+    ]
+  },
+  {
+    "id": "book_frankenstein",
+    "title": "Frankenstein",
+    "author": "Mary Shelley",
+    "description": "*Frankenstein; or, The Modern Prometheus* is an 1818 novel written by English author Mary Shelley. Frankenstein tells the story of Victor Frankenstein, a young scientist who creates a sapient creature in an unorthodox scientific experiment. Shelley started writing the story when she was 18, and the first edition was published anonymously in London on 1 January 1818, when she was 20. Her name first appeared in the second edition, which was published in Paris in 1821.",
+    "rating": 4.75,
+    "reviewsCount": 228,
+    "category": "book.categories.science",
+    "pages": 280,
+    "readTimeMinutes": 290,
+    "image": "assets/public/books/frankenstein.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/12356249-L.jpg",
+    "openLibraryWorkId": "OL450063W",
+    "openLibraryCoverId": 12356249,
+    "colorHex": 4281221203,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 290,
+    "keyTakeaways": [
+      "Хариуцлагагүй шинжлэх ухаан ба хүний хязгаарыг давсан шунал нь эмгэнэлд хүргэдэг.",
+      "Хүлээн зөвшөөрөгдөх, хайрлагдах хүсэл нь хүний хамгийн анхдагч хэрэгцээ юм."
+    ],
+    "tags": [
+      "Science Fiction",
+      "Gothic",
+      "Classics",
+      "Horror",
+      "Ethics",
+      "Fiction"
+    ],
+    "reviews": [
+      {
+        "id": "rev_frank_1",
+        "userName": "Тэмүүлэн",
+        "rating": 4.8,
+        "comment": "Шинжлэх ухааны уран зөгнөлт зохиолын эхлэл болсон сод бүтээл. Ёс зүй ба технологийн тухай чухал сануулга.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: The Spark of Being",
+        "estimatedMinutes": 7,
+        "content": "It was on a dreary night of November that I beheld the accomplishment of my toils. With an anxiety that almost amounted to agony, I collected the instruments of life around me, that I might infuse a spark of being into the lifeless thing that lay at my feet.\n\nIt was already one in the morning; the rain pattered dismally against the panes, and my candle was nearly burnt out, when, by the glimmer of the half-extinguished light, I saw the dull yellow eye of the creature open; it breathed hard, and a convulsive motion agitated its limbs."
+      }
+    ]
+  },
+  {
+    "id": "book_the_hobbit",
+    "title": "The Hobbit",
+    "author": "J.R.R. Tolkien",
+    "description": "The Hobbit is a tale of high adventure, undertaken by a company of dwarves in search of dragon-guarded gold. A reluctant partner in this perilous quest is Bilbo Baggins, a comfort-loving unambitious hobbit, who surprises even himself by his resourcefulness and skill as a burglar.\r\n\r\nEncounters with trolls, goblins, dwarves, elves, and giant spiders, conversations with the dragon, Smaug, and a rather unwilling presence at the Battle of Five Armies are just some of the adventures that befall Bilbo.\r\n\r\nBilbo Baggins has taken his place among the ranks of the immortals of children’s fiction. Written by Professor Tolkien for his children, The Hobbit met with instant critical acclaim when published.",
+    "rating": 4.3,
+    "reviewsCount": 507,
+    "category": "book.categories.adventure",
+    "pages": 310,
+    "readTimeMinutes": 320,
+    "image": "assets/public/books/the_hobbit.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/14627509-L.jpg",
+    "openLibraryWorkId": "OL27482W",
+    "openLibraryCoverId": 14627509,
+    "colorHex": 4279523890,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": true,
+    "isFavorite": true,
+    "hasAudio": true,
+    "audioDurationMinutes": 320,
+    "keyTakeaways": [
+      "Эгэл даруу хүн ч дэлхийн хувь заяаг өөрчлөх хүчтэй зориг гаргаж чаддаг.",
+      "Адал явдал, нөхөрлөл нь аюул бэрхшээлийг даван туулах хамгийн найдвартай зам юм."
+    ],
+    "tags": [
+      "Fantasy",
+      "Adventure",
+      "Epic",
+      "Middle-Earth",
+      "Classics",
+      "Arkenstone"
+    ],
+    "reviews": [
+      {
+        "id": "rev_hob_1",
+        "userName": "Баатар",
+        "rating": 5.0,
+        "comment": "Уран сэтгэмж, адал явдлын гайхалтай ертөнц. Хүүхэд залуус төдийгүй томчуудын ч дуртай ном.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: An Unexpected Party",
+        "estimatedMinutes": 8,
+        "content": "In a hole in the ground there lived a hobbit. Not a nasty, dirty, wet hole, filled with the ends of worms and an oozy smell, nor yet a dry, bare, sandy hole with nothing in it to sit down on or to eat: it was a hobbit-hole, and that means comfort.\n\nIt had a perfectly round door like a porthole, painted green, with a shiny yellow brass knob in the exact middle. The door opened on to a tube-shaped hall like a tunnel."
+      }
+    ]
+  },
+  {
+    "id": "book_the_alchemist",
+    "title": "The Alchemist",
+    "author": "Paulo Coelho",
+    "description": "Offers an adaptation in graphic novel format of a modern classic about the globe-trotting spiritual journey of a humble shepherd boy.",
+    "rating": 4.25,
+    "reviewsCount": 150,
+    "category": "book.categories.adventure",
+    "pages": 208,
+    "readTimeMinutes": 220,
+    "image": "assets/public/books/the_alchemist.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/11556106-L.jpg",
+    "openLibraryWorkId": "OL24793569W",
+    "openLibraryCoverId": 11556106,
+    "colorHex": 4292039680,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 220,
+    "keyTakeaways": [
+      "Хүн өөрийн хувь тавилан, мөрөөдлийнхөө араас тууштай явах хэрэгтэй.",
+      "Хэрэв чи ямар нэг зүйлийг чин сэтгэлээсээ хүсвэл бүх орчлон ертөнц чамд туслахаар хуйвалддаг.",
+      "Жинхэнэ эрдэнэс нь хүрэх газарт бус аяллын замд нуугдаж байдаг."
+    ],
+    "tags": [
+      "Adventure",
+      "Philosophy",
+      "Inspirational",
+      "Quest",
+      "Bestseller",
+      "Fables"
+    ],
+    "reviews": [
+      {
+        "id": "rev_alc_1",
+        "userName": "Сарнай Б.",
+        "rating": 5.0,
+        "comment": "Урам зориг өгсөн, амьдралын зорилгоо дахин эргэцүүлэхэд хүргэсэн тансаг бүтээл.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Part 1: The Shepherd and the Desert",
+        "estimatedMinutes": 7,
+        "content": "The boy's name was Santiago. Dusk was falling as the boy arrived with his herd at an abandoned church. The roof had fallen in long ago, and an enormous sycamore had grown on the spot where the sacristy had once stood.\n\nHe decided to spend the night there. He saw to it that all the sheep entered through the ruined gate, and then laid some planks across it to prevent the flock from wandering off during the night."
+      }
+    ]
+  },
+  {
+    "id": "book_treasure_island",
+    "title": "Treasure Island",
+    "author": "Robert Louis Stevenson",
+    "description": "Traditionally considered a coming-of-age story, Treasure Island is an adventure tale known for its atmosphere, characters and action, and also as a wry commentary on the ambiguity of morality — as seen in Long John Silver — unusual for children's literature then and now. It is one of the most frequently dramatized of all novels. The influence of Treasure Island on popular perceptions of pirates is enormous, including treasure maps marked with an \"X\", schooners, the Black Spot, tropical islands, and one-legged seamen carrying parrots on their shoulders",
+    "rating": 4.75,
+    "reviewsCount": 150,
+    "category": "book.categories.adventure",
+    "pages": 292,
+    "readTimeMinutes": 300,
+    "image": "assets/public/books/treasure_island.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/13859660-L.jpg",
+    "openLibraryWorkId": "OL24034W",
+    "openLibraryCoverId": 13859660,
+    "colorHex": 4286408200,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 300,
+    "keyTakeaways": [
+      "Эрэлхэг зориг ба сонор сэрэмж нь хамгийн хүнд сорилтыг даван туулах түлхүүр.",
+      "Шунал ба урвалт нь эцэстээ өөрийгөө мөхөөдөг."
+    ],
+    "tags": [
+      "Pirates",
+      "Adventure",
+      "Sea",
+      "Classics",
+      "Treasure",
+      "Fiction"
+    ],
+    "reviews": [
+      {
+        "id": "rev_ti_1",
+        "userName": "Давааням",
+        "rating": 4.9,
+        "comment": "Далайн дээрэмчид, алтан эрдэнэсийн тухай дэлхийн хамгийн алдартай адал явдалт зохиол.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: The Old Sea-dog at the Admiral Benbow",
+        "estimatedMinutes": 8,
+        "content": "Squire Trelawney, Dr. Livesey, and the rest of these gentlemen having asked me to write down the whole particulars about Treasure Island, from the beginning to the end, keeping nothing back but the bearings of the island, and that only because there is still treasure not yet lifted, I take up my pen in the year of grace 17__.\n\nI remember him as if it were yesterday, as he came plodding to the inn door, his sea-chest following behind him in a hand-barrow; a tall, strong, heavy, nut-brown man; his tarry pigtail falling over the shoulders of his soiled blue coat; his hands ragged and scarred, with black, broken nails; and the sabre cut across one cheek."
+      }
+    ]
+  },
+  {
+    "id": "book_around_the_world_in_eighty_days",
+    "title": "Around the World in Eighty Days",
+    "author": "Jules Verne",
+    "description": "Phileas Fogg, a very punctual man had broken into an argument while conversing about the recent bank robbery. To keep his word of proving that he would travel around the world in 80 days and win the bet, he sets on a long trip, where he is joined by a few other people on the way. A wonderful adventure is about to begin!",
+    "rating": 4.75,
+    "reviewsCount": 150,
+    "category": "book.categories.adventure",
+    "pages": 252,
+    "readTimeMinutes": 270,
+    "image": "assets/public/books/around_the_world_in_eighty_days.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/6976035-L.jpg",
+    "openLibraryWorkId": "OL1100007W",
+    "openLibraryCoverId": 6976035,
+    "colorHex": 4279856957,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 270,
+    "keyTakeaways": [
+      "Цаг хугацааны нарийн төлөвлөлт, тайван сэтгэлгээ нь гэнэтийн бэрхшээлийг шийддэг.",
+      "Дэлхий ертөнцөөр аялах нь хүний нүдийг нээж, шинэ харилцааг авчирдаг."
+    ],
+    "tags": [
+      "Adventure",
+      "Travel",
+      "Classics",
+      "Victorian",
+      "Expedition",
+      "Fiction"
+    ],
+    "reviews": [
+      {
+        "id": "rev_atw_1",
+        "userName": "Мөнгөнсүх",
+        "rating": 4.8,
+        "comment": "Жюль Вернийн гайхалтай уран сэтгэмж ба Филеас Фоггийн тууштай зан чанар үнэхээр бахдам.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: In Which Phileas Fogg and Passepartout Accept Each Other",
+        "estimatedMinutes": 8,
+        "content": "Mr. Phileas Fogg lived, in 1872, at No. 7, Saville Row, Burlington Gardens, the house in which Sheridan died in 1814. He was one of the most noticeable members of the Reform Club, though he seemed always to avoid attracting attention.\n\nPhileas Fogg was a man who lived with the precision of a chronometer. Everything he did was calculated to the second, from the temperature of his shaving water to his exact footsteps down the Strand."
+      }
+    ]
+  },
+  {
+    "id": "book_pride_and_prejudice",
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "description": "Pride and Prejudice is an 1813 novel of manners written by Jane Austen. The novel follows the character development of Elizabeth Bennet, the dynamic protagonist of the book who learns about the repercussions of hasty judgments and comes to appreciate the difference between superficial goodness and actual goodness.\r\n\r\nMr. Bennet, owner of the Longbourn estate in Hertfordshire, has five daughters, but his property is entailed and can only be passed to a male heir. His wife also lacks an inheritance, so his family faces becoming very poor upon his death. Thus, it is imperative that at least one of the girls marry well to support the others, which is a motivation that drives the plot.",
+    "rating": 4.21,
+    "reviewsCount": 415,
+    "category": "book.categories.romance",
+    "pages": 432,
+    "readTimeMinutes": 440,
+    "image": "assets/public/books/pride_and_prejudice.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/14348537-L.jpg",
+    "openLibraryWorkId": "OL66554W",
+    "openLibraryCoverId": 14348537,
+    "colorHex": 4285281411,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": true,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 440,
+    "keyTakeaways": [
+      "Анхны сэтгэгдэл болон бардам зан нь хүний жинхэнэ мөн чанарыг харахад саад болдог.",
+      "Нийгмийн давхарга, хөрөнгө мөнгөнөөс илүү харилцан хүндлэл, оюуны нийцэл чухал."
+    ],
+    "tags": [
+      "Romance",
+      "Classics",
+      "British Literature",
+      "Drama",
+      "Brothers and sisters",
+      "Courtship"
+    ],
+    "reviews": [
+      {
+        "id": "rev_pap_1",
+        "userName": "Хонгорзул",
+        "rating": 5.0,
+        "comment": "Английн уран зохиолын оргил бүтээлүүдийн нэг. Элизабетийн хурц ухаан үнэхээр сэтгэл татам.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: It is a Truth Universally Acknowledged",
+        "estimatedMinutes": 7,
+        "content": "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.\n\nHowever little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.\n\n'My dear Mr. Bennet,' said his lady to him one day, 'have you heard that Netherfield Park is let at last?'"
+      }
+    ]
+  },
+  {
+    "id": "book_the_great_gatsby",
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "description": "Here is a novel, glamorous, ironical, compassionate – a marvelous fusion into unity of the curious incongruities of the life of the period – which reveals a hero like no other – one who could live at no other time and in no other place. But he will live as a character, we surmise, as long as the memory of any reader lasts.\r\n\r\n\"There was something gorgeous about him, some heightened sensitivity to the promises of life.... It was an extraordinary gift for hope, a romantic readiness such as I have never found in any other person and which it is not likely I shall ever find again.\"\r\n\r\nIt is the story of this Jay Gatsby who came so mysteriously to West Egg, of his sumptuous entertainments, and of his love for Daisy Buchanan – a story that ranges from pure lyrical beauty to sheer brutal realism, and is infused with a sense of the strangeness of human circumstance in a heedless universe.\r\n\r\nIt is a magical, living book, blended of irony, romance, and mysticism.\r\n\r\n\\--first edition jacket\r\n\r\n---\r\n\r\nAlso contained in:\r\n\r\n- [The Fitzgerald Reader](https://openlibrary.org/works/OL468551W/The_Fitzgerald_Reader)\r\n- [Three Novels of F. Scott Fitzgerald](https://openlibrary.org/works/OL468557W)",
+    "rating": 4.75,
+    "reviewsCount": 258,
+    "category": "book.categories.romance",
+    "pages": 180,
+    "readTimeMinutes": 210,
+    "image": "assets/public/books/the_great_gatsby.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/10590366-L.jpg",
+    "openLibraryWorkId": "OL468431W",
+    "openLibraryCoverId": 10590366,
+    "colorHex": 4279915126,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 210,
+    "keyTakeaways": [
+      "Өнгөрсөн цаг үеийг дахин амьдруулах гэсэн хүсэл нь бодит байдалтай зөрчилддөг.",
+      "Эд баялаг, тансаг амьдрал нь дотоод сэтгэлийн хоосон чанарыг нөхөж чаддаггүй."
+    ],
+    "tags": [
+      "Classics",
+      "Romance",
+      "American Literature",
+      "Jazz Age",
+      "Tragedy",
+      "Married people, fiction"
+    ],
+    "reviews": [
+      {
+        "id": "rev_tgg_1",
+        "userName": "Анударь",
+        "rating": 4.9,
+        "comment": "Ногоон гэрэл, өнгөрсөн үеийн мөрөөдлийн тухай гайхалтай тансаг хэллэгтэй сонгодог роман.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: In My Younger and More Vulnerable Years",
+        "estimatedMinutes": 8,
+        "content": "In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since.\n\n'Whenever you feel like criticizing anyone,' he told me, 'just remember that all the people in this world haven't had the advantages that you've had.'\n\nHe didn't say any more, but we've always been unusually communicative in a reserved way, and I understood that he meant a great deal more than that."
+      }
+    ]
+  },
+  {
+    "id": "book_jane_eyre",
+    "title": "Jane Eyre",
+    "author": "Charlotte Brontë",
+    "description": "The novel is set somewhere in the north of England. Jane's childhood at Gateshead Hall, where she is emotionally and physically abused by her aunt and cousins; her education at Lowood School, where she acquires friends and role models but also suffers privations and oppression; her time as the governess of Thornfield Hall, where she falls in love with her Byronic employer, Edward Rochester; her time with the Rivers family, during which her earnest but cold clergyman cousin, St John Rivers, proposes to her. Will she or will she not marry him?",
+    "rating": 4.04,
+    "reviewsCount": 191,
+    "category": "book.categories.romance",
+    "pages": 507,
+    "readTimeMinutes": 520,
+    "image": "assets/public/books/jane_eyre.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/8235363-L.jpg",
+    "openLibraryWorkId": "OL1095427W",
+    "openLibraryCoverId": 8235363,
+    "colorHex": 4283510367,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 520,
+    "keyTakeaways": [
+      "Өөрийн нэр төр, ёс зүйг хайр дурлал болон нийгмийн дарамтын өмнө хадгалж үлдэх нь чухал.",
+      "Хүний дотоод эрх чөлөөг ямар ч гаднын хүчин зүйл хүлж чадахгүй."
+    ],
+    "tags": [
+      "Gothic Romance",
+      "Victorian",
+      "Classics",
+      "Morality",
+      "Fiction",
+      "Romance"
+    ],
+    "reviews": [
+      {
+        "id": "rev_je_1",
+        "userName": "Цолмон",
+        "rating": 5.0,
+        "comment": "Эмэгтэй хүний тэсвэр хатуужил, бие даасан зан чанарын гайхамшигт бэлгэдэл болсон роман.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: Gateshead Hall",
+        "estimatedMinutes": 8,
+        "content": "There was no possibility of taking a walk that day. We had been wandering, indeed, in the leafless shrubbery an hour in the morning; but since dinner (Mrs. Reed, when there was no company, dined early) the cold winter wind had brought with it clouds so sombre, and a rain so penetrating, that further outdoor exercise was now out of the question.\n\nI was glad of it: I never liked long walks, especially on chilly afternoons: dreadful to me was the coming home in the raw twilight, with nipped fingers and toes, and a heart saddened by the chidings of Bessie, the nurse, and humbled by the consciousness of my physical inferiority to Eliza, John, and Georgiana Reed."
+      }
+    ]
+  },
+  {
+    "id": "book_wuthering_heights",
+    "title": "Wuthering Heights",
+    "author": "Emily Brontë",
+    "description": "Wuthering Heights is an 1847 novel by Emily Brontë, initially published under the pseudonym Ellis Bell. It concerns two families of the landed gentry living on the West Yorkshire moors, the Earnshaws and the Lintons, and their turbulent relationships with Earnshaw's adopted son, Heathcliff. The novel was influenced by Romanticism and Gothic fiction.",
+    "rating": 4.1,
+    "reviewsCount": 309,
+    "category": "book.categories.romance",
+    "pages": 416,
+    "readTimeMinutes": 430,
+    "image": "assets/public/books/wuthering_heights.png",
+    "coverCdnUrl": "https://covers.openlibrary.org/b/id/12818862-L.jpg",
+    "openLibraryWorkId": "OL21177W",
+    "openLibraryCoverId": 12818862,
+    "colorHex": 4283048794,
+    "progress": 0.0,
+    "currentPage": 0,
+    "currentChapterIndex": 0,
+    "isSaved": false,
+    "isFavorite": false,
+    "hasAudio": true,
+    "audioDurationMinutes": 430,
+    "keyTakeaways": [
+      "Хязгааргүй шунал тачаал ба өшөө хонзон нь эцэстээ бүх оролцогчдод сүйрэл авчирдаг.",
+      "Байгалийн догшин ширүүн төрх нь хүний дотоод сэтгэлийн шуургыг тольдон харуулдаг."
+    ],
+    "tags": [
+      "Gothic",
+      "Tragic Romance",
+      "Classics",
+      "Obsession",
+      "form:novel",
+      "genre:tragedy"
+    ],
+    "reviews": [
+      {
+        "id": "rev_wh_1",
+        "userName": "Нарангарав",
+        "rating": 4.8,
+        "comment": "Дурлал, өшөө хонзон, Йоркширийн зэрлэг талын тухай хэзээ ч мартагдашгүй хүчирхэг бүтээл.",
+        "createdAt": "2026-11-01T12:00:00Z"
+      }
+    ],
+    "chapters": [
+      {
+        "id": "c1",
+        "title": "Chapter 1: 1801 - A Visit to Wuthering Heights",
+        "estimatedMinutes": 8,
+        "content": "1801.—I have just returned from a visit to my landlord—the solitary neighbour that I shall be troubled with. This is certainly a beautiful country! In all England, I do not believe that I could have fixed on a situation so completely removed from the stir of society.\n\nA perfect misanthropist's heaven: and Mr. Heathcliff and I are such a suitable pair to divide the desolation between us. A capital fellow! He little imagined how my heart warmed towards him when I beheld his black eyes withdraw so suspiciously under their brows, as I rode up."
+      }
+    ]
+  }
+]

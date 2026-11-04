@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:readpack/shared/widgets/animated_pressable.dart';
 
 class Categories extends StatelessWidget {
   final List<String> categories;
@@ -19,7 +20,7 @@ class Categories extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 8),
       child: SizedBox(
-        height: 40,
+        height: 42,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -27,24 +28,34 @@ class Categories extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(width: 8),
           itemBuilder: (context, index) {
             final isSelected = selectedIndex == index;
-            return GestureDetector(
+            return AnimatedPressable(
               onTap: () => onChanged(index),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? colorScheme.primary
-                      : colorScheme.primary.withValues(alpha: 0.08),
+                      : colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.outlineVariant.withValues(alpha: 0.25),
+                  ),
                 ),
                 child: Center(
                   child: Text(
                     categories[index],
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? colorScheme.onPrimary : colorScheme.primary,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurface,
                     ),
                   ),
                 ),

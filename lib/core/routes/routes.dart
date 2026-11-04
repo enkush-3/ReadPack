@@ -1,30 +1,95 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/app_shell.dart';
 import 'package:readpack/features/auth/presentation/page/auth.dart';
+import 'package:readpack/features/details/presentation/page/book_detail.dart';
+import 'package:readpack/features/notifications/presentation/page/notifications_page.dart';
+import 'package:readpack/features/onboarding/presentation/page/onboarding_page.dart';
+import 'package:readpack/features/reader/presentation/page/reader_page.dart';
+import 'package:readpack/models/book.dart';
 
 class Routes {
-  Routes._(_);
+  Routes._();
 
   static const String auth = '/auth';
   static const String verify = '/verify';
   static const String appshell = '/shell';
+  static const String bookDetail = '/book-detail';
+  static const String reader = '/reader';
+  static const String notifications = '/notifications';
+  static const String onboarding = '/onboarding';
 
-  
   static Route<dynamic> generateRoute(RouteSettings settings) {
-  switch (settings.name) {
-    case auth:
-      return MaterialPageRoute(builder: (_) => AuthPage());
-    case appshell:
-      return MaterialPageRoute(builder: (_) => AppShell());
+    switch (settings.name) {
+      case auth:
+        return MaterialPageRoute(builder: (_) => const AuthPage());
 
-      
-    default:
-      return MaterialPageRoute(
-        builder: (_) => const Scaffold(
-          body: Center(child: Text('Route not found')),
-        ),
-      );
+      case onboarding:
+        return MaterialPageRoute(builder: (_) => const OnboardingPage());
+
+      case appshell:
+        int initialIndex = 0;
+        if (settings.arguments is int) {
+          initialIndex = settings.arguments as int;
+        }
+        return MaterialPageRoute(
+          builder: (_) => AppShell(initialIndex: initialIndex),
+        );
+
+      case notifications:
+        return MaterialPageRoute(
+          builder: (_) => const NotificationsPage(),
+        );
+
+      case bookDetail:
+        if (settings.arguments is Book) {
+          final book = settings.arguments as Book;
+          return MaterialPageRoute(
+            builder: (_) => BookDetailPage(book: book),
+          );
+        }
+        return _errorRoute('Book data is missing');
+
+      case reader:
+        if (settings.arguments is Map<String, dynamic>) {
+          final args = settings.arguments as Map<String, dynamic>;
+          final book = args['book'] as Book;
+          final initialChapterIndex =
+              args['initialChapterIndex'] as int? ?? 0;
+          final openAudio = args['openAudio'] as bool? ?? false;
+          return MaterialPageRoute(
+            builder: (_) => ReaderPage(
+              book: book,
+              initialChapterIndex: initialChapterIndex,
+              openAudioInitially: openAudio,
+            ),
+          );
+        } else if (settings.arguments is Book) {
+          return MaterialPageRoute(
+            builder: (_) => ReaderPage(book: settings.arguments as Book),
+          );
+        }
+        return _errorRoute('Reader parameters are missing');
+
+      default:
+        return _errorRoute('Хуудас олдсонгүй: ${settings.name}');
     }
   }
 
+  static Route<dynamic> _errorRoute(String message) {
+    return MaterialPageRoute(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: const Text('Алдаа')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

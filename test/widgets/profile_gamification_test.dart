@@ -1,0 +1,111 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/providers/theme_provider.dart';
+import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/features/profile/presentation/page/profile_page.dart';
+import 'package:readpack/helper/translation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+late Map<String, dynamic> _mnMap;
+late Map<String, dynamic> _enMap;
+
+class TestAppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const TestAppLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    final l10n = AppLocalizations(locale);
+    l10n.sentences = locale.languageCode == 'en' ? _enMap : _mnMap;
+    return SynchronousFuture<AppLocalizations>(l10n);
+  }
+
+  @override
+  bool shouldReload(TestAppLocalizationsDelegate old) => false;
+}
+
+Widget createProfileTestWidget({
+  required BookProvider bookProvider,
+}) {
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<ThemeProvider>.value(value: ThemeProvider()),
+      ChangeNotifierProvider<BookProvider>.value(value: bookProvider),
+    ],
+    child: MaterialApp(
+      locale: const Locale('mn'),
+      supportedLocales: const [Locale('mn'), Locale('en')],
+      localizationsDelegates: const [
+        TestAppLocalizationsDelegate(),
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      routes: {
+        Routes.onboarding: (_) => const Scaffold(body: Text('OnboardingScreen')),
+        Routes.auth: (_) => const Scaffold(body: Text('AuthScreen')),
+      },
+      home: const Scaffold(body: ProfilePage()),
+    ),
+  );
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    final mnStr = await rootBundle.loadString('assets/locales/mn.json');
+    final enStr = await rootBundle.loadString('assets/locales/en.json');
+    _mnMap = json.decode(mnStr) as Map<String, dynamic>;
+    _enMap = json.decode(enStr) as Map<String, dynamic>;
+  });
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
+  group('Profile Gamification & Habits Tests', () {
+    testWidgets('ProfilePage renders XP level, Weekly League, and Reading Habits',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final bookProvider = BookProvider();
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+
+      await tester.pumpWidget(createProfileTestWidget(bookProvider: bookProvider));
+      await tester.pumpAndSettle();
+
+      // Check XP & Level progression card
+      expect(find.text('Түвшин ба Цол'), findsOneWidget);
+      expect(find.text('${bookProvider.userProfile.xp} XP'), findsNWidgets(2));
+
+      // Check Weekly League & Leaderboard
+      expect(find.textContaining('Лидерборд'), findsOneWidget);
+      expect(find.textContaining('Алмазан Лиг'), findsOneWidget);
+
+      // Check Reading Habit insights & heat-map
+      expect(find.text('Уншлагын цагийн хуваарь'), findsOneWidget);
+      expect(find.textContaining('20:00 - 22:30'), findsOneWidget);
+
+      // Check Retake Onboarding card
+      final retakeBtn = find.text('Засах');
+      expect(retakeBtn, findsOneWidget);
+      await tester.tap(retakeBtn);
+      await tester.pumpAndSettle();
+
+      // Navigated to onboarding
+      expect(find.text('OnboardingScreen'), findsOneWidget);
+    });
+  });
+}

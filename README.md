@@ -1,166 +1,332 @@
+# Flutter Online Book Reader — Implementation Plan
 
----
-# Энэхүү app нь бүрэн хөгжүүлэгдэж дуусаагүй болно
+## Context
 
-
----
-# Demo Images
-# 📱 ReadPact App - Дэлгэцийн зураг
-
-<table>
-  <tr>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-23-40.png" width="200" /><br>
-      <b>Нүүр хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-23-51.png" width="200" /><br>
-      <b>Хайлтын хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-23-56.png" width="200" /><br>
-      <b>Хадгалсан номын хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-00.png" width="200" /><br>
-      <b>Профайл хуудас</b>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-13.png" width="200" /><br>
-      <b>Номын мэдээллийн хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-25.png" width="200" /><br>
-      <b>Мэдэгдэлийн хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-33.png" width="200" /><br>
-      <b>Шүүлтүүрийн хуудас</b>
-    </td>
-    <td align="center">
-      <img src="assets/DemoImages/Screenshot%20From%202026-06-08%2017-24-46.png" width="200" /><br>
-      <b>Профайл засах хуудас</b>
-    </td>
-  </tr>
-</table>
-
-# 📱 ReadPact
-
-## 🧭 Үндсэн Навигаци (Bottom Navigation Bar)
-Аппликейшний доод хэсэгт байрлах үндсэн 4 цэс:
-1. 🏠 **Нүүр (Home)**
-2. 🔍 **Хайлт ба Ангилал (Search & Categories)**
-3. 📚 **Миний ном (My Library)**
-4. 👤 **Профайл (Profile)**
+Энэхүү plan нь React/Web дээр хийгдсэн "Online Book Reader" аппын дизайныг Flutter mobile апп болгон хөрвүүлэх гарын авлага юм. Гол зорилго: web preview-тэй яг ижил visual fidelity (өнгө, font, layout, animation) Flutter дээр хэрэгжүүлэх.
 
 ---
 
-## 1. 🏠 Нүүр хуудас (Home Page)
-*Хэрэглэгчийг татах, шинэ ном санал болгох үндсэн хуудас.*
-1. **Hero Banner:** "7 хоногийн шилдэг", "ReadPact-аас санал болгож байна" (Свайп хийж шилжих слайдер).
-2. **Таны сонирхолд нийцсэн (Personalized):** AI-аар тухайн хэрэглэгчид тохируулан санал болгосон номнууд.
-3. **Шинэ ном (New Releases):** Саяхан нэмэгдсэн номнууд.
-4. **Best Seller (Шилдэг борлуулалт):** 10 шилдэг номны жагсаалт.
-5. **Санал болгох (Recommended):** Редакцын зүгээс санал болгосон 10 ном.
-6. **Trending (Олон нийтийн анхааралд):** Их сэтгэгдэл бичигдэж, их уншигдсан номнууд.
+## 1. Project Setup
+
+```
+flutter create book_reader
+cd book_reader
+```
+
+### pubspec.yaml dependencies
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.2.1          # Playfair Display, DM Sans, DM Mono
+  provider: ^6.1.2              # ThemeProvider state management
+  go_router: ^13.2.0            # Declarative routing
+  cached_network_image: ^3.3.1  # Book cover image caching
+  percent_indicator: ^4.2.3     # Circular + linear progress
+  shared_preferences: ^2.2.3    # Theme preference persistence
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+```
 
 ---
 
-## 2. 🔍 Хайлт ба Ангилал (Search & Categories)
-*Номоо хурдан олох, төрлөөр нь сонгох хуудас.*
-1. **Ухаалаг хайлт (Smart Search):** Номын нэр, зохиолч, ISBN, түлхүүр үгээр хайх. Сүүлийн болон Trending хайлтууд.
-2. **ISBN Сканнер (Камер):** Бодит номын зураг/зураасан код аваад аппликейшнээс хайх.
-3. **Ангилалууд (16 Үндсэн Ангилал):** *(Icon болон өнгөт картаар харуулна)*
-    1. Аж үйлдвэр, технологи, ХАА
-    2. Анагаах ухаан
-    3. Бизнес, Эдийн засаг
-    4. Компьютер, мэдээллийн технологи
-    5. Намтар, Дурсамж
-    6. Нийгмийн шинжлэх ухаан
-    7. Спорт
-    8. Түүх
-    9. Уран зохиол
-    10. Урлаг, Соёл
-    11. Философи, Шашин
-    12. Хобби, Амьдралын хэв маяг
-    13. Хувь хүний хөгжил, эрүүл мэнд
-    14. Хууль, Эрх зүй
-    15. Хэл, Толь бичиг, Нэвтэрхий толь
-    16. Шинжлэх ухаан
-4. **Шүүлтүүр (Filters):** Үнэ, Хуудасны тоо, Үнэлгээ (Од), Хэл, Он.
+## 2. Project Structure
+
+```
+lib/
+├── main.dart
+├── app.dart                    # MaterialApp + ThemeProvider wrapper
+├── core/
+│   ├── theme/
+│   │   ├── app_colors.dart     # All color tokens (dark + light)
+│   │   ├── app_text_styles.dart
+│   │   └── theme_provider.dart # ChangeNotifier, toggleTheme()
+│   └── models/
+│       ├── book.dart
+│       └── bookmark.dart
+├── data/
+│   └── sample_data.dart        # books[], bookmarkedPages[] lists
+├── screens/
+│   ├── home/
+│   │   └── home_screen.dart
+│   ├── library/
+│   │   └── library_screen.dart
+│   ├── reading/
+│   │   └── reading_screen.dart
+│   ├── bookmarks/
+│   │   └── bookmarks_screen.dart
+│   ├── profile/
+│   │   └── profile_screen.dart
+│   ├── search/
+│   │   └── search_screen.dart
+│   └── settings/
+│       └── settings_screen.dart
+└── widgets/
+    ├── phone_frame.dart          # Декоратив phone frame (web demo үед)
+    ├── status_bar.dart
+    ├── bottom_nav_bar.dart
+    ├── book_card.dart
+    ├── book_list_tile.dart
+    ├── progress_ring.dart
+    ├── genre_filter_chips.dart
+    ├── continue_reading_card.dart
+    └── reading_settings_sheet.dart
+```
 
 ---
 
-## 3. 📚 Миний Номын Сан (My Library)
-*Хэрэглэгчийн хувийн номын сан. Свайп хийж хурдан үйлдэл хийх боломжтой.*
-1. **Одоо уншиж байгаа (Currently Reading):** *(Хамгийн дээр)* Номын зураг, зохиогч, **Прогресс бар** (Жнь: 45% уншсан). Дарахад шууд уншлагын горим руу шилжинэ.
-2. **Уншихыг хүссэн (Wishlist / To-Read):** Ирээдүйд уншихаар хадгалсан.
-3. **Уншсан номнууд (Read):** Амжилттай уншиж дуусгасан.
-4. **Татаж авсан (Downloads):** Оффлайн уншихаар татсан.
-5. **Миний тэмдэглэл ба ишлэл (Highlights & Notes):** Бүх номноос тэмдэглэж авсан зүйлс нэг дор.
-6. **Өөрийн цэгцлэгч (Custom Shelves):** Хэрэглэгч өөрөө нэр өгч ангилал үүсгэх (Жнь: "Аялалд унших", "Сургуулийн хичээл").
+## 3. Color Tokens — `app_colors.dart`
+
+```dart
+class AppColorsDark {
+  static const bgApp       = Color(0xFF050C1E);
+  static const bgPhone     = Color(0xFF0D1530);
+  static const bgCard      = Color(0xFF182350);
+  static const bgCardAlt   = Color(0xFF1E2B55);
+  static const textPrimary = Color(0xFFF4F0E8);
+  static const textSecond  = Color(0xFF8B9DC3);
+  static const textReader  = Color(0xFFD4CEBC);
+  static const accent      = Color(0xFFC8A84B);
+  static const border      = Color(0x0FFFFFFF);   // rgba white 6%
+  static const highlight   = Color(0x33C8A84B);   // accent 20%
+}
+
+class AppColorsLight {
+  static const bgApp       = Color(0xFFE5E7EB);
+  static const bgPhone     = Color(0xFFF8F9FA);
+  static const bgCard      = Color(0xFFFFFFFF);
+  static const bgCardAlt   = Color(0xFFF0F2F5);
+  static const textPrimary = Color(0xFF111827);
+  static const textSecond  = Color(0xFF6B7280);
+  static const textReader  = Color(0xFF374151);
+  static const accent      = Color(0xFFB3913A);
+  static const border      = Color(0x0F000000);
+  static const highlight   = Color(0x4DC8A84B);
+}
+```
 
 ---
 
-## 4. 📖 Номын дэлгэрэнгүй хуудас (Book Details)
-*Номын бүрэн мэдээлэл, худалдан авах/унших шийдвэр гаргах хуудас.*
-1. **Том зураг, Нэр, Зохиолч**
-2. **Үйлдлийн товчнууд (CTA):** "Уншиж эхлэх / Татах", "Wishlist-д нэмэх (Зүрх)", "Бэлэглэх".
-3. **Үндсэн мэдээлэл (Таны гаргасан 13 шаардлага):**
-    1. Нэр | 2. Ангилал | 3. Бичигдсэн хэл | 4. Хуудасны тоо | 5. Үнэ | 6. Тайлбар | 7. Зохиолчийн нэр | 8. Орчуулагчийн нэр | 9. Үнэлгээ (Од) | 10. Зохиогдсон он | 11. Орчуулсан он.
-4. **Танилцуулга унших (Preview):** Эхний 20 хуудсыг үнэгүй унших товч.
-5. **Зохиолчийн тухай:** Товч намтар, түүний бусад алдартай номнууд.
-6. **Сэтгэгдэл ба Тайлал (Reviews):** Сэтгэгдэл бичих, "Like" дарж дэмжих, **Спойлер нуух** товчтой.
-7. **Ижил төстэй номнууд (Similar Books):** Энэ номыг уншсан хүмүүс мөн юу уншсан бэ?
+## 4. Typography — `app_text_styles.dart`
+
+Google Fonts ашиглан:
+```dart
+// Playfair Display — заголвал, ном нэр
+static TextStyle playfair({double size = 16, FontWeight weight = FontWeight.w600, Color? color}) =>
+  GoogleFonts.playfairDisplay(fontSize: size, fontWeight: weight, color: color);
+
+// DM Sans — UI label, body
+static TextStyle dmSans({double size = 14, FontWeight weight = FontWeight.w400, Color? color}) =>
+  GoogleFonts.dmSans(fontSize: size, fontWeight: weight, color: color);
+
+// DM Mono — тоо, хуудасны дугаар, статус
+static TextStyle dmMono({double size = 11, Color? color}) =>
+  GoogleFonts.dmMono(fontSize: size, color: color);
+```
 
 ---
 
-## 5. 📖 Уншлагын Горим (Reader View) - *Шинэ чухал хэсэг*
-*Номыг бодитоор уншиж буй мэт мэдрэмж өгөх тусгай дэлгэц.*
-1. **Дэлгэцийн тохиргоо:** Фонтын хэмжээ/төрөл (Serif/Sans-serif), Мөрний зай.
-2. **Өнгөний горим:** Цагаан, **Sepia (Нүдэнд ээлтэй шар)**, Dark Mode.
-3. **Ишлэл ба Тэмдэглэл (Highlight & Notes):** Текст сонгож тодотгох, хажууд нь тэмдэглэл бичих.
-4. **Хүрээлэл (Bookmarks):** Хуудас тэмдэглэх.
-5. **Автомат хадгалалт (Auto-sync):** Сүүлд уншсан мөр, хуудсаа санаж, дараагийн удаад тэндээсээ үргэлжлүүлэх.
-6. **Аудио горим (Сонголттой):** Номыг сонсох (Хурд тохируулах: 1.0x, 1.5x, Унтлагын таймер).
+## 5. Navigation — `app.dart` + `go_router`
+
+**Route структур:**
+```dart
+// Гол tab route-ууд
+/home         → HomeScreen
+/library      → LibraryScreen
+/bookmarks    → BookmarksScreen
+/profile      → ProfileScreen
+
+// Full-screen overlay route-ууд
+/search       → SearchScreen  (SlideTransition дээрээс)
+/settings     → SettingsScreen
+/reading/:id  → ReadingScreen (fade + slide transition)
+```
+
+**Bottom Nav** — `StatefulShellRoute` ашиглан tab state хадгалах.
+
+`readingBookId` state-ийг `GoRouter` push-аар `/reading/:id` руу явуулна — tab nav харагдахгүй болно.
 
 ---
 
-## 6. 👤 Профайл ба Тохиргоо (Profile & Settings)
-*Хэрэглэгчийн мэдээлэл, статистик, аппликейшний тохиргоо.*
-1. **Хэрэглэгчийн мэдээлэл:** Зураг, Нэр, Имэйл, Утас.
-2. **Уншлагын Статистик (Dashboard):**
-    - Жилийн зорилт (Жнь: 20 ном унших).
-    - Pie chart-аар дуртай жанраа харуулах.
-    - Нийт уншсан цаг, хуудасны тоо.
-3. **Медальнууд (Badges):** "Шөнийн уншигч", "Дараалан 7 хоног уншсан" г.м.
-4. **Тохиргоо (Settings):**
-    - Нэр, Имэйл, Утас → Өөрчлөх.
-    - Нууц үг солих.
-    - **Dark / Light / Auto Mode** товч.
-    - Мэдэгдлийн тохиргоо (Шинэ ном, Сэтгэгдэл, Найзын үйлдэл).
-5. **About us (Бидний тухай):**
-    - Апп-ын зорилго.
-    - Хөгжүүлэгч багийн нэр.
-    - Хувилбарын дугаар (Version).
-    - Contact: Имэйл (support@example.com), Утас (+976-xxxxxxx).
-6. **Гарах (Logout)** товч.
+## 6. Screens Дэлгэрэнгүй
+
+### 6.1 HomeScreen
+**Widgets:**
+- `StatusBar` (custom, цаг/battery/signal)
+- `ContinueReadingCard` — gradient container, cover image, progress bar
+- `GenreFilterChips` — horizontal scroll, active/inactive state
+- Discover horizontal scroll list → `BookCard` (110px wide, 154px cover)
+- "In Your Library" vertical list → `BookListTile`
+
+**ContinueReadingCard:**
+```dart
+Container(
+  decoration: BoxDecoration(
+    gradient: LinearGradient(
+      colors: [book.color, theme.bgCard],
+      begin: Alignment.topLeft, end: Alignment.bottomRight,
+    ),
+    borderRadius: BorderRadius.circular(16),
+    border: Border.all(color: theme.highlight, width: 1),
+  ),
+)
+```
+
+### 6.2 LibraryScreen
+- `GridView.builder` — crossAxisCount: 2, childAspectRatio: ~0.55
+- Ном бүрт `ProgressRing` overlay (top-right), progress bar (bottom)
+- `CachedNetworkImage` cover
+
+### 6.3 ReadingScreen
+**Layout:**
+```
+Column:
+  ├── TopBar (back, title, bookmark + more buttons)
+  ├── Expanded(ScrollView → reading text)
+  └── ProgressBar footer
+```
+
+**Font size adjustment:** `setState` → `_fontSize` variable (12–24)
+
+**Highlight text:** Custom `TextSpan` builder — `recognizer` + background color highlight on matching substring.
+
+**BottomSheet (settings):** `showModalBottomSheet` with `DraggableScrollableSheet` —
+```dart
+showModalBottomSheet(
+  context: context,
+  backgroundColor: Colors.transparent,
+  builder: (_) => ReadingSettingsSheet(...),
+);
+```
+`ReadingSettingsSheet` агуулна:
+- Drag handle
+- Font size +/- buttons
+- 4-column grid: Justify / Dark / Light / Audio buttons
+- Theme toggle → `context.read<ThemeProvider>().toggle()`
+
+### 6.4 BookmarksScreen
+- ListView → bookmark card:
+  - Book cover (40×54) + title + chapter/page
+  - Quote block with left gold border (`BorderSide(color: accent, width: 2)`)
+
+### 6.5 ProfileScreen
+- Avatar + name + 5-star row
+- Reading goal progress bar
+- `GridView` 2×2 stats
+- Achievements list (earned/locked opacity)
+
+### 6.6 SearchScreen
+- `TextField` autofocus, custom decoration (rounded, bgCardAlt)
+- `books.where(...)` live filter
+- `BookListTile` results
+
+### 6.7 SettingsScreen
+- Dark theme toggle (`Switch` widget, custom colored)
+- Account info rows
 
 ---
 
-## 7. 🔐 Нэвтрэх, Бүртгэл ба Онбординг (Auth & Onboarding)
-1. **Онбординг (Анх нэвтрэх үед):** "Та ямар жанрын ном сонирхдог вэ?" гэдэг 3-4 сонголтыг сонгуулж, түүндээ тохируулан Нүүр хуудсыг автоматаар дүүргэх.
-2. **Нэвтрэх (Login):** Имэйл, Нууц үг.
-3. **Бүртгүүлэх (Register):** Имэйл, Нууц үг, **Баталгаажуулах код (OTP)**.
+## 7. Key Widgets
+
+### ProgressRing
+```dart
+// percent_indicator package ашиглах
+CircularPercentIndicator(
+  radius: 18.0,
+  lineWidth: 3.0,
+  percent: book.progress / 100,
+  backgroundColor: theme.border,
+  progressColor: theme.accent,
+  circularStrokeCap: CircularStrokeCap.round,
+)
+```
+
+### BottomNavBar
+```dart
+// Custom floating pill style
+Container(
+  margin: EdgeInsets.all(16),
+  decoration: BoxDecoration(
+    color: theme.bgCard,
+    borderRadius: BorderRadius.circular(32),
+    border: Border.all(color: theme.border),
+    boxShadow: [BoxShadow(color: theme.highlight, blurRadius: 20)],
+  ),
+  child: Row(children: tabs.map(...).toList()),
+)
+```
 
 ---
 
-## 🎨 UI/UX Дизайны Алтан Дүрмүүд (Хөгжүүлэгчид заавал мөрдөх)
-1. **Skeleton Loading:** Номнуудыг татаж байх үед цагаан дэлгэц эргэлдүүлэхийн оронд саарал хүрээ (Skeleton) харуулах.
-2. **Micro-interactions:** "Wishlist"-д нэмэх үед зүрх дүрсэлж амь оруулах (Animation).
-3. **Swipe Gestures:** "Миний ном" цэсэнд номыг баруун, зүүн тийш свайп хийхэд "Уншсан болгох", "Устгах" гэх мэт үйлдлүүд гарч ирэх.
-4. **Typography:** Монгол хэлний үсэг (ө, ү) зөв, гоё харагдах, уншихад нүдэнд ээлтэй фонт сонгох (Жишээ нь: *Inter, Roboto, эсвэл Монгол хэл дэмжсэн Serif фонт*).
+## 8. Animations
+
+| Web (Framer Motion) | Flutter эквивалент |
+|---|---|
+| Bottom sheet spring animation | `showModalBottomSheet` + `CurvedAnimation(Curves.easeOutBack)` |
+| Theme 500ms transition | `AnimatedContainer` + `AnimatedDefaultTextStyle` |
+| Progress bar width | `AnimatedContainer(duration: 600ms)` |
+| Progress ring stroke | `TweenAnimationBuilder` |
+| Tab switch | `AnimatedSwitcher` |
 
 ---
+
+## 9. Data Layer
+
+`lib/data/sample_data.dart` — JS-ийн `books[]` болон `bookmarkedPages[]` массивыг Dart `List<Book>` болгон хөрвүүлнэ. Production дээр `Hive` эсвэл `SQLite` ашиглаж local persistence нэмнэ.
+
+---
+
+## 10. ThemeProvider
+
+```dart
+class ThemeProvider extends ChangeNotifier {
+  ThemeMode _mode = ThemeMode.dark;
+  ThemeMode get mode => _mode;
+  bool get isDark => _mode == ThemeMode.dark;
+
+  void toggle() {
+    _mode = isDark ? ThemeMode.light : ThemeMode.dark;
+    notifyListeners();
+    // SharedPreferences-д хадгалах
+  }
+}
+```
+
+`MaterialApp.router` дээр:
+```dart
+themeMode: themeProvider.mode,
+theme: _buildLightTheme(),
+darkTheme: _buildDarkTheme(),
+```
+
+---
+
+## 11. Verification (Шалгах аргачлал)
+
+1. `flutter run` — debug build iOS Simulator / Android Emulator
+2. Dark/light theme toggle ажиллах эсэх
+3. Bottom nav бүх tab-д зөв navigate хийх эсэх
+4. Reading screen нээгдэх, font size өөрчлөгдөх
+5. Bottom sheet spring animation smooth эсэх
+6. Search live filter ажиллах
+7. Progress ring/bar утгаа зөв харуулах
+8. `flutter build apk --release` алдаагүй compile болох
+
+---
+
+## 12. Хэрэгжүүлэх дараалал (Sprint дарааллаар)
+
+1. **Project setup** — pubspec, folder structure, color tokens, text styles
+2. **ThemeProvider + MaterialApp** — dark/light theme switch
+3. **Data models + sample data**
+4. **Bottom nav + routing** — tab shell
+5. **HomeScreen** — ContinueReadingCard, GenreChips, Discover, Library list
+6. **LibraryScreen** — grid view
+7. **ReadingScreen** — text render, font controls, progress, bookmark
+8. **ReadingSettingsSheet** — bottom sheet modal
+9. **BookmarksScreen**
+10. **ProfileScreen + SettingsScreen**
+11. **SearchScreen**
+12. **Polish** — animations, transitions, edge cases
+

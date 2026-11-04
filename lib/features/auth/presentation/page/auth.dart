@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart' hide BackButton;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
-import 'package:readpack/shared/readpacklogo.dart';
 import 'package:readpack/features/auth/widgets/signin.dart';
 import 'package:readpack/features/auth/widgets/signup.dart';
-import 'package:readpack/shared/widgets/backbutton.dart';
-
+import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/readpacklogo.dart';
+import 'package:readpack/shared/widgets/animated_pressable.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -26,15 +28,15 @@ class _AuthPageState extends State<AuthPage>
     super.initState();
 
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 350),
       vsync: this,
     );
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.08),
+      begin: const Offset(0, 0.06),
       end: Offset.zero,
     ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+      CurvedAnimation(parent: _controller, curve: const Cubic(0.2, 0.0, 0.0, 1.0)),
     );
 
     _fadeAnimation = Tween<double>(
@@ -55,8 +57,10 @@ class _AuthPageState extends State<AuthPage>
 
   void _switchMode() {
     _controller.reverse().then((_) {
-      setState(() => _showLogin = !_showLogin);
-      _controller.forward();
+      if (mounted) {
+        setState(() => _showLogin = !_showLogin);
+        _controller.forward();
+      }
     });
   }
 
@@ -65,23 +69,22 @@ class _AuthPageState extends State<AuthPage>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              colorScheme.primaryContainer,
+              colorScheme.primaryContainer.withValues(alpha: 0.7),
               colorScheme.surface,
             ],
           ),
         ),
         child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildTopNav(),
-
               Expanded(
                 child: _buildAnimatedCard(),
               ),
@@ -91,22 +94,92 @@ class _AuthPageState extends State<AuthPage>
       ),
     );
   }
-  
+
   Widget _buildTopNav() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final skipText = l10n?.t('auth.skip') ?? 'Алгасах';
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-      child: Stack(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Center(
-            child: ReadPackLogo(),
-          ),
-          Positioned(
-            left: 0,
-            top: 0,
-            child: BackButton(
-              icon: Icons.arrow_back_ios_new_rounded,
-              onTap: () => Navigator.of(context).pushNamed(Routes.appshell),
-            ),
+          const ReadPackLogo(size: 40),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedPressable(
+                onTap: () {
+                  Navigator.of(context).pushNamed(Routes.onboarding);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.tune_rounded,
+                        size: 14,
+                        color: colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        l10n?.t('onboarding.setup_goal_btn') ?? 'Зорилго тохируулах',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              AnimatedPressable(
+                onTap: () {
+                  context.read<BookProvider>().loginAsGuest();
+                  Navigator.of(context).pushReplacementNamed(Routes.appshell);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        skipText,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 12,
+                        color: colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -127,9 +200,17 @@ class _AuthPageState extends State<AuthPage>
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(32),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 24,
+                offset: const Offset(0, -6),
+              ),
+            ],
           ),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(28, 32, 28, 32),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
             child: _showLogin
                 ? SignInPage(onSwitchToSignUp: _switchMode)
                 : SignUpPage(onSwitchToLogin: _switchMode),
