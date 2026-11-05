@@ -86,7 +86,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
     final tabs = [
       l10n?.t('book.tabs.overview') ?? 'Тойм',
       l10n?.t('book.tabs.chapters') ?? 'Бүлгүүд',
-      l10n?.t('book.tabs.reviews') ?? 'Шүүмж',
+      l10n?.t('book.tabs.reviews') ?? 'Сэтгэгдэл',
       l10n?.t('book.tabs.similar') ?? 'Ижил төстэй',
     ];
 
@@ -273,16 +273,11 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     ),
                   ],
                   _buildTabBar(colorScheme, l10n),
-                  if (_selectedTabIndex == 0) ...[
+                  if (_selectedTabIndex == 0)
                     BookDetailOverviewTab(
                       currentBook: currentBook,
                       l10n: l10n,
                     ),
-                    BookDetailReviewsTab(
-                      currentBook: currentBook,
-                      l10n: l10n,
-                    ),
-                  ],
                   if (_selectedTabIndex == 1)
                     BookDetailChaptersTab(
                       currentBook: currentBook,

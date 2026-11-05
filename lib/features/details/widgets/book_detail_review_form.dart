@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
@@ -21,20 +22,17 @@ class BookDetailReviewForm extends StatefulWidget {
 
 class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
   double _userRating = 5.0;
-  late TextEditingController _nameController;
   late TextEditingController _commentController;
   bool _isReviewSubmitted = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
     _commentController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _commentController.dispose();
     super.dispose();
   }
@@ -44,13 +42,14 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
     if (comment.isEmpty) return;
 
     final userProfile = context.read<BookProvider>().userProfile;
-    final userName = _nameController.text.trim().isNotEmpty
-        ? _nameController.text.trim()
-        : userProfile.name;
+    if (userProfile.isGuest) {
+      Navigator.of(context).pushNamed(Routes.auth);
+      return;
+    }
 
     final newReview = BookReview(
       id: 'rev_${DateTime.now().millisecondsSinceEpoch}',
-      userName: userName,
+      userName: userProfile.name,
       rating: _userRating,
       comment: comment,
       createdAt: DateTime.now(),
@@ -74,10 +73,117 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
     );
   }
 
+  Widget _buildGuestPrompt(
+    ColorScheme colorScheme,
+    AppLocalizations? l10n,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.lock_outline_rounded,
+                  color: colorScheme.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n?.t('reviews.login_required_title') ??
+                          'Сэтгэгдэл бичихийн тулд нэвтэрнэ үү',
+                      style: TextStyle(
+                        fontFamily: 'Serif',
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      l10n?.t('reviews.login_required_desc') ??
+                          'Зөвхөн бүртгэлтэй хэрэглэгчид үнэлгээ, сэтгэгдэл үлдээх боломжтой.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurface.withValues(alpha: 0.65),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          AnimatedPressable(
+            onTap: () {
+              Navigator.of(context).pushNamed(Routes.auth);
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    colorScheme.primary,
+                    colorScheme.primary.withValues(alpha: 0.85),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  l10n?.t('reviews.login_action') ?? 'Нэвтрэх / Бүртгүүлэх',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = widget.l10n ?? AppLocalizations.of(context);
+    final userProfile = context.watch<BookProvider>().userProfile;
+
+    // If user is a guest, prompt to sign in before writing a review
+    if (userProfile.isGuest) {
+      return _buildGuestPrompt(colorScheme, l10n);
+    }
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -94,14 +200,46 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                l10n?.t('reviews.write_review') ?? 'Сэтгэгдэл бичих',
-                style: TextStyle(
-                  fontFamily: 'Serif',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor:
+                        colorScheme.primary.withValues(alpha: 0.15),
+                    child: Text(
+                      userProfile.name.isNotEmpty
+                          ? userProfile.name[0].toUpperCase()
+                          : 'U',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userProfile.name,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        l10n?.t('reviews.posting_as') ??
+                            'Таны бүртгэлээр нийтлэгдэнэ',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
               Row(
                 children: List.generate(5, (index) {
@@ -126,7 +264,7 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
             ],
           ),
           if (_isReviewSubmitted) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -155,34 +293,6 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
             ),
           ],
           const SizedBox(height: 14),
-          TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              hintText: l10n?.t('reviews.your_name_hint') ??
-                  'Нэрээ оруулна уу (заавал биш)',
-              hintStyle: TextStyle(
-                fontSize: 13,
-                color: colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-              filled: true,
-              fillColor: colorScheme.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                ),
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            ),
-          ),
-          const SizedBox(height: 10),
           TextField(
             controller: _commentController,
             maxLines: 3,

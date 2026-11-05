@@ -156,7 +156,7 @@ void main() {
       expect(find.text('Ня'), findsOneWidget);
     });
 
-    testWidgets('BookDetailPage allows submitting inline review with custom reviewer name',
+    testWidgets('BookDetailPage allows submitting inline review using account user profile',
         (tester) async {
       tester.view.physicalSize = const Size(800, 3000);
       tester.view.devicePixelRatio = 1.0;
@@ -172,22 +172,57 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
+      // In overview tab (tab 0), reviews form is removed
+      expect(find.text('Сэтгэгдэл илгээх'), findsNothing);
+
+      // Tap 'Сэтгэгдэл' tab (tab 2)
+      final reviewsTab = find.text('Сэтгэгдэл');
+      expect(reviewsTab, findsOneWidget);
+      await tester.tap(reviewsTab);
+      await tester.pumpAndSettle();
+
       final submitButton = find.text('Сэтгэгдэл илгээх');
       expect(submitButton, findsOneWidget);
 
-      // Find text fields: first is name, second is comment
+      // Name textfield is removed; only comment TextField remains
       final textFields = find.byType(TextField);
-      expect(textFields, findsNWidgets(2));
+      expect(textFields, findsOneWidget);
 
-      // Enter custom name and comment
-      await tester.enterText(textFields.first, 'Galsan S.');
-      await tester.enterText(textFields.last, 'Гайхалтай урам зориг өгсөн гайхамшигт бүтээл!');
+      // Enter comment
+      await tester.enterText(textFields.first, 'Гайхалтай урам зориг өгсөн гайхамшигт бүтээл!');
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
 
-      // Verify review was added with author name 'Galsan S.'
+      // Verify review was added with account user name (bookProvider.userProfile.name)
       final updatedBook = bookProvider.books.firstWhere((b) => b.id == book.id);
-      expect(updatedBook.reviews.any((r) => r.userName == 'Galsan S.'), isTrue);
+      expect(updatedBook.reviews.any((r) => r.userName == bookProvider.userProfile.name), isTrue);
+    });
+
+    testWidgets('BookDetailPage displays sign-in prompt in reviews tab when user is guest',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final book = BookRepository.getInitialBooks().first;
+      final guestProvider = BookProvider();
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+      guestProvider.loginAsGuest();
+
+      await tester.pumpWidget(createLocalizedTestWidget(
+        child: BookDetailPage(book: book),
+        bookProvider: guestProvider,
+      ));
+      await tester.pumpAndSettle();
+
+      // Tap 'Сэтгэгдэл' tab
+      await tester.tap(find.text('Сэтгэгдэл'));
+      await tester.pumpAndSettle();
+
+      // Guest prompt should be displayed
+      expect(find.text('Сэтгэгдэл бичихийн тулд нэвтэрнэ үү'), findsOneWidget);
+      expect(find.text('Нэвтрэх / Бүртгүүлэх'), findsOneWidget);
+      expect(find.text('Сэтгэгдэл илгээх'), findsNothing);
     });
 
     testWidgets('HomePage renders 2-column SliverGrid for books', (tester) async {

@@ -96,7 +96,11 @@
     "submit": "Submit Review",
     "success": "Your review has been submitted successfully!",
     "empty": "Be the first to review this book!",
-    "ratings_count": "ratings"
+    "ratings_count": "ratings",
+    "login_required_title": "Sign in to write a review",
+    "login_required_desc": "Only registered accounts can leave ratings and reviews.",
+    "login_action": "Sign In / Register",
+    "posting_as": "Posting as:"
   },
   "reader": {
     "chapters": "Chapters",
