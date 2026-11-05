@@ -53,6 +53,7 @@ Widget createProfileTestWidget({
       routes: {
         Routes.onboarding: (_) => const Scaffold(body: Text('OnboardingScreen')),
         Routes.auth: (_) => const Scaffold(body: Text('AuthScreen')),
+        Routes.settings: (_) => const Scaffold(body: Text('SettingsScreen')),
       },
       home: const Scaffold(body: ProfilePage()),
     ),
@@ -76,7 +77,7 @@ void main() {
   group('Profile Gamification & Habits Tests', () {
     testWidgets('ProfilePage renders XP level, Weekly League, and Reading Habits',
         (tester) async {
-      tester.view.physicalSize = const Size(800, 3000);
+      tester.view.physicalSize = const Size(800, 2000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
@@ -98,14 +99,14 @@ void main() {
       expect(find.text('Уншлагын цагийн хуваарь'), findsOneWidget);
       expect(find.textContaining('20:00 - 22:30'), findsOneWidget);
 
-      // Check Retake Onboarding card
-      final retakeBtn = find.text('Засах');
-      expect(retakeBtn, findsOneWidget);
-      await tester.tap(retakeBtn);
+      // Check Edit Profile button navigates to Settings
+      final editBtn = find.byIcon(Icons.edit_outlined);
+      expect(editBtn, findsOneWidget);
+      await tester.tap(editBtn);
       await tester.pumpAndSettle();
 
-      // Navigated to onboarding
-      expect(find.text('OnboardingScreen'), findsOneWidget);
+      // Navigated to settings
+      expect(find.text('SettingsScreen'), findsOneWidget);
     });
   });
 }

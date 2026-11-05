@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/animated_pressable.dart';
 
 class ProfileXpCard extends StatelessWidget {
   final BookProvider bookProvider;
@@ -38,23 +40,25 @@ class ProfileXpCard extends StatelessWidget {
         ((xp - currentLevelBase) / (nextLevelTarget - currentLevelBase))
             .clamp(0.0, 1.0);
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.primaryContainer.withValues(alpha: 0.5),
-            colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return AnimatedPressable(
+      onTap: () => Navigator.of(context).pushNamed(Routes.userLevelDetail),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primaryContainer.withValues(alpha: 0.5),
+              colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.primary.withValues(alpha: 0.25),
+          ),
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.25),
-        ),
-      ),
-      child: Column(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -162,6 +166,8 @@ class ProfileXpCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
 }
+}
+

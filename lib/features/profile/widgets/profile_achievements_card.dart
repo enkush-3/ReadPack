@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
-import 'package:readpack/features/home/widgets/streak_modal_sheet.dart';
+import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/features/profile/widgets/read_books_sheet.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 
@@ -39,6 +40,7 @@ class ProfileAchievementsCard extends StatelessWidget {
               value: '${profile.totalBooksRead}',
               icon: Icons.auto_stories_rounded,
               colorScheme: colorScheme,
+              onTap: () => ReadBooksSheet.show(context, bookProvider),
             ),
             const SizedBox(width: 12),
             _buildStatCard(
@@ -58,8 +60,7 @@ class ProfileAchievementsCard extends StatelessWidget {
               value: '${profile.streakDays}',
               icon: Icons.local_fire_department_rounded,
               colorScheme: colorScheme,
-              onTap: () =>
-                  showStreakModalSheet(context, profile, colorScheme, l10n),
+              onTap: () => Navigator.of(context).pushNamed(Routes.streakDetail),
             ),
             const SizedBox(width: 12),
             _buildStatCard(
@@ -71,106 +72,6 @@ class ProfileAchievementsCard extends StatelessWidget {
             ),
           ],
         ),
-
-        const SizedBox(height: 28),
-
-        // Achievements List
-        Text(
-          l10n?.t('profile.achievements') ?? 'Уншлагын амжилтууд',
-          style: TextStyle(
-            fontFamily: 'Serif',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...profile.achievements.map((ach) {
-          final achTitle =
-              l10n?.t('profile.achievements_list.${ach.id}_title') ??
-                  ach.title;
-          final achDesc =
-              l10n?.t('profile.achievements_list.${ach.id}_desc') ??
-                  ach.description;
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: ach.isUnlocked
-                  ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
-                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: ach.isUnlocked
-                    ? colorScheme.primary.withValues(alpha: 0.25)
-                    : colorScheme.outlineVariant.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: ach.isUnlocked
-                        ? colorScheme.primary.withValues(alpha: 0.15)
-                        : colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      ach.icon,
-                      style: TextStyle(
-                        fontSize: 22,
-                        color: ach.isUnlocked ? null : Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        achTitle,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: ach.isUnlocked
-                              ? colorScheme.onSurface
-                              : colorScheme.onSurface.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        achDesc,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (ach.isUnlocked)
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: colorScheme.primary,
-                    size: 20,
-                  )
-                else
-                  Icon(
-                    Icons.lock_outline_rounded,
-                    color: colorScheme.onSurface.withValues(alpha: 0.3),
-                    size: 18,
-                  ),
-              ],
-            ),
-          );
-        }),
       ],
     );
   }

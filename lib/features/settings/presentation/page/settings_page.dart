@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/providers/theme_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/features/profile/widgets/profile_challenge_card.dart';
 import 'package:readpack/features/profile/widgets/profile_edit_dialog.dart';
+import 'package:readpack/features/quotes/presentation/phone_widget_sheet.dart';
 import 'package:readpack/helper/translation.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -225,12 +227,14 @@ class SettingsPage extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // Section 2: Уншлагын зорилго & Сонирхол (Reading Goals & Interests)
+          // Section 2: Уншлагын зорилго & 2026 челленж
           _buildSectionHeader(
-            'Уншлагын зорилго & Сонирхол',
+            'Уншлагын зорилго & 2026 челленж',
             colorScheme,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          ProfileChallengeCard(bookProvider: bookProvider),
+          const SizedBox(height: 16),
           _buildCard(
             colorScheme: colorScheme,
             children: [
@@ -522,6 +526,35 @@ class SettingsPage extends StatelessWidget {
                     );
                   },
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Section 5: Утасны дэлгэцийн виджет (Phone Screen Widget)
+          _buildSectionHeader(
+            'Утасны дэлгэцийн виджет',
+            colorScheme,
+          ),
+          const SizedBox(height: 8),
+          _buildCard(
+            colorScheme: colorScheme,
+            children: [
+              ListTile(
+                leading: Icon(
+                  Icons.widgets_rounded,
+                  color: colorScheme.primary,
+                ),
+                title: const Text(
+                  'Ишлэлийн виджет тохируулах',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: const Text(
+                  'Өдрийн ишлэл эсвэл хадгалсан ишлэлээ утасны дэлгэцэнд байршуулах',
+                  style: TextStyle(fontSize: 12),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                onTap: () => PhoneWidgetSheet.show(context),
               ),
             ],
           ),

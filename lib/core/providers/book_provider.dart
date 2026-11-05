@@ -233,6 +233,10 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     BookProviderPersistence.syncProfilePreferences(_apiService, _userProfile);
   }
 
+  void updateYearlyGoalBooks(int goal) {
+    updateUserProfile(yearlyGoalBooks: goal);
+  }
+
   void clearCache() {
     _recentSearches.clear();
     BookProviderPersistence.persistRecentSearches(_recentSearches);

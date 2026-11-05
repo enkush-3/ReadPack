@@ -10,6 +10,8 @@ import 'package:readpack/core/providers/theme_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/auth/presentation/page/auth.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/linktext.dart';
+import 'package:readpack/shared/widgets/submitbutton.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 late Map<String, dynamic> _mnMap;
@@ -75,7 +77,7 @@ void main() {
   });
 
   group('AuthPage and Onboarding Entrypoint Tests', () {
-    testWidgets('AuthPage top nav has goal personalization button that navigates to Onboarding',
+    testWidgets('AuthPage registration navigates to Onboarding before home page',
         (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
@@ -87,10 +89,26 @@ void main() {
       await tester.pumpWidget(createAuthTestWidget(bookProvider: bookProvider));
       await tester.pumpAndSettle();
 
-      final goalButton = find.byIcon(Icons.tune_rounded);
-      expect(goalButton, findsOneWidget);
+      // Tap link to switch to SignUp
+      final linkText = find.byType(LinkText);
+      expect(linkText, findsOneWidget);
+      await tester.tap(linkText);
+      await tester.pumpAndSettle();
 
-      await tester.tap(goalButton);
+      // Fill in signup fields
+      final textFields = find.byType(TextField);
+      expect(textFields, findsAtLeastNWidgets(3));
+
+      await tester.enterText(textFields.at(0), 'Шинэ Уншигч');
+      await tester.enterText(textFields.at(1), 'newreader@readpack.app');
+      await tester.enterText(textFields.at(2), 'password123');
+      await tester.pumpAndSettle();
+
+      // Submit
+      final submitButton = find.byType(SubmitButton);
+      expect(submitButton, findsOneWidget);
+      await tester.tap(submitButton);
+      await tester.pump(const Duration(milliseconds: 600));
       await tester.pumpAndSettle();
 
       expect(find.text('OnboardingScreen'), findsOneWidget);
@@ -136,7 +154,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+      expect(find.text('Алгасах'), findsOneWidget);
     });
 
     testWidgets('AuthPage Google button authenticates user (isGuest == false) instead of guest mode',

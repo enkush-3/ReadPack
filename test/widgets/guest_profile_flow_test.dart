@@ -120,7 +120,6 @@ void main() {
       // Personal cards and Edit Profile button must be present
       expect(find.byType(ProfileXpCard), findsOneWidget);
       expect(find.byType(ProfileLeagueCard), findsOneWidget);
-      expect(find.byType(ProfileChallengeCard), findsOneWidget);
       expect(find.byType(ProfileHabitsCard), findsOneWidget);
       expect(find.byType(ProfileAchievementsCard), findsOneWidget);
       expect(find.byIcon(Icons.edit_outlined), findsOneWidget);

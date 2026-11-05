@@ -12,14 +12,17 @@ import 'package:readpack/models/bookmark.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/empty_state_view.dart';
 import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/features/quotes/presentation/phone_widget_sheet.dart';
 import 'package:readpack/shared/widgets/skeleton_loader.dart';
 
 class SavedPage extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
+  final int initialSegment;
 
   const SavedPage({
     super.key,
     this.onNavigateTab,
+    this.initialSegment = 0,
   });
 
   @override
@@ -28,8 +31,14 @@ class SavedPage extends StatefulWidget {
 
 class _SavedPageState extends State<SavedPage> {
   // 0: Currently Reading, 1: Saved, 2: Shelves / Collections, 3: Quotes
-  int _selectedSegment = 0;
+  late int _selectedSegment;
   int _quoteFilterIndex = 0; // 0: All, 1: Bookmarked, 2: Liked
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedSegment = widget.initialSegment;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -338,25 +347,29 @@ class _SavedPageState extends State<SavedPage> {
                 ),
                 const SizedBox(width: 8),
                 AnimatedPressable(
-                  onTap: () => _showAddQuoteDialog(context, provider),
+                  onTap: () => PhoneWidgetSheet.show(context),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 7),
                     decoration: BoxDecoration(
-                      color: colorScheme.primary,
+                      color: colorScheme.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.25),
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.add, size: 14, color: colorScheme.onPrimary),
+                        Icon(Icons.widgets_rounded,
+                            size: 14, color: colorScheme.primary),
                         const SizedBox(width: 4),
                         Text(
-                          'Ишлэл нэмэх',
+                          'Утасны виджет',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
-                            color: colorScheme.onPrimary,
+                            color: colorScheme.primary,
                           ),
                         ),
                       ],
@@ -457,221 +470,4 @@ class _SavedPageState extends State<SavedPage> {
     );
   }
 
-  void _showAddQuoteDialog(BuildContext context, BookProvider provider) {
-    if (provider.books.isEmpty) return;
-    String selectedBookId = provider.books.first.id;
-    final quoteController = TextEditingController();
-    final noteController = TextEditingController();
-    int selectedColor = 0xFFFFD54F;
-
-    final colorOptions = [
-      0xFFFFD54F, // amber
-      0xFF81C784, // green
-      0xFF64B5F6, // blue
-      0xFFBA68C8, // purple
-      0xFFFF8A80, // pink
-    ];
-
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            final colorScheme = Theme.of(context).colorScheme;
-            final selectedBook = provider.books.firstWhere(
-              (b) => b.id == selectedBookId,
-              orElse: () => provider.books.first,
-            );
-
-            return AlertDialog(
-              backgroundColor: colorScheme.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              title: const Text(
-                'Шинэ ишлэл тэмдэглэх',
-                style: TextStyle(
-                  fontFamily: 'Serif',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Ном сонгох:',
-                      style:
-                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedBookId,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.3),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                              color: colorScheme.outlineVariant
-                                  .withValues(alpha: 0.3)),
-                        ),
-                      ),
-                      items: provider.books.map((b) {
-                        return DropdownMenuItem(
-                          value: b.id,
-                          child: Text(
-                            b.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setDialogState(() => selectedBookId = val);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Ишлэлийн эх бичвэр:',
-                      style:
-                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: quoteController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: 'Таалагдсан эсвэл чухал ишлэлээ бичнэ үү...',
-                        hintStyle: TextStyle(
-                            fontSize: 12,
-                            color:
-                                colorScheme.onSurface.withValues(alpha: 0.5)),
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                              color: colorScheme.outlineVariant
-                                  .withValues(alpha: 0.3)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Хувийн тэмдэглэл (заавал биш):',
-                      style:
-                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: noteController,
-                      decoration: InputDecoration(
-                        hintText: 'Таны бодол, сэтгэгдэл...',
-                        hintStyle: TextStyle(
-                            fontSize: 12,
-                            color:
-                                colorScheme.onSurface.withValues(alpha: 0.5)),
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.3),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                              color: colorScheme.outlineVariant
-                                  .withValues(alpha: 0.3)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Тодруулах өнгө:',
-                      style:
-                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: colorOptions.map((c) {
-                        final isSel = selectedColor == c;
-                        return GestureDetector(
-                          onTap: () =>
-                              setDialogState(() => selectedColor = c),
-                          child: Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              color: Color(c),
-                              shape: BoxShape.circle,
-                              border: isSel
-                                  ? Border.all(
-                                      color: colorScheme.primary, width: 3)
-                                  : null,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Болих'),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () {
-                    final text = quoteController.text.trim();
-                    if (text.isEmpty) return;
-
-                    final newBm = Bookmark(
-                      id: 'bm_${DateTime.now().millisecondsSinceEpoch}',
-                      bookId: selectedBook.id,
-                      bookTitle: selectedBook.title,
-                      chapterTitle: selectedBook.chapters.isNotEmpty
-                          ? selectedBook.chapters.first.title
-                          : 'Бүлэг 1',
-                      pageNumber: 1,
-                      quote: text,
-                      note: noteController.text.trim(),
-                      colorHex: selectedColor,
-                      isLiked: false,
-                      createdAt: DateTime.now(),
-                    );
-                    provider.addBookmark(newBm);
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Ишлэл амжилттай хадгалагдлаа!'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-                  },
-                  child: const Text('Хадгалах'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 }

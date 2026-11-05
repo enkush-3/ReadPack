@@ -57,7 +57,6 @@ void main() {
       // Tap Tab 3: Profile (Used to crash with RangeError: 3 not in 0..1)
       await tester.tap(find.byIcon(Icons.person_rounded));
       await tester.pumpAndSettle();
-      expect(find.text('Өдрийн зорилго'), findsOneWidget);
       expect(find.text('Статистик үзүүлэлт'), findsOneWidget);
 
       // Tap Tab 0: Back to Home

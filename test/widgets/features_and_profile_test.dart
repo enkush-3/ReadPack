@@ -12,6 +12,7 @@ import 'package:readpack/features/details/presentation/page/book_detail.dart';
 import 'package:readpack/features/home/presentation/page/home.dart';
 import 'package:readpack/features/home/widgets/header.dart';
 import 'package:readpack/features/profile/presentation/page/profile_page.dart';
+import 'package:readpack/features/settings/presentation/page/settings_page.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,10 +80,11 @@ void main() {
   });
 
   group('Deep Verification of Features and Localization', () {
-    testWidgets('ProfilePage renders 2026 Reading Challenge card and achievements',
+    testWidgets('ProfilePage renders statistics and habits, SettingsPage renders 2026 Challenge',
         (tester) async {
       final bookProvider = BookProvider();
       await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+      bookProvider.loginWithEmail('user@test.com', 'Test User');
 
       await tester.pumpWidget(createLocalizedTestWidget(
         child: const ProfilePage(),
@@ -90,13 +92,19 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      // Check reading challenge
+      // Check statistics & habits
+      expect(find.text('Статистик үзүүлэлт'), findsOneWidget);
+      expect(find.text('Уншсан ном'), findsOneWidget);
+
+      // Verify SettingsPage renders 2026 Reading Challenge
+      await tester.pumpWidget(createLocalizedTestWidget(
+        child: const SettingsPage(),
+        bookProvider: bookProvider,
+      ));
+      await tester.pumpAndSettle();
+
       expect(find.text('2026'), findsWidgets);
       expect(find.byIcon(Icons.emoji_events_rounded), findsOneWidget);
-
-      // Check achievements
-      expect(find.text('Уншлагын амжилтууд'), findsOneWidget);
-      expect(find.byIcon(Icons.check_circle_rounded), findsWidgets);
     });
 
     testWidgets('ProfilePage displays localized guest user name in English and Mongolian',

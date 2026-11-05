@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
+import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/animated_pressable.dart';
 
 class ProfileHabitsCard extends StatelessWidget {
   const ProfileHabitsCard({super.key});
@@ -10,38 +12,50 @@ class ProfileHabitsCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.schedule_rounded,
-                color: colorScheme.primary,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                l10n?.t('profile.time_of_day_insights') ??
-                    'Уншлагын цагийн хуваарь',
-                style: TextStyle(
-                  fontFamily: 'Serif',
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ],
+    return AnimatedPressable(
+      onTap: () => Navigator.of(context).pushNamed(Routes.readingSchedule),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
           ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      l10n?.t('profile.time_of_day_insights') ??
+                          'Уншлагын цагийн хуваарь',
+                      style: TextStyle(
+                        fontFamily: 'Serif',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: colorScheme.primary,
+                ),
+              ],
+            ),
           const SizedBox(height: 6),
           Text(
             l10n?.t('profile.peak_reading_time') ??
@@ -120,8 +134,9 @@ class ProfileHabitsCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTimeBar(
     String label,

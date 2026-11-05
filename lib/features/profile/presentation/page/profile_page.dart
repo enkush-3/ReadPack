@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/features/profile/widgets/profile_achievements_card.dart';
-import 'package:readpack/features/profile/widgets/profile_challenge_card.dart';
 import 'package:readpack/features/profile/widgets/profile_guest_card.dart';
 import 'package:readpack/features/profile/widgets/profile_habits_card.dart';
 import 'package:readpack/features/profile/widgets/profile_header_card.dart';
 import 'package:readpack/features/profile/widgets/profile_league_card.dart';
-import 'package:readpack/features/profile/widgets/profile_retake_card.dart';
 import 'package:readpack/features/profile/widgets/profile_xp_card.dart';
 import 'package:readpack/helper/translation.dart';
 
@@ -40,33 +38,23 @@ class ProfilePage extends StatelessWidget {
                 ProfileGuestCard(bookProvider: bookProvider),
                 const SizedBox(height: 24),
               ] else ...[
-                // Level & XP Progression Card
+                // Level & XP Progression Card (tappable -> UserLevelDetailPage)
                 ProfileXpCard(bookProvider: bookProvider),
-
-                const SizedBox(height: 16),
-
-                // Weekly League / Leaderboard Card
-                ProfileLeagueCard(bookProvider: bookProvider),
 
                 const SizedBox(height: 20),
 
-                // Daily Reading Goal & 2026 Reading Challenge
-                ProfileChallengeCard(bookProvider: bookProvider),
-
-                const SizedBox(height: 24),
-
-                // Reading Habits & Time of Day Insights
+                // Reading Habits & Time of Day Insights (tappable -> ReadingSchedulePage)
                 const ProfileHabitsCard(),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                // Statistics & Achievements (streak sheet accessible via tapping streak stat)
+                // Statistics Section (Books read -> ReadBooksSheet, Streak -> StreakDetailPage)
                 ProfileAchievementsCard(bookProvider: bookProvider),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                // Personalization / Retake Onboarding Card
-                const ProfileRetakeCard(),
+                // Weekly League / Leaderboard Card (moved below statistics)
+                ProfileLeagueCard(bookProvider: bookProvider),
 
                 const SizedBox(height: 28),
               ],

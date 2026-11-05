@@ -124,6 +124,46 @@ class UserProfile {
     ],
   });
 
+  int get bestStreakDays => streakDays > 14 ? streakDays : 14;
+
+  int get userLevel {
+    if (xp < 500) return 1;
+    if (xp < 1500) return 2;
+    if (xp < 3000) return 3;
+    if (xp < 5000) return 4;
+    return 5;
+  }
+
+  String get userLevelTitle {
+    if (xp < 500) return 'Эхлэн уншигч (Lv. 1)';
+    if (xp < 1500) return 'Идэвхтэй уншигч (Lv. 2)';
+    if (xp < 3000) return 'Номын хорхойтон (Lv. 3)';
+    if (xp < 5000) return 'Мэргэшсэн уншигч (Lv. 4)';
+    return 'Мэргэн уншигч (Lv. 5)';
+  }
+
+  int get currentLevelBase {
+    if (xp >= 500 && xp < 1500) return 500;
+    if (xp >= 1500 && xp < 3000) return 1500;
+    if (xp >= 3000 && xp < 5000) return 3000;
+    if (xp >= 5000) return 5000;
+    return 0;
+  }
+
+  int get xpNeededForNextLevel {
+    if (xp >= 500 && xp < 1500) return 1500;
+    if (xp >= 1500 && xp < 3000) return 3000;
+    if (xp >= 3000 && xp < 5000) return 5000;
+    if (xp >= 5000) return 10000;
+    return 500;
+  }
+
+  int get xpInCurrentLevel => (xp - currentLevelBase).clamp(0, 10000);
+
+  double get levelProgress =>
+      ((xp - currentLevelBase) / (xpNeededForNextLevel - currentLevelBase))
+          .clamp(0.0, 1.0);
+
   UserProfile copyWith({
     String? name,
     String? email,

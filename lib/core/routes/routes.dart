@@ -5,6 +5,9 @@ import 'package:readpack/features/details/presentation/page/book_detail.dart';
 import 'package:readpack/features/leaderboard/presentation/page/leaderboard_page.dart';
 import 'package:readpack/features/notifications/presentation/page/notifications_page.dart';
 import 'package:readpack/features/onboarding/presentation/page/onboarding_page.dart';
+import 'package:readpack/features/profile/presentation/page/reading_schedule_page.dart';
+import 'package:readpack/features/profile/presentation/page/streak_detail_page.dart';
+import 'package:readpack/features/profile/presentation/page/user_level_detail_page.dart';
 import 'package:readpack/features/reader/presentation/page/reader_page.dart';
 import 'package:readpack/features/settings/presentation/page/settings_page.dart';
 import 'package:readpack/models/book.dart';
@@ -21,6 +24,9 @@ class Routes {
   static const String onboarding = '/onboarding';
   static const String leaderboard = '/leaderboard';
   static const String settings = '/settings';
+  static const String readingSchedule = '/reading-schedule';
+  static const String streakDetail = '/streak-detail';
+  static const String userLevelDetail = '/user-level-detail';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -64,6 +70,24 @@ class Routes {
         return _buildAnimatedRoute(
           settings: settings,
           builder: (_) => const SettingsPage(),
+        );
+
+      case readingSchedule:
+        return _buildAnimatedRoute(
+          settings: settings,
+          builder: (_) => const ReadingSchedulePage(),
+        );
+
+      case streakDetail:
+        return _buildAnimatedRoute(
+          settings: settings,
+          builder: (_) => const StreakDetailPage(),
+        );
+
+      case userLevelDetail:
+        return _buildAnimatedRoute(
+          settings: settings,
+          builder: (_) => const UserLevelDetailPage(),
         );
 
       case bookDetail:

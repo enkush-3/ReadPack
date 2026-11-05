@@ -7,7 +7,7 @@ import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 
-class ReaderScrollView extends StatelessWidget {
+class ReaderScrollView extends StatefulWidget {
   final Book book;
   final BookChapter currentChapter;
   final int currentChapterIndex;
@@ -40,56 +40,87 @@ class ReaderScrollView extends StatelessWidget {
   });
 
   @override
+  State<ReaderScrollView> createState() => _ReaderScrollViewState();
+}
+
+class _ReaderScrollViewState extends State<ReaderScrollView> {
+  String? _selectedText;
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final bookProvider = context.watch<BookProvider>();
-    final hasChapters = book.chapters.isNotEmpty;
+    final hasChapters = widget.book.chapters.isNotEmpty;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onToggleControls,
-      child: CustomScrollView(
-        controller: scrollController,
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          const SliverToBoxAdapter(child: SizedBox(height: 72)),
-          SliverPadding(
-            padding: EdgeInsets.symmetric(
-              horizontal: themeProvider.horizontalMargin,
+      onTap: widget.onToggleControls,
+      child: SelectionArea(
+        onSelectionChanged: (content) {
+          _selectedText = content?.plainText;
+        },
+        contextMenuBuilder: (context, selectableRegionState) {
+          final defaultItems = selectableRegionState.contextMenuButtonItems;
+          final items = [
+            ...defaultItems,
+            ContextMenuButtonItem(
+              label: '📌 Ишлэл хадгалах',
+              onPressed: () {
+                final text = _selectedText;
+                selectableRegionState.hideToolbar();
+                if (text != null && text.trim().isNotEmpty) {
+                  widget.onShowHighlight(text.trim());
+                }
+              },
             ),
-            sliver: SliverToBoxAdapter(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    currentChapter.title,
-                    style: TextStyle(
-                      fontFamily: 'Serif',
-                      fontSize: (22 * themeProvider.fontSizeScale)
-                          .clamp(16.0, 32.0),
-                      fontWeight: FontWeight.bold,
-                      color: readerTextColor,
-                      height: 1.3,
+          ];
+          return AdaptiveTextSelectionToolbar.buttonItems(
+            anchors: selectableRegionState.contextMenuAnchors,
+            buttonItems: items,
+          );
+        },
+        child: CustomScrollView(
+          controller: widget.scrollController,
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 72)),
+            SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.themeProvider.horizontalMargin,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.currentChapter.title,
+                      style: TextStyle(
+                        fontFamily: 'Serif',
+                        fontSize: (22 * widget.themeProvider.fontSizeScale)
+                            .clamp(16.0, 32.0),
+                        fontWeight: FontWeight.bold,
+                        color: widget.readerTextColor,
+                        height: 1.3,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 8),
                   Text(
-                    book.author,
+                    widget.book.author,
                     style: TextStyle(
-                      fontSize: (13 * themeProvider.fontSizeScale)
+                      fontSize: (13 * widget.themeProvider.fontSizeScale)
                           .clamp(11.0, 18.0),
-                      color: readerTextColor.withValues(alpha: 0.6),
+                      color: widget.readerTextColor.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ...List.generate(paragraphs.length, (pIndex) {
-                    final paragraph = paragraphs[pIndex];
+                  ...List.generate(widget.paragraphs.length, (pIndex) {
+                    final paragraph = widget.paragraphs[pIndex];
                     final isAudioActive =
-                        isAudioPlaying && pIndex == activeAudioParagraph;
+                        widget.isAudioPlaying && pIndex == widget.activeAudioParagraph;
 
                     final matchingBookmark = bookProvider.bookmarks.where(
                       (b) =>
-                          b.bookId == book.id &&
+                          b.bookId == widget.book.id &&
                           paragraph.contains(b.quote.substring(
                               0,
                               b.quote.length > 25
@@ -102,8 +133,8 @@ class ReaderScrollView extends StatelessWidget {
                         : Colors.amber;
 
                     return GestureDetector(
-                      onLongPress: () => onShowHighlight(paragraph),
-                      onDoubleTap: () => onShowHighlight(paragraph),
+                      onLongPress: () => widget.onShowHighlight(paragraph),
+                      onDoubleTap: () => widget.onShowHighlight(paragraph),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.only(bottom: 20),
@@ -137,7 +168,7 @@ class ReaderScrollView extends StatelessWidget {
                         child: Text(
                           paragraph,
                           style: ReaderThemeHelpers.getReaderTextStyle(
-                              themeProvider, readerTextColor),
+                              widget.themeProvider, widget.readerTextColor),
                         ),
                       ),
                     );
@@ -147,29 +178,28 @@ class ReaderScrollView extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        if (currentChapterIndex > 0)
+                        if (widget.currentChapterIndex > 0)
                           AnimatedPressable(
-                            onTap: () => onGoToChapter(currentChapterIndex - 1),
+                            onTap: () => widget.onGoToChapter(widget.currentChapterIndex - 1),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 10),
                               decoration: BoxDecoration(
-                                color: readerTextColor
+                                color: widget.readerTextColor
                                     .withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
                                 children: [
                                   Icon(Icons.arrow_back_ios_rounded,
-                                      size: 14, color: readerTextColor),
+                                      size: 14, color: widget.readerTextColor),
                                   const SizedBox(width: 6),
                                   Text(
-                                    l10n?.t('reader.prev_chapter') ??
+                                    widget.l10n?.t('reader.prev_chapter') ??
                                         'Өмнөх бүлэг',
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: readerTextColor,
+                                      color: widget.readerTextColor,
                                     ),
                                   ),
                                 ],
@@ -178,9 +208,9 @@ class ReaderScrollView extends StatelessWidget {
                           )
                         else
                           const SizedBox.shrink(),
-                        if (currentChapterIndex < book.chapters.length - 1)
+                        if (widget.currentChapterIndex < widget.book.chapters.length - 1)
                           AnimatedPressable(
-                            onTap: () => onGoToChapter(currentChapterIndex + 1),
+                            onTap: () => widget.onGoToChapter(widget.currentChapterIndex + 1),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 10),
@@ -191,7 +221,7 @@ class ReaderScrollView extends StatelessWidget {
                               child: Row(
                                 children: [
                                   Text(
-                                    l10n?.t('reader.next_chapter') ??
+                                    widget.l10n?.t('reader.next_chapter') ??
                                         'Дараагийн бүлэг',
                                     style: TextStyle(
                                       fontSize: 13,
@@ -216,6 +246,7 @@ class ReaderScrollView extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
