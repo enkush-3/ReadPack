@@ -4,6 +4,7 @@ import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/home/widgets/streak_modal_sheet.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/readpacklogo.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 
 class HomeHeader extends StatelessWidget {
@@ -37,10 +38,56 @@ class HomeHeader extends StatelessWidget {
     final profile = bookProvider.userProfile;
     final unreadCount = bookProvider.unreadNotificationsCount;
     final l10n = AppLocalizations.of(context);
-    final displayName = profile.isGuest
-        ? (l10n?.t('profile.guest_user') ??
-            (userName.isNotEmpty ? userName : 'Guest'))
-        : (userName.isNotEmpty ? userName : profile.name);
+
+    if (profile.isGuest) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const ReadPackLogo(size: 38),
+          AnimatedPressable(
+            onTap: () {
+              Navigator.of(context).pushNamed(Routes.auth);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              decoration: BoxDecoration(
+                color: colorScheme.primary,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.22),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.login_rounded,
+                    size: 15,
+                    color: colorScheme.onPrimary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    l10n?.t('auth.signin') ?? 'Нэвтрэх',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final displayName = userName.isNotEmpty ? userName : profile.name;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,

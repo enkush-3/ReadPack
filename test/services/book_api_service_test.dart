@@ -130,5 +130,52 @@ void main() {
 
       expect(books.length, greaterThanOrEqualTo(16));
     });
+
+    test('syncUserAccountTree and syncUserReadingToTree communicate with Express + MongoDB Tree API',
+        () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.endsWith('/auth/login')) {
+          return http.Response(
+            jsonEncode({
+              'status': 'authenticated',
+              'userAccountTree': {
+                'userId': 'usr_bat_01',
+                'email': 'bat@readpack.app',
+                'profileNode': {'displayName': 'Bat-Erdene'},
+                'readingTree': {'shelves': []},
+              },
+            }),
+            200,
+          );
+        }
+        if (request.url.path.endsWith('/reading')) {
+          return http.Response(
+            jsonEncode({
+              'status': 'synced',
+              'source': 'central_db',
+              'centralBook': {'id': '1', 'title': 'Atomic Habits'},
+            }),
+            201,
+          );
+        }
+        return http.Response('Not found', 404);
+      });
+
+      final service = BookApiService(client: mockClient);
+      final authRes = await service.syncUserAccountTree(
+        email: 'bat@readpack.app',
+        name: 'Bat-Erdene',
+      );
+      expect(authRes, isNotNull);
+      expect(authRes!['status'], 'authenticated');
+
+      final books = await service.fetchBooks();
+      final syncRes = await service.syncUserReadingToTree(
+        userIdOrEmail: 'bat@readpack.app',
+        book: books.first,
+      );
+      expect(syncRes, isNotNull);
+      expect(syncRes!['source'], 'central_db');
+    });
   });
 }

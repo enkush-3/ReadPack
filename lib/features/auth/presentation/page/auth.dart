@@ -193,25 +193,29 @@ class _AuthPageState extends State<AuthPage>
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
     final skipText = l10n?.t('auth.skip') ?? 'Алгасах';
+    final canPop = Navigator.of(context).canPop();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (Navigator.of(context).canPop()) ...[
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-                  onPressed: () => Navigator.of(context).pop(),
-                  color: colorScheme.onSurface,
-                ),
-                const SizedBox(width: 4),
+          Flexible(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (canPop) ...[
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => Navigator.of(context).pop(),
+                    color: colorScheme.onSurface,
+                  ),
+                  const SizedBox(width: 2),
+                ],
+                const Flexible(child: ReadPackLogo(size: 36)),
               ],
-              const ReadPackLogo(size: 40),
-            ],
+            ),
           ),
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -220,72 +224,66 @@ class _AuthPageState extends State<AuthPage>
                 onTap: () {
                   Navigator.of(context).pushNamed(Routes.onboarding);
                 },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: colorScheme.primary.withValues(alpha: 0.25),
+                child: Tooltip(
+                  message:
+                      l10n?.t('onboarding.setup_goal_btn') ?? 'Зорилго тохируулах',
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    margin: EdgeInsets.only(right: canPop ? 0 : 8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.25),
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.tune_rounded,
-                        size: 14,
-                        color: colorScheme.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        l10n?.t('onboarding.setup_goal_btn') ?? 'Зорилго тохируулах',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                    ],
+                    child: Icon(
+                      Icons.tune_rounded,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
                   ),
                 ),
               ),
-              AnimatedPressable(
-                onTap: () {
-                  context.read<BookProvider>().loginAsGuest();
-                  Navigator.of(context).pushReplacementNamed(Routes.appshell);
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface.withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+              if (!canPop)
+                AnimatedPressable(
+                  onTap: () {
+                    context.read<BookProvider>().loginAsGuest();
+                    Navigator.of(context).pushReplacementNamed(Routes.appshell);
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color:
+                            colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        skipText,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          skipText,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 12,
                           color: colorScheme.primary,
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        size: 12,
-                        color: colorScheme.primary,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ],

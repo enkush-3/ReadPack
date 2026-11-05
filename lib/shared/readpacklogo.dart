@@ -46,30 +46,34 @@ class ReadPackLogo extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: 'Read',
-                style: TextStyle(
-                  fontFamily: 'Serif',
-                  fontSize: size * 0.48,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onSurface,
-                  letterSpacing: -0.5,
+        Flexible(
+          child: RichText(
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Read',
+                  style: TextStyle(
+                    fontFamily: 'Serif',
+                    fontSize: size * 0.48,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-              TextSpan(
-                text: 'Pack',
-                style: TextStyle(
-                  fontFamily: 'Serif',
-                  fontSize: size * 0.48,
-                  fontWeight: FontWeight.w400,
-                  color: colorScheme.primary,
-                  letterSpacing: -0.5,
+                TextSpan(
+                  text: 'Pack',
+                  style: TextStyle(
+                    fontFamily: 'Serif',
+                    fontSize: size * 0.48,
+                    fontWeight: FontWeight.w400,
+                    color: colorScheme.primary,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

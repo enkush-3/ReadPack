@@ -7,19 +7,32 @@ import 'package:readpack/models/book.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BookApiService {
+  static const String defaultBackendBaseUrl = 'http://localhost:4000/api/v1';
   static const String _gutendexBaseUrl = 'https://gutendex.com/books/';
   static const String cacheKey = 'readpack_cached_api_books';
   static const Duration defaultTimeout = Duration(seconds: 6);
 
   final http.Client _client;
+  final String backendBaseUrl;
 
-  BookApiService({http.Client? client}) : _client = client ?? http.Client();
+  BookApiService({
+    http.Client? client,
+    this.backendBaseUrl = defaultBackendBaseUrl,
+  }) : _client = client ?? http.Client();
 
-  /// Fetches books from Gutendex REST API with query support and offline cache fallback.
-  Future<List<Book>> fetchBooks({String query = ''}) async {
-    final uri = query.trim().isEmpty
-        ? Uri.parse(_gutendexBaseUrl)
-        : Uri.parse('$_gutendexBaseUrl?search=${Uri.encodeComponent(query.trim())}');
+  /// Fetches books via Smart Read-Through Search (Central Express/MongoDB Catalog
+  /// or Gutendex REST API) with automatic data cleaning and offline cache fallback.
+  Future<List<Book>> fetchBooks({
+    String query = '',
+    bool preferCentralBackend = false,
+  }) async {
+    final trimmed = query.trim();
+    final baseEndpoint = preferCentralBackend
+        ? '$backendBaseUrl/books/search'
+        : _gutendexBaseUrl;
+    final uri = trimmed.isEmpty
+        ? Uri.parse(baseEndpoint)
+        : Uri.parse('$baseEndpoint?search=${Uri.encodeComponent(trimmed)}');
 
     try {
       final response = await _client.get(uri).timeout(defaultTimeout);
@@ -32,7 +45,7 @@ class BookApiService {
         final books = <Book>[];
         for (final item in results) {
           if (item is Map<String, dynamic>) {
-            final book = _parseGutendexBook(item);
+            final book = _parseRemoteBook(item);
             if (book != null) {
               books.add(book);
             }
@@ -62,6 +75,78 @@ class BookApiService {
     return BookRepository.getInitialBooks();
   }
 
+  /// Synchronizes a book and reading progress into the Express + MongoDB
+  /// Central Books Catalog and the user's `UserAccountTree.readingTree`.
+  Future<Map<String, dynamic>?> syncUserReadingToTree({
+    required String userIdOrEmail,
+    required Book book,
+    String shelfId = 'currently_reading',
+    String status = 'reading',
+    int minutesRead = 0,
+  }) async {
+    final uri = Uri.parse(
+      '$backendBaseUrl/users/${Uri.encodeComponent(userIdOrEmail)}/reading',
+    );
+    try {
+      final response = await _client
+          .post(
+            uri,
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'book': book.toJson(),
+              'shelfId': shelfId,
+              'status': status,
+              'progress': book.progress,
+              'currentChapter': book.currentChapterIndex,
+              'currentPage': book.currentPage,
+              'minutesRead': minutesRead,
+            }),
+          )
+          .timeout(const Duration(seconds: 3));
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(utf8.decode(response.bodyBytes))
+            as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Authenticates or registers a user in the Express + MongoDB backend,
+  /// returning the hierarchical `UserAccountTree` document.
+  Future<Map<String, dynamic>?> syncUserAccountTree({
+    required String email,
+    required String name,
+  }) async {
+    final uri = Uri.parse('$backendBaseUrl/auth/login');
+    try {
+      final response = await _client
+          .post(
+            uri,
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email,
+              'name': name,
+            }),
+          )
+          .timeout(const Duration(seconds: 3));
+      if (response.statusCode == 200) {
+        return jsonDecode(utf8.decode(response.bodyBytes))
+            as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Book? _parseRemoteBook(Map<String, dynamic> map) {
+    // If payload comes from our Express Central DB (already structured as CentralBook)
+    if (map['id'] is String && map['author'] is String) {
+      try {
+        return Book.fromJson(map);
+      } catch (_) {}
+    }
+    return _parseGutendexBook(map);
+  }
+
   Book? _parseGutendexBook(Map<String, dynamic> map) {
     try {
       final int id = map['id'] as int? ?? 0;
@@ -71,7 +156,6 @@ class BookApiService {
       String authorName = 'Unknown Author';
       if (authors.isNotEmpty && authors.first is Map<String, dynamic>) {
         final rawAuthor = authors.first['name'] as String? ?? 'Unknown Author';
-        // Gutendex format is usually "Lastname, Firstname"
         final parts = rawAuthor.split(', ');
         authorName = parts.length > 1 ? '${parts[1]} ${parts[0]}' : rawAuthor;
       }

@@ -117,5 +117,21 @@ void main() {
       expect(find.text('AppShellScreen'), findsOneWidget);
       expect(bookProvider.userProfile.isGuest, isTrue);
     });
+
+    testWidgets('AuthPage renders cleanly on narrow 360px mobile screen without overflow',
+        (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final bookProvider = BookProvider();
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+
+      await tester.pumpWidget(createAuthTestWidget(bookProvider: bookProvider));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+    });
   });
 }

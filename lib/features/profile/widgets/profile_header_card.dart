@@ -28,34 +28,54 @@ class ProfileHeaderCard extends StatelessWidget {
         Row(
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    colorScheme.primary,
-                    colorScheme.primary.withValues(alpha: 0.7),
-                  ],
-                ),
+                color: profile.isGuest
+                    ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                    : null,
+                gradient: profile.isGuest
+                    ? null
+                    : LinearGradient(
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.primary.withValues(alpha: 0.7),
+                        ],
+                      ),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                border: profile.isGuest
+                    ? Border.all(
+                        color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                      )
+                    : null,
+                boxShadow: profile.isGuest
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: colorScheme.primary.withValues(alpha: 0.25),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
               ),
               child: Center(
-                child: Text(
-                  displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                  style: TextStyle(
-                    fontFamily: 'Serif',
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onPrimary,
-                  ),
-                ),
+                child: profile.isGuest
+                    ? Icon(
+                        Icons.person_outline_rounded,
+                        size: 28,
+                        color: colorScheme.primary,
+                      )
+                    : Text(
+                        displayName.isNotEmpty
+                            ? displayName[0].toUpperCase()
+                            : 'U',
+                        style: TextStyle(
+                          fontFamily: 'Serif',
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: 16),
@@ -85,18 +105,15 @@ class ProfileHeaderCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.amber.withValues(alpha: 0.2),
+                            color: colorScheme.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.amber.withValues(alpha: 0.4),
-                            ),
                           ),
                           child: Text(
                             l10n?.t('profile.guest_badge') ?? 'Зочин',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: Colors.amber,
+                              color: colorScheme.primary,
                             ),
                           ),
                         ),
@@ -105,7 +122,10 @@ class ProfileHeaderCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    profile.email,
+                    profile.isGuest
+                        ? (l10n?.t('app.tagline') ??
+                            'Таны ухаалаг цахим номын сан')
+                        : profile.email,
                     style: TextStyle(
                       fontSize: 13,
                       color: colorScheme.onSurface.withValues(alpha: 0.6),
@@ -114,22 +134,23 @@ class ProfileHeaderCard extends StatelessWidget {
                 ],
               ),
             ),
-            AnimatedPressable(
-              onTap: () => ProfileEditDialog.show(context, bookProvider),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.35),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.edit_outlined,
-                  size: 18,
-                  color: colorScheme.primary,
+            if (!profile.isGuest)
+              AnimatedPressable(
+                onTap: () => ProfileEditDialog.show(context, bookProvider),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.35),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: colorScheme.primary,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       ],

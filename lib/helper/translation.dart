@@ -33,7 +33,7 @@ class AppLocalizations {
     return true;
   }
 
-  String translate(String key, [Map<String, String>? params, String? fallback]) {
+  String? translate(String key, [Map<String, String>? params, String? fallback]) {
     final parts = key.split('.');
     dynamic current = _localizedStrings;
 
@@ -41,11 +41,11 @@ class AppLocalizations {
       if (current is Map && current.containsKey(part)) {
         current = current[part];
       } else {
-        return fallback ?? key;
+        return fallback;
       }
     }
 
-    if (current == null) return fallback ?? key;
+    if (current == null) return fallback;
     String result = current.toString();
     if (params != null) {
       params.forEach((paramKey, value) {
@@ -55,7 +55,7 @@ class AppLocalizations {
     return result;
   }
 
-  String t(String key, [Map<String, String>? params, String? fallback]) =>
+  String? t(String key, [Map<String, String>? params, String? fallback]) =>
       translate(key, params, fallback);
 }
 

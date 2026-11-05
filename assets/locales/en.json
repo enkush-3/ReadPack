@@ -76,7 +76,14 @@
     "helpful": "helpful",
     "helpful_btn": "Helpful 👍",
     "about_author": "About the Author",
-    "more_by_author": "More by this Author"
+    "author_badge": "About the Author",
+    "more_by_author": "More by this Author",
+    "tabs": {
+      "overview": "Overview",
+      "chapters": "Chapters",
+      "reviews": "Reviews",
+      "similar": "Similar"
+    }
   },
   "reviews": {
     "title": "Ratings & Reviews",
@@ -126,12 +133,21 @@
     "color_green": "Green",
     "color_blue": "Blue",
     "color_pink": "Pink",
-    "color_purple": "Purple"
+    "color_purple": "Purple",
+    "font_mono": "Monospace (Mono)",
+    "line_height": "Line Height",
+    "margins": "Page Margins",
+    "margin_narrow": "Narrow",
+    "margin_normal": "Normal",
+    "margin_wide": "Wide",
+    "mode_paginated": "Paginated",
+    "mode_scroll": "Continuous"
   },
   "library": {
     "title": "My Library",
     "currently_reading": "Reading",
     "saved": "Saved",
+    "shelves": "Collections",
     "quotes": "Quotes & Notes",
     "empty_reading_title": "No books in progress",
     "empty_reading_desc": "Start reading a book to see it here.",
@@ -154,6 +170,11 @@
     "remove_download": "Remove Download",
     "downloaded": "Downloaded",
     "sort_by_label": "Sort By",
+    "sort_recent": "Recently Read",
+    "sort_title": "By Title",
+    "sort_author": "By Author",
+    "sort_progress": "By Progress",
+    "sort_rating": "By Rating",
     "share_story": "Share to Instagram Story",
     "share_story_btn": "Story Card"
   },
@@ -211,6 +232,7 @@
     "title": "Filter & Sort",
     "category": "Category",
     "rating": "Rating",
+    "mood": "Reading Mood & Pace",
     "sort_by": "Sort By",
     "clear": "Reset",
     "apply": "Apply Filter",
@@ -232,6 +254,7 @@
     "guest_prompt": "You are browsing as a guest. Create an account to sync your reading progress across devices.",
     "login_signup": "Sign In / Register",
     "edit_profile": "Edit Profile",
+    "updated": "Profile updated successfully",
     "daily_goal": "Daily Goal",
     "daily_goal_sub": "minute goal",
     "minutes_today": "mins today",
@@ -246,6 +269,7 @@
     "achievements": "Reading Achievements",
     "level_title": "Level & Titles",
     "weekly_league": "Weekly League",
+    "diamond_league": "Diamond League",
     "leaderboard": "Leaderboard",
     "days_remaining": "2 days remaining",
     "diamond_promotion": "💎 Top 3 will be promoted to Diamond League",
@@ -281,6 +305,24 @@
       "speed_reader_title": "⚡ Speed Reader",
       "speed_reader_desc": "Read at over 240 words per minute"
     }
+  },
+  "settings": {
+    "manage": "Manage",
+    "appearance": "Appearance & Language",
+    "notifications": "Notifications & Recommendations",
+    "storage": "Storage & Cache"
+  },
+  "quote_share": {
+    "share": "Share",
+    "title": "Share Quote",
+    "choose_theme": "Choose Card Theme",
+    "copy_text": "Copy Text",
+    "share_card": "Share to Instagram Story",
+    "shared_success": "Quote card is ready to share!"
+  },
+  "leaderboard": {
+    "weekly_rankings": "Weekly Rankings",
+    "weekly_reset_info": "Resets every Sunday at 23:59"
   },
   "history": {
     "book": {

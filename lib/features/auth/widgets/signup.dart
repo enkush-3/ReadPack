@@ -150,23 +150,25 @@ class _SignUpPageState extends State<SignUpPage> {
           isLoading: _isLoading,
           onPressed: _validateAndSubmit,
         ),
-        const SizedBox(height: 16),
-        Center(
-          child: AnimatedPressable(
-            onTap: _continueAsGuest,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                l10n?.t('auth.continue_as_guest') ?? 'Зочноор үргэлжлүүлэх →',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.primary,
+        if (!Navigator.of(context).canPop()) ...[
+          const SizedBox(height: 16),
+          Center(
+            child: AnimatedPressable(
+              onTap: _continueAsGuest,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  l10n?.t('auth.continue_as_guest') ?? 'Зочноор үргэлжлүүлэх →',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.primary,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
         const SizedBox(height: 20),
         Row(
           children: [

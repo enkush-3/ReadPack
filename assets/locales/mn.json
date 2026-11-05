@@ -76,7 +76,14 @@
     "helpful": "тустай",
     "helpful_btn": "Тустай 👍",
     "about_author": "Зохиолчийн тухай",
-    "more_by_author": "Зохиолчийн бусад номууд"
+    "author_badge": "Зохиогчийн тухай",
+    "more_by_author": "Зохиолчийн бусад номууд",
+    "tabs": {
+      "overview": "Тойм",
+      "chapters": "Бүлгүүд",
+      "reviews": "Шүүмж",
+      "similar": "Ижил төстэй"
+    }
   },
   "reviews": {
     "title": "Үнэлгээ & Сэтгэгдэл",
@@ -126,12 +133,21 @@
     "color_green": "Ногоон",
     "color_blue": "Цэнхэр",
     "color_pink": "Ягаан",
-    "color_purple": "Нил"
+    "color_purple": "Нил",
+    "font_mono": "Моно (Mono)",
+    "line_height": "Мөр хоорондын зай",
+    "margins": "Захаас авах зай",
+    "margin_narrow": "Нарийн",
+    "margin_normal": "Хэвийн",
+    "margin_wide": "Өргөн",
+    "mode_paginated": "Хуудаслалттай",
+    "mode_scroll": "Тасралтгүй"
   },
   "library": {
     "title": "Миний Сан",
     "currently_reading": "Уншиж буй",
     "saved": "Хадгалсан",
+    "shelves": "Цуглуулгууд",
     "quotes": "Ишлэлүүд",
     "empty_reading_title": "Одоогоор уншиж буй ном алга",
     "empty_reading_desc": "Нүүр хуудаснаас сонирхсон номоо сонгоод уншиж эхлээрэй.",
@@ -154,6 +170,11 @@
     "remove_download": "Таталт устгах",
     "downloaded": "Татагдсан",
     "sort_by_label": "Эрэмбэлэх",
+    "sort_recent": "Сүүлд уншсан",
+    "sort_title": "Гарчгаар",
+    "sort_author": "Зохиолчоор",
+    "sort_progress": "Явцаар",
+    "sort_rating": "Үнэлгээгээр",
     "share_story": "Instagram Story болгох",
     "share_story_btn": "Story карт"
   },
@@ -211,6 +232,7 @@
     "title": "Шүүлтүүр",
     "category": "Төрөл",
     "rating": "Үнэлгээ",
+    "mood": "Сэтгэл хөдлөл (Mood & Pace)",
     "sort_by": "Эрэмбэлэх",
     "clear": "Цэвэрлэх",
     "apply": "Шүүх",
@@ -232,6 +254,7 @@
     "guest_prompt": "Та зочны горимоор орсон байна. Бүртгэл үүсгэж уншлагын ахицаа хадгалаарай.",
     "login_signup": "Нэвтрэх / Бүртгүүлэх",
     "edit_profile": "Профайл засах",
+    "updated": "Профайл амжилттай шинэчлэгдлээ",
     "daily_goal": "Өдрийн зорилго",
     "daily_goal_sub": "минутын зорилго",
     "minutes_today": "минут өнөөдөр",
@@ -246,6 +269,7 @@
     "achievements": "Уншлагын амжилтууд",
     "level_title": "Түвшин ба Цол",
     "weekly_league": "Долоо хоногийн лиг",
+    "diamond_league": "Алмазан Лиг",
     "leaderboard": "Лидерборд",
     "days_remaining": "2 өдөр үлдсэн",
     "diamond_promotion": "💎 Эхний 3 байр Алмазан Лиг рүү дэвшинэ",
@@ -281,6 +305,24 @@
       "speed_reader_title": "⚡ Хурдан уншигч",
       "speed_reader_desc": "Минутанд 240-өөс дээш үг унших"
     }
+  },
+  "settings": {
+    "manage": "Удирдах",
+    "appearance": "Харагдах байдал & Хэл",
+    "notifications": "Мэдэгдэл & Зөвлөмж",
+    "storage": "Хадгалах сан"
+  },
+  "quote_share": {
+    "share": "Хуваалцах",
+    "title": "Эшлэл хуваалцах",
+    "choose_theme": "Картын өнгө сонгох",
+    "copy_text": "Текст хуулах",
+    "share_card": "Instagram Story-д хуваалцах",
+    "shared_success": "Эшлэлийн карт сошиалд хуваалцахад бэлэн боллоо!"
+  },
+  "leaderboard": {
+    "weekly_rankings": "7 хоногийн чансаа",
+    "weekly_reset_info": "Долоо хоног бүрийн Ням гарагт 23:59 цагт шинэчлэгдэнэ"
   },
   "history": {
     "book": {

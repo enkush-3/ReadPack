@@ -23,8 +23,27 @@ class FeaturedBookCard extends StatelessWidget {
     this.onTap,
   });
 
+  Widget _buildCoverImage() {
+    if (image.isEmpty) {
+      return _buildArtworkCover();
+    }
+    if (image.startsWith('http://') || image.startsWith('https://')) {
+      return Image.network(
+        image,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildArtworkCover(),
+      );
+    }
+    return Image.asset(
+      image,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildArtworkCover(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
     final readText = l10n?.t('book.read') ?? 'Унших';
     final hasAudio = book?.hasAudio ?? true;
@@ -32,167 +51,156 @@ class FeaturedBookCard extends StatelessWidget {
     return AnimatedPressable(
       onTap: onTap,
       child: Container(
-        width: 230,
+        width: 220,
         height: 290,
         decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+          ),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.35),
-              blurRadius: 18,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            fit: StackFit.expand,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [color, color.withValues(alpha: 0.75)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-              ),
-              if (image.isNotEmpty)
-                Image.asset(
-                  image,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _buildArtworkCover(),
-                )
-              else
-                _buildArtworkCover(),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.0, 0.45, 1.0],
-                      colors: [
-                        Colors.black.withValues(alpha: 0.25),
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.88),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              // Top row: category & audio badge
-              Positioned(
-                top: 14,
-                left: 14,
-                right: 14,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // 1. Clean Unobstructed Book Cover Artwork (No text-on-text collision)
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
                   children: [
-                    if (category != null)
-                      Flexible(
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            color.withValues(alpha: 0.85),
+                            color.withValues(alpha: 0.55),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
+                    _buildCoverImage(),
+                    // Subtle category pill in top-left
+                    if (category != null && category!.isNotEmpty)
+                      Positioned(
+                        top: 10,
+                        left: 10,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 5,
+                            horizontal: 8,
+                            vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.2),
-                            ),
+                            color: Colors.black.withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             category!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 10,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
                           ),
                         ),
                       ),
-                    if (category != null && hasAudio)
-                      const SizedBox(width: 6),
+                    // Subtle audio icon badge in top-right
                     if (hasAudio)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF9800).withValues(alpha: 0.85),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.headphones_rounded,
-                                size: 12, color: Colors.white),
-                            const SizedBox(width: 3),
-                            Text(
-                              l10n?.t('reader.audio_narration') ?? 'Аудио',
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.headphones_rounded,
+                            size: 13,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                   ],
                 ),
               ),
 
-              // Bottom content
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
+              // 2. Dedicated Metadata Footer (Separated from cover artwork)
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                color: colorScheme.surface,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       title,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Serif',
-                        fontSize: 17,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.25,
+                        color: colorScheme.onSurface,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       author,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.85),
+                        color: colorScheme.onSurface.withValues(alpha: 0.65),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        if (book != null)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                size: 14,
+                                color: Colors.amber,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                book!.rating.toStringAsFixed(1),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          const SizedBox.shrink(),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
+                            horizontal: 10,
+                            vertical: 5,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
+                            color: colorScheme.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -200,36 +208,20 @@ class FeaturedBookCard extends StatelessWidget {
                               Text(
                                 readText,
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: color,
+                                  color: colorScheme.primary,
                                 ),
                               ),
                               const SizedBox(width: 4),
                               Icon(
                                 Icons.arrow_forward_rounded,
-                                size: 14,
-                                color: color,
+                                size: 12,
+                                color: colorScheme.primary,
                               ),
                             ],
                           ),
                         ),
-                        if (book != null)
-                          Row(
-                            children: [
-                              const Icon(Icons.star_rounded,
-                                  size: 14, color: Colors.amber),
-                              const SizedBox(width: 2),
-                              Text(
-                                book!.rating.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
                       ],
                     ),
                   ],
@@ -253,24 +245,10 @@ class FeaturedBookCard extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(20),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.auto_stories_rounded,
-                color: Colors.white70, size: 40),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: const TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
+        child: Icon(
+          Icons.auto_stories_rounded,
+          color: Colors.white.withValues(alpha: 0.85),
+          size: 42,
         ),
       ),
     );

@@ -95,6 +95,10 @@ void main() {
       expect(find.byType(ProfileChallengeCard), findsNothing);
       expect(find.byType(ProfileHabitsCard), findsNothing);
       expect(find.byType(ProfileAchievementsCard), findsNothing);
+
+      // Fake guest email and Edit Profile pencil button MUST NOT be displayed for guest
+      expect(find.text('guest@readpack.app'), findsNothing);
+      expect(find.byIcon(Icons.edit_outlined), findsNothing);
     });
 
     testWidgets('Authenticated Profile renders all personal user cards and hides ProfileGuestCard',
@@ -113,12 +117,13 @@ void main() {
       // Guest card must not be present
       expect(find.byType(ProfileGuestCard), findsNothing);
 
-      // Personal cards must be present
+      // Personal cards and Edit Profile button must be present
       expect(find.byType(ProfileXpCard), findsOneWidget);
       expect(find.byType(ProfileLeagueCard), findsOneWidget);
       expect(find.byType(ProfileChallengeCard), findsOneWidget);
       expect(find.byType(ProfileHabitsCard), findsOneWidget);
       expect(find.byType(ProfileAchievementsCard), findsOneWidget);
+      expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
     });
 
     testWidgets('Tapping login on ProfileGuestCard navigates to AuthScreen',

@@ -20,6 +20,24 @@ class BookCard extends StatelessWidget {
     this.onTap,
   });
 
+  Widget _buildCoverImage() {
+    if (image == null || image!.isEmpty) {
+      return _buildPlaceholder();
+    }
+    if (image!.startsWith('http://') || image!.startsWith('https://')) {
+      return Image.network(
+        image!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildPlaceholder(),
+      );
+    }
+    return Image.asset(
+      image!,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _buildPlaceholder(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -36,7 +54,7 @@ class BookCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
+                    color: Colors.black.withValues(alpha: 0.12),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -48,58 +66,8 @@ class BookCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     Container(color: Color(colorHex)),
-                    if (image != null && image!.isNotEmpty)
-                      Image.asset(
-                        image!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                      )
-                    else
-                      _buildPlaceholder(),
-                    // Top gradient
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: 50,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.4),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Audio badge
-                    if (book?.hasAudio == true)
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.headphones_rounded,
-                                size: 12,
-                                color: Colors.amberAccent,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    // Rating tag
+                    _buildCoverImage(),
+                    // Subtle rating tag
                     Positioned(
                       top: 8,
                       right: 8,
@@ -107,7 +75,7 @@ class BookCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
+                          color: Colors.black.withValues(alpha: 0.65),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(

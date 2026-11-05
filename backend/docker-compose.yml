@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: readpack_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: readpack
+    volumes:
+      - mongodb_data:/data/db
+
+  backend:
+    build: .
+    container_name: readpack_express_api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      MONGODB_URI: mongodb://mongodb:27017/readpack
+    depends_on:
+      - mongodb
+
+volumes:
+  mongodb_data:

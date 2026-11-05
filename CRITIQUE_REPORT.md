@@ -1,136 +1,258 @@
-# 🚨 BRUTAL PRODUCT & CODE CRITIQUE REPORT (v2.0)
-**App Name:** ReadPack (Flutter Architecture Audit)  
-**Evaluator:** Senior Product Critic, Principal UX Architect & Design Systems Reviewer (ex-Apple HIG / Google M3)  
+# 🚨 BRUTAL PRODUCT, UI/UX VISUAL HIERARCHY & BACKEND ARCHITECTURE CRITIQUE (v4.0)
+**App Name:** ReadPack (Mobile Screenshot Teardown + Express.js & MongoDB Tree System Audit)  
+**Evaluator:** Senior Product Critic, Principal UX Architect & Distributed Systems Engineer  
 **Audit Date:** 2026-11-05  
-**Audit Scope:** Deep Source Code, Architecture, Network Layer, & State Teardown (Read-Only)  
+**Audit Mode:** STRICT FULL-SPECTRUM AUDIT (Zero Artificial Action-Item Limits — 100% Issue Coverage)
 
 ---
 
 ## 1. Ерөнхий дүн (Brutal Reality Check)
 
-> **Одоогийн түвшин:** **Polished Prototype / Architectural Illusion**  
-> **Хэрэглэгчийн Бодит Retention (Day 7):** `< 6.8%`  
-> **Шалгагдсан кодын дүгнэлт:** Код нь 400 мөрөөр хуваагдсан, 81 тест давсан, харахад маш цэвэрхэн мэт боловч бүтээгдэхүүний гүн рүү өнгийвөл **"хиймэл дуураймал (facade) технологи"** дээр тогтож байна.
+> **Одоогийн түвшин:** **Broken Visual Hierarchy / Client-Only Illusion**  
+> **Бодит утасны дэлгэц дээрх үнэлгээ:** **3.5 / 10**
 
-### Гурван Том Илчлэлт (The 3 Deadly Illusions):
-1. **Хиймэл Номын API (The Synthetic Gutendex Trap):** Апп нь интернэтээс Гутенбергийн номуудыг API-аар татдаг гэж байгаа боловч үнэндээ номын зөвхөн гарчиг, зохиолчийг татаж аваад, доторх агуулгыг нь `Part 1: The Beginning`, `Part 2: The Core Journey` гэсэн **2 догол мөр зохиомол хуурамч текстээр дүүргэдэг** (`book_api_service.dart:98`). Хэрэглэгч ямар ч ном нээсэн бүгд яг ижилхэн 2 өгүүлбэртэй байдаг тул жинхэнэ ном унших боломжгүй!
-2. **Ашиглагдаагүй сангуудын хог (Phantom Dependency Bloat):** Төслийн `pubspec.yaml` дээр `cached_network_image`, `google_fonts`, `go_router` зэрэг том сангуудыг татсан мөртлөө **кодон дотор нэг ч файл эдгээрийг ашиглахгүй байна!** Үүнээс болж:
-   - Онлайнаас татсан номын хавтаснуудын `https://...` хаягийг `Image.asset()`-ээр дууддаг тул бүх онлайн номын ковер алдаа зааж (`errorBuilder`), бүгд саарал зураг болж хувирдаг (`books_card.dart:52`).
-3. **Хуурамч Үсэг Тоолдог Хуудаслалт (Crude Character-Length Pagination):** Цахим номын хуудаслалтыг төхөөрөмжийн дэлгэцийн өндөр, пиксел, үсгийн фонтын жинхэнэ хэмжилт (`TextPainter`)-ээр биш, зүгээр л 550 тэмдэгт тутамд хайчилж хуваасан (`reader_theme_helpers.dart:88`). Үсгийн хэмжээг томруулахад текст дэлгэцийн доогуур хальж тасарч уншигдахгүй болдог бол том таблет дээр хуудасны 80% нь хоосон цагаан үлддэг.
+Бодит утасны дэлгэц (Screenshots 1–4) дээр апп-ыг ажиллуулахад өмнөх "81 тест давсан" гэх тайлангийн цаана **UI эвдрэл (116px Overflow), орчуулгын түүхий түлхүүрүүд (`settings.appearance`, `settings.manage`, `quote_share.share`), давхардсан анимаци, Зочин (Guest) болон Нэвтэрсэн хэрэглэгчийн логикийн холион бантан**, мөн **Төвлөрсөн дата баазгүй (No Backend/DB)** архитектур нуугдаж байна.
 
 ---
 
-## 2. Дэлгэц ба Функц тус бүрийн шүүмж (Screen-by-Screen Teardown)
+## 2. Бодит Дэлгэцийн Баримттай Шүүмж (Screenshot-by-Screenshot Teardown)
+
+### 📸 Баримт 1: Нүүр хуудасны Visual Hierarchy ба "Хуурамч Хэрэглэгч" (`HomePage` — Screenshot 4)
+
+1. **Зочин (Guest) мөртлөө Нэвтэрсэн хүн шиг харагдах логикийн гажуудал (`header.dart:40`):**
+   - Хэрэглэгч огт нэвтрээгүй байхад зүүн дээд буланд `"З"` үсэгтэй аватар, `"Оройн мэнд, Зочин уншигч"`, `"🔥 0 хоног"` (Streak), мөн Мэдэгдлийн хонх харагдаж байна.
+   - **Яагаад буруу вэ?** Зочин хүн бол бүртгэлгүй уншигч. Түүнд хувийн аватар, 0 хоногийн гал, хувийн мэдэгдэл харуулах нь хэрэглэгчийг "Би аль хэдийн бүртгэлтэй юм байна" гэж төөрөгдүүлж, бүртгүүлэх (Conversion) сэдлийг 100% устгадаг.
+   - **Эксперт шийдэл (Apple Books / Medium):** Зочин үед Header дээр зөвхөн Апп-ын цэвэрхэн лого (`ReadPackLogo`) + баруун буланд цэмцгэр `"Нэвтрэх"` товч байх ёстой. Streak болон Avatar нь зөвхөн нэвтэрсэн хүний урамшуулал байх ёстой.
+
+2. **Давхардсан хоёр Refresh Indicator (`refresh.dart:108-189`):**
+   - Дэлгэцийг доош татахад Flutter-ийн стандарт бөөрөнхий `RefreshIndicator` эргэлдэж, яг доор нь давхардаад `"🔄 Тавьж шинэчлэх"` гэсэн хоёр дахь pill гарч ирж байна. Энэ бол маш бүдүүлэг UI давхардал.
+
+3. **Номын карт дээрх Текст давхцал ба Харагдах байдлын шатлал (`features_book.dart:69-83`, `books_card.dart`):**
+   - `"Онцлох номнууд"` хэсгийн *Thinking, Fast and Slow* болон *The Art of War* номын ковер зураг нь өөр дээрээ том үсэгтэй. Гэтэл яг тэр үсгэн дээр нь цагаан өнгөөр `The Art of War / Sun Tzu` гээд давхарлаж бичсэнээс болж хоёр текст хоорондоо холилдоод уншигдахын аргагүй заваан харагдаж байна.
+   - Мөн ковер бүр дээр хэт тод улбар шар `"🎧 Аудио хүүрнэл"` гэсэн шошго наасан нь номын хавтсыг халхалж, хямдхан сурталчилгааны баннер шиг харагдуулж байна.
+   - `Image.asset` нь `https://` сүлжээний зургийг дэмжихгүй байгаагаас гадны API-аас ирсэн номын хавтас алдаа зааж байна.
+
+4. **Түүхий орчуулгын түлхүүр (`home_quote_banner.dart:95`):**
+   - Өдрийн эшлэл карт дээр `"Хуваалцах"` гэж гарахын оронд `< quote_share.share` гэсэн кодын түлхүүр үг шууд гарч ирсэн.
+   - **Шалтгаан (`translation.dart:44`):** `AppLocalizations.translate(key)` функц нь түлхүүр олдохгүй үед `null` биш `key` буцаадаг тул `l10n?.t('quote_share.share') ?? 'Хуваалцах'` гэсэн Dart-ийн `??` оператор хэзээ ч ажилладаггүй!
 
 ---
 
-### 1. Нүүр Хуудас (`HomePage` & Sections)
+### 📸 Баримт 2: Профайл ба Зочны Горимын Зөрчил (`ProfilePage` — Screenshot 1)
 
-#### Одоо байгаа байдал & Муу тал:
-- **Онлайн номын коверууд бүгд үхмэл:** `BookApiService`-аар дамжин ирсэн номын хавтаснууд `Image.asset()`-ээр уншигдах гэж оролдоод алдаа зааж, хоосон хавтас харуулдаг. `cached_network_image` сан `pubspec.yaml`-д байгаа мөртлөө холбоогүй хаягдсан.
-- **Хэт олон давхар Scroll:** Дэлгэцийн гадна талд `CustomScrollView`, дотор талд нь `ListView.separated` хэвтээ каруселиуд, ангиллын чипүүд, доор нь `SliverGrid` байна. Гүйлгэх үед төхөөрөмжийн фрейм унаж, хурууны хөдөлгөөн гацах (jank) мэдрэмж өгдөг.
-- **Категори өөрчлөхөд хиймэл үсрэлт:** Ангиллын чип сонгоход ямар ч AnimatedSwitcher, fade, эсвэл shimmer байхгүй шууд өөрчлөгддөг нь хямдхан веб сайт шиг харагдуулдаг.
+1. **Зочин хүнд "Профайл засах" ба `guest@readpack.app` харуулах (`profile_header_card.dart:108-119`):**
+   - Хэрэглэгч Зочин горимд байхад дээр нь `Зочин уншигч`, `guest@readpack.app` гэсэн хуурамч имэйл харуулаад, баруун талд нь **Харандаа (Edit Profile)** товч үлдээсэн байна!
+   - Тэр харандааг дарахад `"Профайл засах -> Бүтэн нэр: Зочин"` гэсэн модал гарч ирж байна. Бүртгэлгүй зочин хүн яагаад өөрийнхөө нэрийг "Зочин"-гоос өөрчилж хадгалах ёстой гэж?!
+   - **Эксперт шийдэл:** Зочин үед `guest@readpack.app` болон Edit товч (`ProfileEditDialog`) ОГТ харагдах ёсгүй. Профайл таб руу ороход бүртгүүлэхийг урьсан цэвэрхэн Onboarding/Auth Hero карт (`ProfileGuestCard`) болон Апп-ын ерөнхий тохиргоо (Хэл, Харанхуй горим) л байх ёстой.
 
-#### Эксперт аппуудын туршлага:
-- **Apple Books:** Номын ковер бүр дээр 3D сүүдэр (dynamic ambient shadow), хуудасны ирмэгийн цагаан зураас (book spine highlight) болон өндөр чанартай кэш хийгдсэн зураг байдаг.
-- **Kindle:** Нүүр хуудас дээр уншигчийн хамгийн сүүлд орхисон яг тухайн догол мөрийг харуулсан "Jump Back In" амьд виджет хамгийн дээр байрладаг.
-
-#### Шаардлагатай шинэчлэлт:
-- [ ] `CachedNetworkImage` ашиглан URL болон Asset зургийг ялгаж уншдаг ухаалаг `BookCoverImage` виджет бичих.
-- [ ] Шүүлтүүр солигдох үед grid-ийн номууд зөөлөн уусан шилжих (Staggered Fade/Scale).
-- [ ] Номын хавтсанд бодит номын нуруу (3D spine emboss) мэдрэмж төрүүлэх сүүдэр нэмэх.
+2. **Дахин түүхий түлхүүр (`profile_settings_card.dart:94`):**
+   - Тохиргоо хэсгийн баруун дээр `settings.manage` гэсэн түүхий текст улаан цайм харагдаж байна.
 
 ---
 
-### 2. Ном Уншигч Хөдөлгүүр (`ReaderPage` & `ReaderPageView`)
+### 📸 Баримт 3: Нэвтрэх Хуудасны 116 Пикселийн Эвдрэл (`AuthPage` — Screenshot 2)
 
-#### Одоо байгаа байдал & Муу тал:
-- **Хуурамч хуудаслалт (Pseudopagination):** 550 тэмдэгтээр тэгшилж тасалсан хуваалт нь номын бүлгийн шүлэг, харилцан яриа, богино өгүүлбэрүүдийг дундуур нь хэрчиж утгагүй болгодог. Үсгийн хэмжээг 1.6x болгоход хуудасны текстийн доод хэсэг дэлгэцнээс гарч харагдахгүй болдог.
-- **Хуурамч Аудио байнга оршсоор байна:** Хэрэглэгч чихэвчээ зүүгээд дэлгэцээ унтраахад дуу шууд унтарна. `pubspec.yaml`-д `just_audio` болон `audio_service` одоо ч байхгүй, аудио бар нь ердөө секунд гүйлгэдэг `Timer` хэвээрээ байна.
-- **Дисплексийн дэмжлэггүй фонтууд:** `google_fonts` сан `pubspec.yaml`-д байгаа мөртлөө кодонд `fontFamily: 'Serif'`, `fontFamily: 'Georgia'` гэсэн системийн сул фонтуудыг хатуу заасан. Android утсан дээр "Georgia" фонт байхгүй тул системийн робото фонт руу унадаг.
-
-#### Эксперт аппуудын туршлага:
-- **Moon+ Reader / Foliate:** Төхөөрөмжийн өргөн ба өндрийг авч, дэлгэцэнд яг багтах хэмжээгээр `TextPainter.layout()` ашиглан динамикаар хуудасладаг.
-- **Audible:** Background audio service-тэй, Lock screen дээр хянах товчлууруудтай, чихэвчний товчоор удирдаж болдог.
-
-#### Шаардлагатай шинэчлэлт:
-- [ ] `LayoutBuilder` ба `TextPainter` ашиглан дэлгэцийн өндөрт 100% тохирсон жинхэнэ хуудаслалт хийх.
-- [ ] `google_fonts` ашиглан Literata, Merriweather, OpenDyslexic фонтуудыг бодитоор татаж суулгах.
-- [ ] Жинхэнэ дуу хоолой тоглуулах `just_audio` сервисийн суурийг нэвтрүүлэх.
+1. **`RIGHT OVERFLOWED BY 116 PIXELS` (`auth.dart:199`):**
+   - Дээд навигацийн мөрөнд `<` буцах товч, `ReadPack` лого, `"Уншлагын зорилго тохируулах ->"` товч, `"Алгасах"` товч дөрвийг нэг `Row` дотор чихсэнээс болж дэлгэцийн баруун тийш **116 пикселээр хальж, шар-хар эрээн анхааруулах тууз** гарсан байна.
+2. **Урсгалын логик алдаа (Broken User Journey):**
+   - Хэрэглэгч Нүүр хуудаснаас Зочноор эхлээд -> Профайл руу ороод -> `"Нэвтрэх / Бүртгүүлэх"` дарж энэ хуудас руу орж ирсэн.
+   - Гэтэл энэ хуудасны голд дахиад `"Зочноор үргэлжлүүлэх ->"` болон дээр нь хэт урт `"Уншлагын зорилго тохируулах"` гэсэн илүү товчнууд байгаа нь хэрэглэгчийг буцаад тойрог руу шиддэг.
 
 ---
 
-### 3. Нэвтрэх ба Бүртгэлийн Дэлгэц (`AuthPage` & `SignInPage`)
+### 📸 Баримт 4: Тохиргооны Хуудасны Орчуулгын Сүйрэл (`SettingsPage` — Screenshot 3)
 
-#### Одоо байгаа байдал & Муу тал:
-- **Хуурамч хэрэглэгчийн нэр:** `SignInPage:67`-р мөрөнд ямар ч имэйлээр нэвтэрсэн хэрэглэгчийн нэрийг хатуу `'Enkush'` гэж заасан байна! `bat@gmail.com` гэж нэвтэрсэн ч "Сайн байна уу, Enkush" гэж гардаг.
-- **Нууц үг харах/нуух товч (Toggle Password Visibility) байхгүй:** Хэрэглэгч 12 оронтой нууц үг бичиж байхдаа алдсан эсэхээ шалгах нүдний дүрс (obscureText toggle) байхгүй тул буруу бичээд гацдаг.
-- **Биометрийн нэвтрэлт (FaceID / Fingerprint) байхгүй:** Modern app гэсэн мөртлөө хурууны хээгээр нэвтрэх ямар ч боломжгүй.
-
-#### Эксперт аппуудын туршлага:
-- **Blinkist & Headway:** Имэйлийн эхний хэсгээс автоматаар нэр санал болгодог, эсвэл нэрээ заавал баталгаажуулдаг. Google One Tap нь 1 секундэд хэрэглэгчийн жинхэнэ нэр, зургийг татаж суулгадаг.
-
-#### Шаардлагатай шинэчлэлт:
-- [ ] Имэйлээс динамик нэр үүсгэх эсвэл бүртгэлийн бодит нэрийг авах.
-- [ ] Нууц үгийн талбарт харах/нуух нүдний дүрс (`IconButton`) нэмэх.
-- [ ] Шинэ нууц үгийн хүч чадлын индикатор (Password strength meter: сул, дунд, хүчтэй).
+1. **Бүх гарчиг нь кодын түлхүүрээрээ гарсан (`settings_page.dart:34, 91, 135`):**
+   - `settings.appearance`
+   - `settings.notifications`
+   - `settings.storage`
+   Эдгээр нь `assets/locales/mn.json` болон `en.json` дотор огт бичигдээгүй мөртлөө `t()` функц нь `null` буцаадаггүйгээс болж хэрэглэгчид шууд кодын хувьсагчийн нэр харагдаж байна.
 
 ---
 
-### 4. Лидерборд ба Өрсөлдөөний Систем (`LeaderboardPage`)
+## 3. Харагдах Байдлын Шатлал (Visual Hierarchy) Шүүмж
 
-#### Одоо байгаа байдал & Муу тал:
-- **Хөдөлгөөнгүй хиймэл хүмүүс (Dead Static Mocks):** `LeaderboardPage:17`-р мөрөнд хуурамч монгол нэрстэй 8 хүнийг кодон дотор шууд хатуу бичсэн. Энэ өгөгдөл цаг хугацаа өнгөрсөн ч өөрчлөгдөхгүй, хэрэглэгч ямар ч ном уншаад байр нь ахихгүй зөвхөн өөрийнх нь XP өөрчлөгдөнө.
-- **Хэрэглэгчийн харилцан үйлдэл 0%:** Өрсөлдөгч хүн дээр дарахад тэр хүн ямар ном уншиж байгааг харж болдоггүй, дагаж болдоггүй, найзаар нэмэх боломжгүй (Dead end screen).
-- **Хэлний зөрчил:** Апп-ын хэлийг English болгосон ч өрсөлдөгчдийн нэрс дан монгол кирилл хэвээр үлддэг.
-
-#### Эксперт аппуудын туршлага:
-- **Duolingo:** Долоо хоногийн тоолуур байдаг (Жишээ нь: "Лиг дуусахад 2 өдөр 4 цаг үлдлээ"). Дээш дэвших 3 байр ногоон гэрэлтэй, доош унах сүүлчийн 3 байр улаан бүстэй байдаг нь хэрэглэгчийг уншихад хүчтэй түлхдэг (FOMO psychology).
-
-#### Шаардлагатай шинэчлэлт:
-- [ ] Долоо хоног дуусах хугацааны амьд тоолуур (`CountdownTimer: 3d 14h left`).
-- [ ] Дээд лиг рүү дэвших (Promotion Zone) ба доод лиг рүү унах (Demotion Zone) өнгөт тусгаарлалт.
-- [ ] Өрсөлдөгчийн профайл карт: Сүүлд уншсан ном ба цуглуулсан тэмдгүүдийг харах.
+Одоогийн UI яагаад "сонирхогчийн" харагдаж байна вэ?
+1. **Хэт олон өрсөлдөгч өнгө ба хүрээ (Competing Borders & Badges):**
+   - Бүх карт хүрээтэй (`Border.all`), бүх товч сүүдэртэй, ном болгон дээр 2–3 өнгийн badge (`Бизнес`, `🎧 Аудио хүүрнэл`, `⭐ 4.1`, `Унших ->`) наасан. Хэрэглэгчийн нүд хаашаа харахаа мэдэхгүй ядардаг.
+2. **Номын ковер ба Мэдээллийг салгах зарчим (Image vs. Metadata Separation) зөрчигдсөн:**
+   - Дэлхийн шилдэг аппууд (Apple Books, Kindle, Goodreads) номын хавтасны зурган дээр **ХЭЗЭЭ Ч** давхар текст бичдэггүй! Номын хавтас өөрөө урлагийн бүтээл бөгөөд өөр дээрээ гарчигтай байдаг. Гарчиг, зохиолч, үнэлгээг хавтасны **доор** эсвэл **хажууд** цэвэрхэн зайд бичдэг.
 
 ---
 
-### 5. Номын Сан ба Оффлайн Горим (`SavedPage` & Collections)
+## 4. Төвлөрсөн Дата Бааз ба Ухаалаг Express.js + MongoDB (Hierarchical Tree) Архитектур
 
-#### Одоо байгаа байдал & Муу тал:
-- **Хуурамч таталт (Simulated Storage):** "Оффлайн татах" товч нь файлын сан (Application Documents Directory) руу ямар ч EPUB/PDF эсвэл зураг татаж хадгалахгүй, зүгээр л ID-г нь жагсаалтад нэмээд "8.5MB эзэллээ" гэж зохиомол тоо харуулж байна. Онгоцонд сүлжээгүй үед энэ ном ажиллах баталгаагүй.
-- **Цуглуулгын удирдлага хэт болхи:** Шинэ цуглуулга үүсгэхэд өнгө эсвэл дүрс сонгох боломжгүй, зөвхөн текст бичдэг.
+### Одоогийн мухардал:
+Апп нь шууд утаснаасаа `gutendex.com` руу хүсэлт шидээд, ирсэн өгөгдлийг зөвхөн тухайн утасны `SharedPreferences` дотор хадгалж байна. Хэрэглэгчийн бүртгэл, уншиж буй ном, челленж, сэтгэгдэл нь нэгдсэн сервер дээр огт бүртгэгддэггүй.
 
-#### Эксперт аппуудын туршлага:
-- **Kindle:** Бодит файлын таталтын явц (Download progress 0% -> 100%) харагдаж, хэрэглэгчийн утасны багтаамжийг хэмнэх үүднээс "Зөвхөн Wi-Fi-аар татах" тохиргоотой байдаг.
+### Шаардлагатай Эксперт Архитектур (Express.js Backend + MongoDB Tree Document + Smart Read-Through Caching):
 
-#### Шаардлагатай шинэчлэлт:
-- [ ] Номын текстийг SQLite эсвэл Local File Storage-д бүрэн багцаар нь хадгалах жинхэнэ оффлайн кэш.
-- [ ] Цуглуулгад зориулсан өнгө, дүрс сонгох модал.
+```mermaid
+sequenceDiagram
+    participant App as Flutter App
+    participant Exp as Express.js Backend (Node.js)
+    participant Mongo as MongoDB (Central Books + User Tree DB)
+    participant Ext as Google Books / Open Library / Gutendex API
+
+    Note over App,Mongo: 1. Ухаалаг Хайлт (Central DB First -> External Fallback)
+    App->>Exp: GET /api/v1/books/search?q=Atomic+Habits
+    Exp->>Mongo: db.books.find({ $text: { $search: "Atomic Habits" } })
+    alt Баазад байгаа бол (Cache Hit)
+        Mongo-->>Exp: Return local books[]
+        Exp-->>App: 200 OK (source: "central_db")
+    else Баазад байхгүй бол (Cache Miss)
+        Exp->>Ext: GET Google Books / Open Library / Gutendex API
+        Ext-->>Exp: Raw External JSON
+        Exp->>Exp: Data Auto-Cleaning (Normalize ISBN, Author, HTTPS Cover URL, Strip HTML)
+        Exp-->>App: 200 OK (source: "external_api", cleaned results)
+    end
+
+    Note over App,Mongo: 2. Автоматаар Өөрийн Сан Руу Хуулах & User Tree Шинэчлэх (On-Demand Sync / Upsert)
+    App->>Exp: POST /api/v1/users/:userId/reading (Selects book to read/challenge/save)
+    Exp->>Mongo: db.books.findOneAndUpdate({ externalId }, cleanedBook, { upsert: true })
+    Exp->>Mongo: db.users.updateOne({ userId }, { $set: { "readingTree.shelves...": node } })
+    Mongo-->>Exp: Confirmed bookId & updated UserAccountTree
+    Exp-->>App: 200 OK (Book permanently registered in Central DB & User Tree!)
+```
+
+#### Эксперт Дата Авто-Цэвэрлэгээ (`/data-autocleaning` зарчим):
+Гадны API (Google Books / Open Library / Gutendex)-аас орж ирсэн өгөгдөл маш бохир байдаг тул Express.js сервис MongoDB рүү хадгалахаас өмнө дараах цэвэрлэгээг автоматаар хийнэ:
+1. **Deduplication (Давхардлыг арилгах):** `isbn13`, `externalId`, эсвэл `normalizedTitle + normalizedAuthor` хослолоор шалгаж, нэг ном баазад 2 удаа орохоос сэргийлнэ.
+2. **Author & Title Canonicalization:** `"Clear, James"` -> `"James Clear"`, илүү хаалт, HTML тагуудыг (`<b>`, `<p>`, `<br>`) цэвэрлэнэ.
+3. **Cover Image Upgrade:** `http://` болон жижиг `zoom=1` зургийг автоматаар `https://` URL руу хөрвүүлнэ; зураггүй бол стандарт fallback онооно.
 
 ---
 
-## 3. UI/UX Visual Flaws (Дизайны системийн алдааны жагсаалт)
+## 5. MongoDB User Account Tree Бүтэц ба Central Books Схем (Production Schema Blueprint)
 
-1. **Фонтын алдагдал (Font Inconsistency):** `google_fonts` сан суугаагүйгээс болж Android төхөөрөмж дээр Serif гарчиг системээс хамаарч өөр өөр харагдаж, зарим төхөөрөмж дээр эвдэрч уншигдаж байна.
-2. **Ашиглагдаагүй `go_router`:** Төслийн үндсэн чиглүүлэгч нь хуучин `Navigator 1.0` (Stack navigation) ашиглаж байхад `go_router` суулгаж санах ой үрж байна.
-3. **Өнгөний далд зөрчил (Subtle Contrast Issue):** Сэпиа горим дээрх шаргал дэвсгэр (`#F5E6C8`) дээр сонгосон цэнхэр өнгийн тодруулагч (`#60A5FA`) нь хоорондоо зохицохгүй, үгийг бүдгэрүүлж уншихад төвөгтэй болгодог.
+Хэрэглэгчийн бүртгэлийн мэдээллийг MongoDB дээр **Мод бүтэцтэй (Hierarchical Tree Structure — `UserAccountTree`)** документ хэлбэрээр хадгална:
+
+```json
+{
+  "_id": "ObjectId('...')",
+  "userId": "usr_enkush_01",
+  "email": "enkush@readpack.app",
+  "authNode": {
+    "passwordHash": "$2b$10$...",
+    "provider": "email",
+    "lastLoginAt": "2026-11-05T10:00:00.000Z"
+  },
+  "profileNode": {
+    "displayName": "Enkush",
+    "avatarUrl": null,
+    "bio": "Passionate reader & lifelong learner",
+    "preferencesNode": {
+      "language": "mn",
+      "theme": "system",
+      "dailyGoalMinutes": 30,
+      "yearlyBookGoal": 24,
+      "favoriteGenres": ["Бизнес", "Хувь хүний хөгжил", "Сэтгэл зүй"],
+      "notificationsEnabled": true,
+      "recommendationsEnabled": true
+    }
+  },
+  "readingTree": {
+    "shelves": [
+      {
+        "shelfId": "currently_reading",
+        "name": "Уншиж буй",
+        "childrenBooks": [
+          {
+            "bookId": "book_atomic_habits",
+            "status": "reading",
+            "progress": 0.65,
+            "currentChapter": 2,
+            "currentPage": 140,
+            "updatedAt": "2026-11-05T10:00:00.000Z",
+            "highlightsNodes": [
+              {
+                "highlightId": "hl_01",
+                "chapterIndex": 1,
+                "text": "You do not rise to the level of your goals. You fall to the level of your systems.",
+                "color": "yellow",
+                "createdAt": "2026-11-05T09:30:00.000Z"
+              }
+            ],
+            "notesNodes": [
+              {
+                "noteId": "nt_01",
+                "content": "Өдөр тутмын системээ сайжруулах.",
+                "createdAt": "2026-11-05T09:31:00.000Z"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "shelfId": "saved",
+        "name": "Хадгалсан",
+        "childrenBooks": []
+      },
+      {
+        "shelfId": "completed",
+        "name": "Уншиж дууссан",
+        "childrenBooks": []
+      }
+    ]
+  },
+  "gamificationTree": {
+    "xpNode": {
+      "totalXp": 1450,
+      "level": 2,
+      "title": "Идэвхтэй уншигч (Lv. 2)",
+      "weeklyLeague": "Gold League"
+    },
+    "streakNode": {
+      "currentStreak": 7,
+      "longestStreak": 14,
+      "minutesReadToday": 24,
+      "streakFreezeAvailable": true,
+      "historyDates": ["2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"]
+    },
+    "challengeNode": {
+      "year": 2026,
+      "targetBooks": 24,
+      "completedBookIds": ["book_1", "book_2"],
+      "achievementsNodes": [
+        {
+          "id": "streak_7",
+          "title": "🔥 7 Day Streak",
+          "isUnlocked": true,
+          "progress": 1.0
+        }
+      ]
+    }
+  }
+}
+```
 
 ---
 
-## 4. Хөгжүүлэгчийн хийх ёстой дараагийн 5 гол шинэчлэл
+## 6. Бүрэн Шийдвэрлэх Ажлын Төлөвлөгөө (Complete Unrestricted Action Plan — Бүх Шүүмжийг 100% Шийдвэрлэх)
 
-ReadPack аппликейшнийг жинхэнэ 100,000+ идэвхтэй хэрэглэгчтэй дэлхийн түвшний бүтээгдэхүүн болгохын тулд дараах 5 суурь ажлыг нэн даруй хий:
+> **Тэмдэглэл:** Хийх ажлыг зөвхөн 5 зүйлээр хязгаарлахгүй. Дээрх шүүмжид дурдагдсан **БҮХ** асуудлыг нэг бүрчлэн бүрэн шийдвэрлэнэ:
 
-1. 🌐 **Жинхэнэ Номын Текст Таталт & Cached Images:**
-   - `BookApiService`-ийг бүрэн текст татдаг болгож, `cached_network_image`-ийг `BookCard`-тай холбон онлайн номын коверуудыг амьд болгох.
-2. 📖 **Viewport-Aware жинхэнэ Paginated Reader:**
-   - 550 тэмдэгтээр хэрчдэг хуурамч логикийг халж, дэлгэцийн бодит хэмжээнд таарч хуудасладаг `TextPainter` хөдөлгүүр нэвтрүүлж, фонтуудыг `GoogleFonts`-оор жинхэнэ эхээр нь татах.
-3. 👤 **Бодит Хэрэглэгчийн Нэршил & Нууц үгийн удирдлага:**
-   - Нэвтрэхэд `'Enkush'` гэж хатуу бичдэг алдааг засч, имэйл болон профайлын бодит нэрээр солих, нууц үг харах нүдний дүрс нэмэх.
-4. 🏆 **Амьд Лидербордын Систем & Цагийн тоолуур:**
-   - Лиг дуусах өдөр тутмын тоолуур (`Countdown`), дээд лиг рүү дэвших зааглагч зураас оруулах.
-5. 🧹 **Сангуудын хог цэвэрлэгээ (Dead Dependency Cleanup):**
-   - Ашиглагдахгүй байгаа `go_router`-ийг цэвэрлэх эсвэл бүрэн шилжүүлэх, `google_fonts` ба `cached_network_image`-ийг бодитоор кодонд холбож үр ашгийг нь гаргах.
-
----
-*Шүүмжийн тайлан бэлтгэсэн: Senior Product Critic & Principal UX Architect.*
+1. 🛠️ **Орчуулгын Систем (`lib/helper/translation.dart`) Засах:**
+   - `AppLocalizations.translate(key)` функц түлхүүр олдохгүй үед `fallback ?? key` буцаадаг байсныг засаж, `t()` дуудах үед `assets/locales/mn.json` болон `en.json` доторх бүх түлхүүрүүд бүрэн уншигдах ба хэрэв түлхүүр байхгүй бол fallback утга зөв ажилладаг болгох.
+2. 🌐 **Дутуу Орчуулгын Түлхүүрүүдийг (`mn.json` & `en.json`) 100% Нөхөх:**
+   - `settings.manage`, `settings.appearance`, `settings.notifications`, `settings.storage`, `quote_share.share`, `quote_share.title`, `quote_share.choose_theme`, `quote_share.copy_text`, `quote_share.share_card`, `quote_share.shared_success`, `book.tabs.*`, `book.author_badge`, `auth.login_btn` зэрэг кодонд ашиглагдсан бүх түлхүүрийг Монгол болон Англи хэл дээр бүрэн нэмэх.
+3. 👤 **Нүүр Хуудасны Зочин (Guest) Толгой Хэсгийг Цэвэрлэх (`lib/features/home/widgets/header.dart`):**
+   - `profile.isGuest == true` үед хуурамч `"З"` аватар, `"Зочин уншигч"`, `"🔥 0 хоног"` гал, хувийн хонх харуулахыг зогсоож, оронд нь цэвэрхэн `ReadPackLogo` брэнд толгой болон `"Нэвтрэх"` (`Routes.auth`) CTA товч харуулдаг болгох.
+4. 🛡️ **Профайл Хуудасны Зочны Горимыг Тусгаарлах (`lib/features/profile/`):**
+   - Зочин үед `ProfileHeaderCard` дээр `guest@readpack.app` болон `"Профайл засах"` (`ProfileEditDialog`) харандаа товч гаргахыг бүрэн болиулж, зочин хэрэглэгчид зөвхөн `ProfileGuestCard` болон ерөнхий тохиргоо (`ProfileSettingsCard`) харуулах.
+5. 📐 **Нэвтрэх Хуудасны 116px Overflow ба Илүү Товчнуудыг Засах (`lib/features/auth/`):**
+   - `AuthPage._buildTopNav` доторх `116 PIXELS RIGHT OVERFLOW`-ийг бүрэн арилгах (уян хатан компакт навигацийн мөр болгох).
+   - Хэрэглэгч аль хэдийн зочноор апп дотор явж байгаад (`canPop() == true`) Профайлаас `"Нэвтрэх"` дарж орж ирсэн үед дахин `"Зочноор үргэлжлүүлэх ->"` гэсэн илүү товч харуулахгүй байх.
+6. 🔄 **Давхардсан Refresh Indicator-ийг Арилгах (`lib/features/shared/common/refresh.dart`):**
+   - Стандарт `RefreshIndicator` болон custom floating pill хоёр давхардаж гарч ирдгийг болиулж, нэгдсэн нэг цэвэрхэн индикатортой болгох.
+7. 🎨 **Номын Картуудын Visual Hierarchy ба Сүлжээний Зургийн Дэмжлэг (`features_book.dart`, `books_card.dart`):**
+   - `FeaturedBookCard` дээр номын хавтасны зурган дээр цагаан текст давхарлаж бичдэгийг болиулж, Apple Books / Kindle жишгээр зургийг цэвэрхэн харуулаад гарчиг, зохиолч, үнэлгээг тусад нь цэгцтэй байрлуулах.
+   - `http://` болон `https://` эхлэлтэй сүлжээний ковер зургийг `Image.network` (+ fallback)-ээр, локал зургийг `Image.asset`-ээр зөв дүрсэлдэг болгох.
+8. 🟢 **Express.js Backend (`backend/`) + MongoDB User Account Tree Database Бүтээх:**
+   - Rust биш **Express.js (Node.js)** дээр төвлөрсөн REST API сервер (`backend/src/server.js`, `models/`, `services/`, `routes/`) болон `docker-compose.yml` үүсгэх.
+   - Хэрэглэгчийн бүртгэлийг (`UserAccountTree`) MongoDB дээр мод бүтэцтэйгээр (`authNode`, `profileNode`, `readingTree.shelves[].childrenBooks[].highlightsNodes/notesNodes`, `gamificationTree.xpNode/streakNode/challengeNode`) хадгалах.
+9. 🧹 **Төвлөрсөн Номын Сан (Central Books Catalog) & Smart Read-Through Auto-Cleaning:**
+   - `GET /api/v1/books/search?q=...`: Эхлээд төвлөрсөн `books` цуглуулгаас хайна (`source: "central_db"`). Байхгүй бол гадны API (Google Books / Open Library / Gutendex)-аас хайж, `/data-autocleaning` цэвэрлэгээ хийгээд буцаана.
+   - `POST /api/v1/books/sync` болон `POST /api/v1/users/:userId/reading`: Хэрэглэгч ном унших, хадгалах, эсвэл челленжид нэмэх үед тухайн номыг төвлөрсөн `books` баазад автоматаар бүртгэж (`upsert`), хэрэглэгчийн `readingTree` модонд хадгална.
+10. 🔗 **Flutter Апп-ыг Express.js Backend-тэй Холбох ба Бүрэн Тестлэх:**
+    - `lib/data/services/book_api_service.dart` болон `BookProvider`-ийг Express.js backend-ийн `/api/v1/books/search`, `/api/v1/books/sync`, `/api/v1/users/:userId/tree` endpoint-уудтай холбож (оффлайн үед graceful fallback-тай), Backend болон Flutter-ийн бүх автомат тестүүдийг 100% ногоон болгох.

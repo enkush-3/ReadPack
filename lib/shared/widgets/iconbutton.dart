@@ -21,7 +21,7 @@ class SocialAuthButton extends StatelessWidget {
       onTap: action,
       child: Container(
         height: 48,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
@@ -40,17 +40,21 @@ class SocialAuthButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              width: 22,
-              height: 22,
+              width: 20,
+              height: 20,
               child: Image.asset(logolink, fit: BoxFit.contain),
             ),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
           ],
