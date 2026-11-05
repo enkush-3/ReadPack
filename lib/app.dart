@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
             theme: BookTheme.lightTheme,
             darkTheme: BookTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-            initialRoute: Routes.auth,
+            initialRoute: Routes.appshell,
             onGenerateRoute: Routes.generateRoute,
           );
         },

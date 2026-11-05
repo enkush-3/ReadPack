@@ -5,10 +5,10 @@ import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/home/widgets/books_card.dart';
 import 'package:readpack/features/home/widgets/categories.dart';
 import 'package:readpack/features/home/widgets/continue_reading_card.dart';
-import 'package:readpack/features/home/widgets/features_book.dart';
 import 'package:readpack/features/home/widgets/header.dart';
+import 'package:readpack/features/home/widgets/home_featured_section.dart';
+import 'package:readpack/features/home/widgets/home_quote_banner.dart';
 import 'package:readpack/features/shared/common/refresh.dart';
-import 'package:readpack/features/shared/widgets/quote_share_modal.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/empty_state_view.dart';
 import 'package:readpack/shared/widgets/error_state_view.dart';
@@ -57,15 +57,6 @@ class _HomePageState extends State<HomePage> {
     final bookProvider = context.watch<BookProvider>();
     final l10n = AppLocalizations.of(context);
     final userName = bookProvider.userProfile.name;
-
-    final featuredTitle =
-        l10n?.t('book.feature') ?? 'Онцлох номнууд';
-    final dailyQuoteTitle =
-        l10n?.t('home.daily_quote_title') ?? 'Өдрийн эшлэл';
-    final dailyQuote = l10n?.t('home.daily_quote') ??
-        'Ном уншдаг хүн үхэхээсээ өмнө мянган амьдралаар амьдардаг.';
-    final dailyQuoteAuthor =
-        l10n?.t('home.daily_quote_author') ?? 'Жорж Р.Р. Мартин';
     final booksCountText = l10n?.t('home.books_count') ?? 'ном';
 
     return Scaffold(
@@ -123,128 +114,10 @@ class _HomePageState extends State<HomePage> {
                 ),
               ] else ...[
                 // 4. Hero Daily Inspiration / Quote Card
-                SliverToBoxAdapter(
+                const SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
-                    child: Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            colorScheme.primaryContainer.withValues(alpha: 0.6),
-                            colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.35),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color:
-                              colorScheme.primary.withValues(alpha: 0.15),
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.format_quote_rounded,
-                              size: 20,
-                              color: colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      dailyQuoteTitle,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.8,
-                                        color: colorScheme.primary,
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () {
-                                        QuoteShareModal.show(
-                                          context,
-                                          quote: dailyQuote,
-                                          author: dailyQuoteAuthor,
-                                          bookTitle: 'ReadPack Daily',
-                                        );
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.primary
-                                              .withValues(alpha: 0.1),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.share_rounded,
-                                                size: 13,
-                                                color: colorScheme.primary),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              l10n?.t('quote_share.share') ??
-                                                  'Хуваалцах',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: colorScheme.primary,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  '"$dailyQuote"',
-                                  style: TextStyle(
-                                    fontFamily: 'Serif',
-                                    fontSize: 13,
-                                    fontStyle: FontStyle.italic,
-                                    color: colorScheme.onSurface
-                                        .withValues(alpha: 0.85),
-                                    height: 1.4,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '— $dailyQuoteAuthor',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    padding: EdgeInsets.fromLTRB(24, 4, 24, 16),
+                    child: HomeQuoteBanner(),
                   ),
                 ),
 
@@ -273,51 +146,8 @@ class _HomePageState extends State<HomePage> {
 
                 // 6. Featured Books Section
                 SliverToBoxAdapter(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Text(
-                          featuredTitle,
-                          style: TextStyle(
-                            fontFamily: 'Serif',
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      SizedBox(
-                        height: 290,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          itemCount: bookProvider.featuredBooks.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: 16),
-                          itemBuilder: (context, index) {
-                            final book = bookProvider.featuredBooks[index];
-                            return FeaturedBookCard(
-                              book: book,
-                              title: book.title,
-                              author: book.author,
-                              color: Color(book.colorHex),
-                              image: book.image ?? '',
-                              category: l10n?.t(book.category) ?? 'Онцлох',
-                              onTap: () {
-                                Navigator.of(context).pushNamed(
-                                  Routes.bookDetail,
-                                  arguments: book,
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                  child: HomeFeaturedSection(
+                    featuredBooks: bookProvider.featuredBooks,
                   ),
                 ),
 
@@ -350,7 +180,9 @@ class _HomePageState extends State<HomePage> {
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: colorScheme.surfaceContainerHighest
                                 .withValues(alpha: 0.4),

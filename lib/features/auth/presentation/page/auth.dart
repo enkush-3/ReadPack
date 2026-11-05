@@ -105,7 +105,20 @@ class _AuthPageState extends State<AuthPage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const ReadPackLogo(size: 40),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (Navigator.of(context).canPop()) ...[
+                IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                  onPressed: () => Navigator.of(context).pop(),
+                  color: colorScheme.onSurface,
+                ),
+                const SizedBox(width: 4),
+              ],
+              const ReadPackLogo(size: 40),
+            ],
+          ),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [

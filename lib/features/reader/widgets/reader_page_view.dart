@@ -1,0 +1,244 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/providers/theme_provider.dart';
+import 'package:readpack/features/reader/widgets/reader_theme_helpers.dart';
+import 'package:readpack/helper/translation.dart';
+import 'package:readpack/models/book.dart';
+
+class ReaderPageView extends StatelessWidget {
+  final Book book;
+  final BookChapter currentChapter;
+  final int currentChapterIndex;
+  final int currentPageInChapter;
+  final List<BookChapter> chapters;
+  final PageController pageController;
+  final ThemeProvider themeProvider;
+  final Color readerTextColor;
+  final ValueChanged<int> onPageChanged;
+  final ValueChanged<int> onGoToChapter;
+  final VoidCallback onToggleControls;
+  final ValueChanged<String> onShowHighlight;
+  final AppLocalizations? l10n;
+
+  const ReaderPageView({
+    super.key,
+    required this.book,
+    required this.currentChapter,
+    required this.currentChapterIndex,
+    required this.currentPageInChapter,
+    required this.chapters,
+    required this.pageController,
+    required this.themeProvider,
+    required this.readerTextColor,
+    required this.onPageChanged,
+    required this.onGoToChapter,
+    required this.onToggleControls,
+    required this.onShowHighlight,
+    this.l10n,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bookProvider = context.watch<BookProvider>();
+    final pages = ReaderThemeHelpers.paginateChapter(currentChapter.content);
+    final pageCount = pages.length;
+
+    return PageView.builder(
+      controller: pageController,
+      itemCount: pageCount,
+      physics: const BouncingScrollPhysics(),
+      onPageChanged: onPageChanged,
+      itemBuilder: (context, pIndex) {
+        final pageText = pages[pIndex];
+        final isLastPage = pIndex == pageCount - 1;
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onDoubleTap: () => onShowHighlight(pageText),
+          onLongPress: () => onShowHighlight(pageText),
+          onTapUp: (details) {
+            final screenWidth = MediaQuery.of(context).size.width;
+            final dx = details.localPosition.dx;
+            if (dx < screenWidth * 0.22) {
+              if (currentPageInChapter > 0) {
+                pageController.previousPage(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                );
+              } else if (currentChapterIndex > 0) {
+                onGoToChapter(currentChapterIndex - 1);
+              }
+            } else if (dx > screenWidth * 0.78) {
+              if (currentPageInChapter < pageCount - 1) {
+                pageController.nextPage(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                );
+              } else if (currentChapterIndex < chapters.length - 1) {
+                onGoToChapter(currentChapterIndex + 1);
+              }
+            } else {
+              onToggleControls();
+            }
+          },
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: themeProvider.horizontalMargin,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 76),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        currentChapter.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Serif',
+                          fontSize: (18 * themeProvider.fontSizeScale)
+                              .clamp(14.0, 26.0),
+                          fontWeight: FontWeight.bold,
+                          color: readerTextColor,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${l10n?.t('reader.chapter') ?? 'Бүлэг'} ${currentChapterIndex + 1}/${chapters.isEmpty ? 1 : chapters.length}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: readerTextColor.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  book.author,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: readerTextColor.withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Builder(builder: (context) {
+                      final pageParagraphs = pageText
+                          .split('\n\n')
+                          .where((p) => p.trim().isNotEmpty)
+                          .toList();
+                      final paragraphsToRender =
+                          pageParagraphs.isEmpty ? [pageText] : pageParagraphs;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: paragraphsToRender.map((p) {
+                          final matchingBm = bookProvider.bookmarks.where(
+                            (b) =>
+                                b.bookId == book.id &&
+                                p.contains(b.quote.substring(
+                                    0,
+                                    b.quote.length > 25
+                                        ? 25
+                                        : b.quote.length)),
+                          ).firstOrNull;
+                          final hasBm = matchingBm != null;
+                          final highlightColor = matchingBm != null
+                              ? Color(matchingBm.colorHex)
+                              : Colors.amber;
+
+                          return GestureDetector(
+                            onLongPress: () => onShowHighlight(p),
+                            onDoubleTap: () => onShowHighlight(p),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: hasBm
+                                  ? const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6)
+                                  : EdgeInsets.zero,
+                              decoration: hasBm
+                                  ? BoxDecoration(
+                                      color: highlightColor
+                                          .withValues(alpha: 0.16),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border(
+                                        left: BorderSide(
+                                          color: highlightColor,
+                                          width: 3.5,
+                                        ),
+                                      ),
+                                    )
+                                  : null,
+                              child: Text(
+                                p,
+                                style: ReaderThemeHelpers.getReaderTextStyle(
+                                    themeProvider, readerTextColor),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    }),
+                  ),
+                ),
+                if (isLastPage &&
+                    chapters.isNotEmpty &&
+                    currentChapterIndex < chapters.length - 1)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 4),
+                    child: Center(
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: colorScheme.primary,
+                        ),
+                        onPressed: () =>
+                            onGoToChapter(currentChapterIndex + 1),
+                        icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                        label: Text(
+                          l10n?.t('reader.next_chapter') ??
+                              'Дараагийн бүлэг рүү шилжих',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${l10n?.t('book.pages') ?? 'Хуудас'} ${pIndex + 1} / $pageCount',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: readerTextColor.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      Text(
+                        '${((((currentChapterIndex + (pIndex + 1) / pageCount) / (chapters.isEmpty ? 1 : chapters.length)).clamp(0.0, 1.0)) * 100).toInt()}%',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: readerTextColor.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 60),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

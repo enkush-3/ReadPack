@@ -17,45 +17,60 @@ class ReadPackLogo extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.all(10),
+          width: size * 0.9,
+          height: size * 0.9,
           decoration: BoxDecoration(
-            color: colorScheme.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              colors: [
+                colorScheme.primary,
+                colorScheme.primary.withValues(alpha: 0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(size * 0.28),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withValues(alpha: 0.25),
+                blurRadius: size * 0.25,
+                offset: Offset(0, size * 0.08),
+              ),
+            ],
           ),
-          child: Icon(
-            Icons.auto_stories_rounded,
-            color: colorScheme.primary,
-            size: size * 0.75,
+          child: Center(
+            child: Icon(
+              Icons.auto_stories_rounded,
+              color: colorScheme.onPrimary,
+              size: size * 0.5,
+            ),
           ),
         ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Read",
-              style: TextStyle(
-                fontFamily: 'Serif',
-                fontSize: size * 0.7,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
-                letterSpacing: -0.5,
-                height: 1.0,
+        const SizedBox(width: 10),
+        RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: 'Read',
+                style: TextStyle(
+                  fontFamily: 'Serif',
+                  fontSize: size * 0.48,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
-            Text(
-              "Pack",
-              style: TextStyle(
-                fontFamily: 'Serif',
-                fontSize: size * 0.6,
-                fontWeight: FontWeight.w400,
-                color: colorScheme.secondary,
-                letterSpacing: -0.5,
-                height: 1.0,
+              TextSpan(
+                text: 'Pack',
+                style: TextStyle(
+                  fontFamily: 'Serif',
+                  fontSize: size * 0.48,
+                  fontWeight: FontWeight.w400,
+                  color: colorScheme.primary,
+                  letterSpacing: -0.5,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
