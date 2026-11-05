@@ -55,15 +55,20 @@ class HomeQuoteBanner extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      dailyQuoteTitle,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.8,
-                        color: colorScheme.primary,
+                    Flexible(
+                      child: Text(
+                        dailyQuoteTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8,
+                          color: colorScheme.primary,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () {
                         QuoteShareModal.show(

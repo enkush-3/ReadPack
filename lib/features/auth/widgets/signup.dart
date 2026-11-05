@@ -84,6 +84,21 @@ class _SignUpPageState extends State<SignUpPage> {
     Navigator.of(context).pushReplacementNamed(Routes.appshell);
   }
 
+  void _loginWithSocial(String providerName) {
+    final email = _emailController.text.trim().contains('@')
+        ? _emailController.text.trim()
+        : '${providerName.toLowerCase()}@readpack.app';
+    final name = _nameController.text.trim().isNotEmpty
+        ? _nameController.text.trim()
+        : '$providerName Уншигч';
+    context.read<BookProvider>().loginWithEmail(email, name);
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacementNamed(Routes.onboarding);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -193,7 +208,7 @@ class _SignUpPageState extends State<SignUpPage> {
               child: SocialAuthButton(
                 logolink: 'assets/public/logos/google.png',
                 label: 'Google',
-                action: _continueAsGuest,
+                action: () => _loginWithSocial('Google'),
               ),
             ),
             const SizedBox(width: 12),
@@ -201,7 +216,7 @@ class _SignUpPageState extends State<SignUpPage> {
               child: SocialAuthButton(
                 logolink: 'assets/public/logos/facebook.png',
                 label: 'Facebook',
-                action: _continueAsGuest,
+                action: () => _loginWithSocial('Facebook'),
               ),
             ),
           ],

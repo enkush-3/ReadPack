@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/data/services/book_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -176,6 +177,53 @@ void main() {
       );
       expect(syncRes, isNotNull);
       expect(syncRes!['source'], 'central_db');
+    });
+
+    test('BookProvider actions automatically sync with Express + MongoDB backend',
+        () async {
+      final hitPaths = <String>[];
+      final mockClient = MockClient((request) async {
+        hitPaths.add('${request.method} ${request.url.path}');
+        if (request.url.path.endsWith('/auth/login')) {
+          return http.Response(
+            jsonEncode({'status': 'authenticated', 'userAccountTree': {}}),
+            200,
+          );
+        }
+        if (request.url.path.endsWith('/reading')) {
+          return http.Response(
+            jsonEncode({'status': 'synced', 'source': 'central_db'}),
+            201,
+          );
+        }
+        if (request.url.path.endsWith('/tree')) {
+          return http.Response(
+            jsonEncode({'status': 'updated', 'userAccountTree': {}}),
+            200,
+          );
+        }
+        return http.Response(mockSuccessJson, 200);
+      });
+
+      final apiService = BookApiService(client: mockClient);
+      final provider = BookProvider(apiService: apiService);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      provider.loginWithEmail('bat@readpack.app', 'Bat-Erdene');
+      provider.updateReadingProgress(provider.books.first.id, 40, 0.5, 1);
+      provider.toggleSaveBook(provider.books.first.id);
+      provider.updateUserProfile(dailyGoalMinutes: 45);
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      expect(hitPaths, contains('POST /api/v1/auth/login'));
+      expect(
+        hitPaths.any((p) => p.startsWith('POST /api/v1/users/') && p.endsWith('/reading')),
+        isTrue,
+      );
+      expect(
+        hitPaths.any((p) => p.startsWith('PUT /api/v1/users/') && p.endsWith('/tree')),
+        isTrue,
+      );
     });
   });
 }

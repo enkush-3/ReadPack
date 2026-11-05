@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:readpack/data/services/book_api_service.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/models/bookmark.dart';
 import 'package:readpack/models/collection.dart';
@@ -77,6 +78,55 @@ class BookProviderPersistence {
   static Future<void> persistUserProfile(UserProfile profile) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(keyUserProfile, jsonEncode(profile.toJson()));
+  }
+
+  static Future<void> syncAuthTree(
+      BookApiService api, UserProfile profile) async {
+    if (profile.isGuest || profile.email.isEmpty) return;
+    await api.syncUserAccountTree(email: profile.email, name: profile.name);
+  }
+
+  static Future<void> syncBookReadingNode(
+    BookApiService api,
+    UserProfile profile,
+    List<Book> books,
+    String bookId, {
+    String shelfId = 'currently_reading',
+    String status = 'reading',
+    int minutesRead = 0,
+    Map<String, dynamic>? highlight,
+  }) async {
+    final idx = books.indexWhere((b) => b.id == bookId);
+    if (idx < 0) return;
+    final book = books[idx];
+    if (profile.isGuest || profile.email.isEmpty) {
+      await api.syncBookToCentralCatalog(book);
+      return;
+    }
+    await api.syncUserReadingToTree(
+      userIdOrEmail: profile.email,
+      book: book,
+      shelfId: shelfId,
+      status: status,
+      minutesRead: minutesRead,
+      highlight: highlight,
+    );
+  }
+
+  static Future<void> syncProfilePreferences(
+      BookApiService api, UserProfile profile) async {
+    if (profile.isGuest || profile.email.isEmpty) return;
+    await api.updateUserPreferencesTree(
+      userIdOrEmail: profile.email,
+      payload: {
+        'displayName': profile.name,
+        'dailyGoalMinutes': profile.dailyGoalMinutes,
+        'yearlyBookGoal': profile.yearlyGoalBooks,
+        'favoriteGenres': profile.favoriteGenres,
+        'notificationsEnabled': profile.notificationsEnabled,
+        'recommendationsEnabled': profile.recommendationsEnabled,
+      },
+    );
   }
 
   static List<Book> rehydrateBooks({

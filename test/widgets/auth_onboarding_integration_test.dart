@@ -118,7 +118,7 @@ void main() {
       expect(bookProvider.userProfile.isGuest, isTrue);
     });
 
-    testWidgets('AuthPage renders cleanly on narrow 360px mobile screen without overflow',
+    testWidgets('AuthPage renders cleanly on narrow 360px mobile screen without overflow even at 2.0x text scale',
         (tester) async {
       tester.view.physicalSize = const Size(360, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -127,11 +127,38 @@ void main() {
       final bookProvider = BookProvider();
       await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
 
-      await tester.pumpWidget(createAuthTestWidget(bookProvider: bookProvider));
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+          child: createAuthTestWidget(bookProvider: bookProvider),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
       expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
+    });
+
+    testWidgets('AuthPage Google button authenticates user (isGuest == false) instead of guest mode',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final bookProvider = BookProvider();
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+      bookProvider.loginAsGuest();
+      expect(bookProvider.userProfile.isGuest, isTrue);
+
+      await tester.pumpWidget(createAuthTestWidget(bookProvider: bookProvider));
+      await tester.pumpAndSettle();
+
+      final googleBtn = find.text('Google');
+      expect(googleBtn, findsOneWidget);
+      await tester.tap(googleBtn);
+      await tester.pumpAndSettle();
+
+      expect(bookProvider.userProfile.isGuest, isFalse);
     });
   });
 }

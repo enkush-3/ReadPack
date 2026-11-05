@@ -171,14 +171,18 @@ class UserTreeService {
     }
 
     // Step 3: Upsert child book node inside shelf.childrenBooks
+    const numericProgress = Number(progress ?? 0);
+    const effectiveStatus =
+      numericProgress >= 1.0 ? 'completed' : status || 'reading';
+
     let bookNode = shelf.childrenBooks.find((b) => b.bookId === centralBook.id);
     if (!bookNode) {
       bookNode = {
         bookId: centralBook.id,
         title: centralBook.title,
         author: centralBook.author,
-        status,
-        progress: Number(progress || 0),
+        status: effectiveStatus,
+        progress: numericProgress,
         currentChapter: Number(currentChapter || 0),
         currentPage: Number(currentPage || 0),
         updatedAt: new Date().toISOString(),
@@ -189,9 +193,9 @@ class UserTreeService {
     } else {
       bookNode.title = centralBook.title || bookNode.title;
       bookNode.author = centralBook.author || bookNode.author;
-      bookNode.status = status || bookNode.status;
+      bookNode.status = effectiveStatus || bookNode.status;
       bookNode.progress =
-        progress !== undefined ? Number(progress) : bookNode.progress;
+        progress !== undefined ? numericProgress : bookNode.progress;
       bookNode.currentChapter =
         currentChapter !== undefined
           ? Number(currentChapter)
@@ -238,12 +242,19 @@ class UserTreeService {
         !userTree.gamificationTree.streakNode.historyDates.includes(todayIso)
       ) {
         userTree.gamificationTree.streakNode.historyDates.push(todayIso);
+        const nextStreak =
+          Number(userTree.gamificationTree.streakNode.currentStreak || 0) + 1;
+        userTree.gamificationTree.streakNode.currentStreak = nextStreak;
+        userTree.gamificationTree.streakNode.longestStreak = Math.max(
+          Number(userTree.gamificationTree.streakNode.longestStreak || 0),
+          nextStreak
+        );
       }
     }
 
     if (
-      status === 'completed' ||
-      Number(progress) >= 1.0 ||
+      effectiveStatus === 'completed' ||
+      numericProgress >= 1.0 ||
       shelfId === 'challenge_2026'
     ) {
       const completedIds =
@@ -252,6 +263,25 @@ class UserTreeService {
         completedIds.push(centralBook.id);
       }
       userTree.gamificationTree.challengeNode.completedBookIds = completedIds;
+
+      if (effectiveStatus === 'completed' && shelfId !== 'completed') {
+        let completedShelf = userTree.readingTree.shelves.find(
+          (s) => s.shelfId === 'completed'
+        );
+        if (!completedShelf) {
+          completedShelf = {
+            shelfId: 'completed',
+            name: 'Уншиж дууссан',
+            childrenBooks: [],
+          };
+          userTree.readingTree.shelves.push(completedShelf);
+        }
+        if (
+          !completedShelf.childrenBooks.some((b) => b.bookId === centralBook.id)
+        ) {
+          completedShelf.childrenBooks.push({ ...bookNode });
+        }
+      }
     }
 
     const savedTree = await this.store.saveUserTree(userTree);

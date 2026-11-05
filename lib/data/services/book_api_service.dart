@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:readpack/data/book_repository.dart';
 import 'package:readpack/models/book.dart';
@@ -21,57 +20,52 @@ class BookApiService {
   }) : _client = client ?? http.Client();
 
   /// Fetches books via Smart Read-Through Search (Central Express/MongoDB Catalog
-  /// or Gutendex REST API) with automatic data cleaning and offline cache fallback.
+  /// first, then Gutendex REST API fallback) with automatic data cleaning and offline cache fallback.
   Future<List<Book>> fetchBooks({
     String query = '',
-    bool preferCentralBackend = false,
+    bool preferCentralBackend = true,
   }) async {
     final trimmed = query.trim();
-    final baseEndpoint = preferCentralBackend
-        ? '$backendBaseUrl/books/search'
-        : _gutendexBaseUrl;
-    final uri = trimmed.isEmpty
-        ? Uri.parse(baseEndpoint)
-        : Uri.parse('$baseEndpoint?search=${Uri.encodeComponent(trimmed)}');
+    final endpoints = preferCentralBackend
+        ? ['$backendBaseUrl/books/search', _gutendexBaseUrl]
+        : [_gutendexBaseUrl];
 
-    try {
-      final response = await _client.get(uri).timeout(defaultTimeout);
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data =
-            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-        final List<dynamic> results = data['results'] as List<dynamic>? ?? [];
-
-        final books = <Book>[];
-        for (final item in results) {
-          if (item is Map<String, dynamic>) {
-            final book = _parseRemoteBook(item);
-            if (book != null) {
-              books.add(book);
+    for (final baseEndpoint in endpoints) {
+      final uri = trimmed.isEmpty
+          ? Uri.parse(baseEndpoint)
+          : Uri.parse('$baseEndpoint?search=${Uri.encodeComponent(trimmed)}');
+      try {
+        final response = await _client.get(uri).timeout(defaultTimeout);
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> data = jsonDecode(
+            utf8.decode(response.bodyBytes),
+          ) as Map<String, dynamic>;
+          final List<dynamic> results =
+              data['results'] as List<dynamic>? ?? [];
+          final books = <Book>[];
+          for (final item in results) {
+            if (item is Map<String, dynamic>) {
+              final book = _parseRemoteBook(item);
+              if (book != null) {
+                books.add(book);
+              }
             }
           }
+          if (books.isNotEmpty) {
+            await _cacheBooks(books);
+            return books;
+          }
         }
-
-        if (books.isNotEmpty) {
-          await _cacheBooks(books);
-          return books;
-        }
+      } catch (_) {
+        // Try next endpoint or fall back to local cache
       }
-    } on SocketException {
-      // Offline mode
-    } on TimeoutException {
-      // Network timeout
-    } catch (_) {
-      // Fallback on any network or parsing error
     }
 
-    // Attempt cache fallback
     final cached = await getCachedBooks();
     if (cached.isNotEmpty) {
       return cached;
     }
 
-    // Default to bundled curated repository
     return BookRepository.getInitialBooks();
   }
 
@@ -83,6 +77,8 @@ class BookApiService {
     String shelfId = 'currently_reading',
     String status = 'reading',
     int minutesRead = 0,
+    Map<String, dynamic>? highlight,
+    Map<String, dynamic>? note,
   }) async {
     final uri = Uri.parse(
       '$backendBaseUrl/users/${Uri.encodeComponent(userIdOrEmail)}/reading',
@@ -100,6 +96,8 @@ class BookApiService {
               'currentChapter': book.currentChapterIndex,
               'currentPage': book.currentPage,
               'minutesRead': minutesRead,
+              if (highlight != null) 'highlight': highlight,
+              if (note != null) 'note': note,
             }),
           )
           .timeout(const Duration(seconds: 3));
@@ -123,13 +121,53 @@ class BookApiService {
           .post(
             uri,
             headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'email': email,
-              'name': name,
-            }),
+            body: jsonEncode({'email': email, 'name': name}),
           )
           .timeout(const Duration(seconds: 3));
       if (response.statusCode == 200) {
+        return jsonDecode(utf8.decode(response.bodyBytes))
+            as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Updates user profile & preferences in the MongoDB `UserAccountTree`.
+  Future<Map<String, dynamic>?> updateUserPreferencesTree({
+    required String userIdOrEmail,
+    required Map<String, dynamic> payload,
+  }) async {
+    final uri = Uri.parse(
+      '$backendBaseUrl/users/${Uri.encodeComponent(userIdOrEmail)}/tree',
+    );
+    try {
+      final response = await _client
+          .put(
+            uri,
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(const Duration(seconds: 3));
+      if (response.statusCode == 200) {
+        return jsonDecode(utf8.decode(response.bodyBytes))
+            as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Synchronizes a book directly into the Central Books Catalog (`POST /api/v1/books/sync`).
+  Future<Map<String, dynamic>?> syncBookToCentralCatalog(Book book) async {
+    final uri = Uri.parse('$backendBaseUrl/books/sync');
+    try {
+      final response = await _client
+          .post(
+            uri,
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({'book': book.toJson()}),
+          )
+          .timeout(const Duration(seconds: 3));
+      if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(utf8.decode(response.bodyBytes))
             as Map<String, dynamic>;
       }

@@ -64,7 +64,11 @@ class _SignInPageState extends State<SignInPage> {
 
     if (mounted) {
       setState(() => _isLoading = false);
-      context.read<BookProvider>().loginWithEmail(email, 'Enkush');
+      final localPart = email.split('@').first;
+      final derivedName = localPart.isEmpty
+          ? 'Enkush'
+          : '${localPart[0].toUpperCase()}${localPart.substring(1)}';
+      context.read<BookProvider>().loginWithEmail(email, derivedName);
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       } else {
@@ -82,6 +86,18 @@ class _SignInPageState extends State<SignInPage> {
       Navigator.of(context).pop();
     } else {
       Navigator.of(context).pushReplacementNamed(Routes.appshell);
+    }
+  }
+
+  void _loginWithSocial(String providerName) {
+    final email = _emailController.text.trim().contains('@')
+        ? _emailController.text.trim()
+        : '${providerName.toLowerCase()}@readpack.app';
+    context.read<BookProvider>().loginWithEmail(email, '$providerName Уншигч');
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacementNamed(Routes.appshell, arguments: 3);
     }
   }
 
@@ -186,7 +202,7 @@ class _SignInPageState extends State<SignInPage> {
               child: SocialAuthButton(
                 logolink: 'assets/public/logos/google.png',
                 label: 'Google',
-                action: _continueAsGuest,
+                action: () => _loginWithSocial('Google'),
               ),
             ),
             const SizedBox(width: 12),
@@ -194,7 +210,7 @@ class _SignInPageState extends State<SignInPage> {
               child: SocialAuthButton(
                 logolink: 'assets/public/logos/facebook.png',
                 label: 'Facebook',
-                action: _continueAsGuest,
+                action: () => _loginWithSocial('Facebook'),
               ),
             ),
           ],

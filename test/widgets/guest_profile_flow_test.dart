@@ -147,5 +147,26 @@ void main() {
 
       expect(find.text('AuthScreen'), findsOneWidget);
     });
+
+    testWidgets('ProfilePage renders without overflow on 360px screen at 2.0x text scale',
+        (tester) async {
+      tester.view.physicalSize = const Size(360, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final bookProvider = BookProvider();
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+      bookProvider.loginAsGuest();
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+          child: createProfileTestWidget(bookProvider),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
   });
 }

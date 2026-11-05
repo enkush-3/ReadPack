@@ -76,13 +76,17 @@ class ProfileSettingsCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              l10n?.t('profile.settings') ?? 'Тохиргоо',
-              style: TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+            Flexible(
+              child: Text(
+                l10n?.t('profile.settings') ?? 'Тохиргоо',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Serif',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
             TextButton.icon(

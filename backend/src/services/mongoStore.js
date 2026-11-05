@@ -103,11 +103,11 @@ class MongoStore {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(
-        this.storageFilePath,
-        JSON.stringify(this.state, null, 2),
-        'utf8'
-      );
+      const tmpPath = `${this.storageFilePath}.tmp.${process.pid}.${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+      fs.writeFileSync(tmpPath, JSON.stringify(this.state, null, 2), 'utf8');
+      fs.renameSync(tmpPath, this.storageFilePath);
     } catch (_) {}
   }
 
@@ -115,7 +115,7 @@ class MongoStore {
     if (this.mode === 'mongodb_mongoose' && this.BookModel) {
       return await this.BookModel.find({}).lean();
     }
-    return [...this.state.books];
+    return structuredClone(this.state.books);
   }
 
   async upsertBook(bookDoc) {
@@ -146,24 +146,24 @@ class MongoStore {
     );
 
     if (idx >= 0) {
-      this.state.books[idx] = {
+      this.state.books[idx] = structuredClone({
         ...this.state.books[idx],
         ...bookDoc,
         id: this.state.books[idx].id,
         updatedAt: new Date().toISOString(),
-      };
+      });
       this._persistToDisk();
-      return this.state.books[idx];
+      return structuredClone(this.state.books[idx]);
     }
 
-    const inserted = {
+    const inserted = structuredClone({
       ...bookDoc,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    };
+    });
     this.state.books.push(inserted);
     this._persistToDisk();
-    return inserted;
+    return structuredClone(inserted);
   }
 
   async findUserTree(userIdOrEmail) {
@@ -174,11 +174,11 @@ class MongoStore {
       }).lean();
     }
 
-    return (
+    const found =
       this.state.users.find(
         (u) => u.userId === userIdOrEmail || u.email.toLowerCase() === key
-      ) || null
-    );
+      ) || null;
+    return found ? structuredClone(found) : null;
   }
 
   async saveUserTree(userTreeDoc) {
@@ -191,18 +191,19 @@ class MongoStore {
       );
     }
 
+    const cloned = structuredClone(userTreeDoc);
     const idx = this.state.users.findIndex(
       (u) =>
-        u.userId === userTreeDoc.userId ||
-        u.email.toLowerCase() === userTreeDoc.email.toLowerCase()
+        u.userId === cloned.userId ||
+        u.email.toLowerCase() === cloned.email.toLowerCase()
     );
     if (idx >= 0) {
-      this.state.users[idx] = userTreeDoc;
+      this.state.users[idx] = cloned;
     } else {
-      this.state.users.push(userTreeDoc);
+      this.state.users.push(cloned);
     }
     this._persistToDisk();
-    return userTreeDoc;
+    return structuredClone(cloned);
   }
 }
 

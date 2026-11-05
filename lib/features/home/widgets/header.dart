@@ -44,7 +44,8 @@ class HomeHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const ReadPackLogo(size: 38),
+          const Flexible(child: ReadPackLogo(size: 38)),
+          const SizedBox(width: 8),
           AnimatedPressable(
             onTap: () {
               Navigator.of(context).pushNamed(Routes.auth);

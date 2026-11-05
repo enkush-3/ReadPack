@@ -6,6 +6,7 @@ class ProfileEditDialog {
   ProfileEditDialog._();
 
   static void show(BuildContext context, BookProvider bookProvider) {
+    if (bookProvider.userProfile.isGuest) return;
     final nameCtrl = TextEditingController(text: bookProvider.userProfile.name);
     int selectedGoal = bookProvider.userProfile.dailyGoalMinutes;
     final l10n = AppLocalizations.of(context);
@@ -76,8 +77,9 @@ class ProfileEditDialog {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [15, 30, 45, 60].map((mins) {
                       final isSelected = selectedGoal == mins;
                       return GestureDetector(
@@ -86,7 +88,7 @@ class ProfileEditDialog {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
+                            horizontal: 14,
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(

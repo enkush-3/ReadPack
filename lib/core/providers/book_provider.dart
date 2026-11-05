@@ -15,14 +15,11 @@ import 'package:readpack/models/notification_model.dart';
 import 'package:readpack/models/user_stats.dart';
 
 class BookProvider extends ChangeNotifier with BookCollectionMixin {
-  final BookApiService _apiService = BookApiService();
+  final BookApiService _apiService;
 
   List<Book> _books = BookRepository.getInitialBooks();
   List<String> _recentSearches = [
-    'Atomic Habits',
-    '1984',
-    'Clear Thinking',
-    'Sapiens',
+    'Atomic Habits', '1984', 'Clear Thinking', 'Sapiens',
   ];
   List<Bookmark> _bookmarks = DefaultProviderData.defaultBookmarks();
   List<NotificationItem> _notifications =
@@ -61,7 +58,8 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   String get librarySortBy => _librarySortBy;
   String get selectedMood => _selectedMood;
 
-  BookProvider() {
+  BookProvider({BookApiService? apiService})
+      : _apiService = apiService ?? BookApiService() {
     _initData();
   }
 
@@ -73,14 +71,11 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       BookFilterHelper.sortSavedBooks(_books, _librarySortBy);
   List<Book> get filteredBooks =>
       BookFilterHelper.filterCategory(_books, _homeSelectedCategory);
-
   String? get searchSuggestion =>
       SearchMatchingEngine.computeSearchSuggestion(_books, _searchQuery);
-
   List<Map<String, dynamic>> getChapterMatchesForBook(
           String bookId, String query) =>
       SearchMatchingEngine.findChapterMatches(_books, bookId, query);
-
   List<Book> get searchResults => SearchMatchingEngine.filterAndSortBooks(
         books: _books,
         query: _searchQuery,
@@ -93,7 +88,6 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   Future<void> _initData() async {
     _isLoading = true;
     notifyListeners();
-
     try {
       final state = await BookDataLoader.loadInitialState();
       _books = state.books;
@@ -116,7 +110,6 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   Future<void> fetchRemoteBooks({String? query}) async {
     _isFetchingRemote = true;
     notifyListeners();
-
     try {
       final remoteBooks =
           await _apiService.fetchBooks(query: query ?? _searchQuery);
@@ -148,6 +141,9 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     if (BookStateMutator.toggleSave(_books, bookId)) {
       notifyListeners();
       BookProviderPersistence.persistSavedBooks(_books);
+      BookProviderPersistence.syncBookReadingNode(
+          _apiService, _userProfile, _books, bookId,
+          shelfId: 'saved', status: 'saved');
     }
   }
 
@@ -168,23 +164,22 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
         currentChapterIndex: currentChapterIndex)) {
       notifyListeners();
       BookProviderPersistence.persistReadingProgress(_books);
+      BookProviderPersistence.syncBookReadingNode(
+          _apiService, _userProfile, _books, bookId);
     }
   }
 
   void updateReadingProgress(
       String bookId, int currentPage, double progress,
       [int? currentChapterIndex]) {
-    _userProfile = BookStateMutator.updateProgressAndStats(
-      _books,
-      _userProfile,
-      bookId,
-      currentPage,
-      progress,
-      currentChapterIndex,
-    );
+    _userProfile = BookStateMutator.updateProgressAndStats(_books, _userProfile,
+        bookId, currentPage, progress, currentChapterIndex);
     notifyListeners();
     BookProviderPersistence.persistReadingProgress(_books);
     BookProviderPersistence.persistUserProfile(_userProfile);
+    BookProviderPersistence.syncBookReadingNode(
+        _apiService, _userProfile, _books, bookId,
+        status: progress >= 1.0 ? 'completed' : 'reading');
   }
 
   void addReadingMinutes(int minutes) {
@@ -205,6 +200,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
         BookGamificationManager.loginWithEmail(_userProfile, email, name);
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
+    BookProviderPersistence.syncAuthTree(_apiService, _userProfile);
   }
 
   void logout() {
@@ -230,6 +226,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     );
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
+    BookProviderPersistence.syncProfilePreferences(_apiService, _userProfile);
   }
 
   void clearCache() {
@@ -242,6 +239,9 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     _bookmarks.insert(0, bookmark);
     notifyListeners();
     BookProviderPersistence.persistBookmarks(_bookmarks);
+    BookProviderPersistence.syncBookReadingNode(
+        _apiService, _userProfile, _books, bookmark.bookId,
+        highlight: {'text': bookmark.quote, 'chapterIndex': 0});
   }
 
   void removeBookmark(String bookmarkId) {
@@ -373,7 +373,6 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   int get userLevel =>
       BookGamificationManager.computeUserLevel(_userProfile.xp);
-
   String get userLevelTitle =>
       BookGamificationManager.computeUserLevelTitle(_userProfile.xp);
 
@@ -391,5 +390,6 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     );
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
+    BookProviderPersistence.syncProfilePreferences(_apiService, _userProfile);
   }
 }

@@ -184,4 +184,111 @@ test('ReadPack Express.js + MongoDB UserAccountTree & Smart Read-Through Book Ca
       );
     }
   );
+
+  await t.test(
+    '6. GET/PUT /api/v1/users/:userId/tree and POST /api/v1/books/sync update preferences, XP, and central catalog',
+    async () => {
+      const putRes = await fetch(
+        `${baseUrl}/api/v1/users/${encodeURIComponent('bat@readpack.app')}/tree`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            displayName: 'Bat-Erdene Reader',
+            dailyGoalMinutes: 45,
+            yearlyBookGoal: 30,
+            xpDelta: 150,
+          }),
+        }
+      );
+      assert.equal(putRes.status, 200);
+      const putData = await putRes.json();
+      assert.equal(
+        putData.userAccountTree.profileNode.displayName,
+        'Bat-Erdene Reader'
+      );
+      assert.equal(
+        putData.userAccountTree.profileNode.preferencesNode.dailyGoalMinutes,
+        45
+      );
+      assert.equal(
+        putData.userAccountTree.profileNode.preferencesNode.yearlyBookGoal,
+        30
+      );
+
+      const getRes = await fetch(
+        `${baseUrl}/api/v1/users/${encodeURIComponent('bat@readpack.app')}/tree`
+      );
+      assert.equal(getRes.status, 200);
+
+      const syncBookRes = await fetch(`${baseUrl}/api/v1/books/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'ext_clean_code_01',
+          title: '<b>Clean Code</b>',
+          authors: [{ name: 'Martin, Robert C.' }],
+        }),
+      });
+      assert.equal(syncBookRes.status, 201);
+      const syncBookData = await syncBookRes.json();
+      assert.equal(syncBookData.book.title, 'Clean Code');
+      assert.equal(syncBookData.book.author, 'Robert C. Martin');
+    }
+  );
+
+  await t.test(
+    '7. Concurrent parallel writes to MongoStore and 100% progress completion promotion',
+    async () => {
+      const parallelRequests = Array.from({ length: 5 }, (_, idx) =>
+        fetch(`${baseUrl}/api/v1/books/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: `parallel_book_${idx}`,
+            title: `Parallel Book ${idx}`,
+            author: `Author ${idx}`,
+          }),
+        })
+      );
+      const responses = await Promise.all(parallelRequests);
+      for (const r of responses) {
+        assert.equal(r.status, 201);
+      }
+
+      // Complete one book at progress 1.0
+      const compRes = await fetch(
+        `${baseUrl}/api/v1/users/${encodeURIComponent('bat@readpack.app')}/reading`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            book: {
+              id: 'parallel_book_0',
+              title: 'Parallel Book 0',
+              author: 'Author 0',
+            },
+            shelfId: 'currently_reading',
+            progress: 1.0,
+            minutesRead: 30,
+          }),
+        }
+      );
+      assert.equal(compRes.status, 201);
+      const compData = await compRes.json();
+      const completedShelf =
+        compData.userAccountTree.readingTree.shelves.find(
+          (s) => s.shelfId === 'completed'
+        );
+      assert.ok(
+        completedShelf.childrenBooks.some(
+          (b) => b.title === 'Parallel Book 0' && b.status === 'completed'
+        )
+      );
+      assert.ok(
+        compData.userAccountTree.gamificationTree.challengeNode.completedBookIds.length >=
+          1
+      );
+    }
+  );
 });
