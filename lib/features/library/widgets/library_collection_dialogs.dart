@@ -15,6 +15,9 @@ class LibraryCollectionDialogs {
         return Icons.star_rounded;
       case 'school':
         return Icons.school_rounded;
+      case 'download':
+      case 'download_done':
+        return Icons.download_done_rounded;
       case 'bookmark':
       default:
         return Icons.bookmark_rounded;

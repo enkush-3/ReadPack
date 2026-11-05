@@ -14,6 +14,7 @@ class DefaultProviderData {
         quote: 'War is peace. Freedom is slavery. Ignorance is strength.',
         note: 'The party’s primary paradox slogan.',
         colorHex: 0xFFFFD54F,
+        isLiked: true,
         createdAt: DateTime.now().subtract(const Duration(days: 3)),
       ),
       Bookmark(
@@ -26,7 +27,34 @@ class DefaultProviderData {
             'Between stimulus and response lies a space. In that space is our power to choose our response.',
         note: 'Fundamental to pausing default emotional reactions.',
         colorHex: 0xFF81C784,
+        isLiked: true,
         createdAt: DateTime.now().subtract(const Duration(days: 1)),
+      ),
+      Bookmark(
+        id: 'bm_default_3',
+        bookId: 'book_3',
+        bookTitle: 'Atomic Habits',
+        chapterTitle: 'Chapter 1: The Surprising Power of Atomic Habits',
+        pageNumber: 27,
+        quote:
+            'You do not rise to the level of your goals. You fall to the level of your systems.',
+        note: 'Зорилго биш өдөр тутмын систем, зуршил амжилтыг шийддэг.',
+        colorHex: 0xFF64B5F6,
+        isLiked: false,
+        createdAt: DateTime.now().subtract(const Duration(hours: 12)),
+      ),
+      Bookmark(
+        id: 'bm_default_4',
+        bookId: 'book_4',
+        bookTitle: 'Sapiens',
+        chapterTitle: 'Part 1: The Cognitive Revolution',
+        pageNumber: 42,
+        quote:
+            'We study history not in order to know the future, but to widen our horizons.',
+        note: 'Түүх бидний сэтгэлгээний хүрээг тэлдэг.',
+        colorHex: 0xFFBA68C8,
+        isLiked: true,
+        createdAt: DateTime.now().subtract(const Duration(hours: 4)),
       ),
     ];
   }

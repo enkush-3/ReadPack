@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/features/home/widgets/streak_modal_sheet.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/animated_pressable.dart';
 
 class ProfileAchievementsCard extends StatelessWidget {
   final BookProvider bookProvider;
@@ -56,6 +58,8 @@ class ProfileAchievementsCard extends StatelessWidget {
               value: '${profile.streakDays}',
               icon: Icons.local_fire_department_rounded,
               colorScheme: colorScheme,
+              onTap: () =>
+                  showStreakModalSheet(context, profile, colorScheme, l10n),
             ),
             const SizedBox(width: 12),
             _buildStatCard(
@@ -176,42 +180,65 @@ class ProfileAchievementsCard extends StatelessWidget {
     required String value,
     required IconData icon,
     required ColorScheme colorScheme,
+    VoidCallback? onTap,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: colorScheme.primary, size: 22),
-            const SizedBox(height: 10),
-            Text(
-              value,
-              style: TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
+    final cardContent = Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: onTap != null
+              ? colorScheme.primary.withValues(alpha: 0.35)
+              : colorScheme.outlineVariant.withValues(alpha: 0.3),
         ),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: colorScheme.primary, size: 22),
+              if (onTap != null)
+                Icon(
+                  Icons.touch_app_rounded,
+                  size: 14,
+                  color: colorScheme.primary.withValues(alpha: 0.6),
+                ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: TextStyle(
+              fontFamily: 'Serif',
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
     );
+
+    if (onTap != null) {
+      return Expanded(
+        child: AnimatedPressable(
+          onTap: onTap,
+          child: cardContent,
+        ),
+      );
+    }
+
+    return Expanded(child: cardContent);
   }
 }

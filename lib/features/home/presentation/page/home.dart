@@ -4,7 +4,6 @@ import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/home/widgets/books_card.dart';
 import 'package:readpack/features/home/widgets/categories.dart';
-import 'package:readpack/features/home/widgets/continue_reading_card.dart';
 import 'package:readpack/features/home/widgets/header.dart';
 import 'package:readpack/features/home/widgets/home_featured_section.dart';
 import 'package:readpack/features/home/widgets/home_quote_banner.dart';
@@ -121,28 +120,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
 
-                // 5. Continue Reading Section (if any in progress)
-                if (bookProvider.continueReadingBooks.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: ContinueReadingCard(
-                        book: bookProvider.continueReadingBooks.first,
-                        onTap: () {
-                          final currentBook =
-                              bookProvider.continueReadingBooks.first;
-                          Navigator.of(context).pushNamed(
-                            Routes.reader,
-                            arguments: {
-                              'book': currentBook,
-                              'initialChapterIndex':
-                                  currentBook.currentChapterIndex,
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ),
+
 
                 // 6. Featured Books Section
                 SliverToBoxAdapter(

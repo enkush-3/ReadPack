@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
-import 'package:readpack/features/profile/widgets/profile_edit_dialog.dart';
+import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 
@@ -136,7 +136,7 @@ class ProfileHeaderCard extends StatelessWidget {
             ),
             if (!profile.isGuest)
               AnimatedPressable(
-                onTap: () => ProfileEditDialog.show(context, bookProvider),
+                onTap: () => Navigator.of(context).pushNamed(Routes.settings),
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(

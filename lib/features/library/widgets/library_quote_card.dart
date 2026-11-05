@@ -62,24 +62,59 @@ class LibraryQuoteCard extends StatelessWidget {
                   ),
                 ),
               ),
-              GestureDetector(
-                onTap: () {
-                  provider.removeBookmark(bm.id);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        l10n?.t('library.quote_deleted') ??
-                            'Ишлэл устгагдлаа',
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      provider.toggleLikeBookmark(bm.id);
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            !bm.isLiked
+                                ? (l10n?.t('library.quote_liked') ??
+                                    'Таалагдсан ишлэлд нэмэгдлээ ❤️')
+                                : (l10n?.t('library.quote_unliked') ??
+                                    'Таалагдсан ишлэлээс хасагдлаа'),
+                          ),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Icon(
+                        bm.isLiked
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        size: 20,
+                        color: bm.isLiked
+                            ? Colors.redAccent
+                            : colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
-                      duration: const Duration(seconds: 1),
                     ),
-                  );
-                },
-                child: Icon(
-                  Icons.delete_outline_rounded,
-                  size: 18,
-                  color: colorScheme.onSurface.withValues(alpha: 0.4),
-                ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      provider.removeBookmark(bm.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            l10n?.t('library.quote_deleted') ??
+                                'Ишлэл устгагдлаа',
+                          ),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    child: Icon(
+                      Icons.delete_outline_rounded,
+                      size: 18,
+                      color: colorScheme.onSurface.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

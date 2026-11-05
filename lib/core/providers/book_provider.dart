@@ -215,7 +215,9 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       int? dailyGoalMinutes,
       bool? notificationsEnabled,
       bool? recommendationsEnabled,
-      bool? streakFreezeAvailable}) {
+      bool? streakFreezeAvailable,
+      List<String>? favoriteGenres,
+      int? yearlyGoalBooks}) {
     _userProfile = _userProfile.copyWith(
       name: name,
       email: email,
@@ -223,6 +225,8 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       notificationsEnabled: notificationsEnabled,
       recommendationsEnabled: recommendationsEnabled,
       streakFreezeAvailable: streakFreezeAvailable,
+      favoriteGenres: favoriteGenres,
+      yearlyGoalBooks: yearlyGoalBooks,
     );
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
@@ -248,6 +252,17 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     _bookmarks.removeWhere((b) => b.id == bookmarkId);
     notifyListeners();
     BookProviderPersistence.persistBookmarks(_bookmarks);
+  }
+
+  void toggleLikeBookmark(String bookmarkId) {
+    final index = _bookmarks.indexWhere((b) => b.id == bookmarkId);
+    if (index != -1) {
+      _bookmarks[index] = _bookmarks[index].copyWith(
+        isLiked: !_bookmarks[index].isLiked,
+      );
+      notifyListeners();
+      BookProviderPersistence.persistBookmarks(_bookmarks);
+    }
   }
 
   void addReview(String bookId, BookReview review) {
