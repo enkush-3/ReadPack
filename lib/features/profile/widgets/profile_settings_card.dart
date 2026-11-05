@@ -47,7 +47,14 @@ class ProfileSettingsCard extends StatelessWidget {
               onPressed: () {
                 Navigator.pop(ctx);
                 bookProvider.logout();
-                Navigator.of(context).pushReplacementNamed(Routes.auth);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      l10n?.t('success.logout') ?? 'Амжилттай гарлаа',
+                    ),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
               },
               child: Text(l10n?.t('auth.logout') ?? 'Гарах'),
             ),
@@ -224,23 +231,25 @@ class ProfileSettingsCard extends StatelessWidget {
                   );
                 },
               ),
-              Divider(
-                height: 1,
-                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-              ),
+              if (!profile.isGuest) ...[
+                Divider(
+                  height: 1,
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                ),
 
-              // Logout Action
-              ListTile(
-                leading: const Icon(
-                  Icons.logout_rounded,
-                  color: Colors.redAccent,
+                // Logout Action
+                ListTile(
+                  leading: const Icon(
+                    Icons.logout_rounded,
+                    color: Colors.redAccent,
+                  ),
+                  title: Text(
+                    l10n?.t('profile.logout') ?? 'Гарах (Logout)',
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                  onTap: () => _showLogoutDialog(context),
                 ),
-                title: Text(
-                  l10n?.t('profile.logout') ?? 'Гарах (Logout)',
-                  style: const TextStyle(color: Colors.redAccent),
-                ),
-                onTap: () => _showLogoutDialog(context),
-              ),
+              ],
             ],
           ),
         ),

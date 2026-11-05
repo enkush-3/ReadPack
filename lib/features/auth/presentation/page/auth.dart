@@ -85,12 +85,106 @@ class _AuthPageState extends State<AuthPage>
           child: Column(
             children: [
               _buildTopNav(),
+              _buildSegmentedToggle(),
               Expanded(
                 child: _buildAnimatedCard(),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSegmentedToggle() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final signinText = l10n?.t('auth.signin') ?? 'Нэвтрэх';
+    final signupText = l10n?.t('auth.signup') ?? 'Бүртгүүлэх';
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: _showLogin ? null : _switchMode,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _showLogin ? colorScheme.surface : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: _showLogin
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    signinText,
+                    style: TextStyle(
+                      fontWeight:
+                          _showLogin ? FontWeight.bold : FontWeight.w500,
+                      color: _showLogin
+                          ? colorScheme.primary
+                          : colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: !_showLogin ? null : _switchMode,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: !_showLogin ? colorScheme.surface : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: !_showLogin
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    signupText,
+                    style: TextStyle(
+                      fontWeight:
+                          !_showLogin ? FontWeight.bold : FontWeight.w500,
+                      color: !_showLogin
+                          ? colorScheme.primary
+                          : colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/providers/theme_provider.dart';
 import 'package:readpack/features/profile/widgets/profile_achievements_card.dart';
 import 'package:readpack/features/profile/widgets/profile_challenge_card.dart';
+import 'package:readpack/features/profile/widgets/profile_guest_card.dart';
 import 'package:readpack/features/profile/widgets/profile_habits_card.dart';
 import 'package:readpack/features/profile/widgets/profile_header_card.dart';
 import 'package:readpack/features/profile/widgets/profile_league_card.dart';
@@ -32,45 +33,51 @@ class ProfilePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // User Header (Avatar, Name, Guest badge & Guest prompt)
+              // User Header (Avatar, Name, Guest badge)
               ProfileHeaderCard(bookProvider: bookProvider),
 
               const SizedBox(height: 20),
 
-              // Level & XP Progression Card
-              ProfileXpCard(bookProvider: bookProvider),
+              if (profile.isGuest) ...[
+                // Guest Onboarding & Feature Teaser Card
+                ProfileGuestCard(bookProvider: bookProvider),
+                const SizedBox(height: 24),
+              ] else ...[
+                // Level & XP Progression Card
+                ProfileXpCard(bookProvider: bookProvider),
 
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Weekly League / Leaderboard Card
-              ProfileLeagueCard(bookProvider: bookProvider),
+                // Weekly League / Leaderboard Card
+                ProfileLeagueCard(bookProvider: bookProvider),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // Streak Banner
-              _buildStreakBanner(profile, colorScheme, l10n),
+                // Streak Banner
+                _buildStreakBanner(profile, colorScheme, l10n),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Daily Reading Goal & 2026 Reading Challenge
-              ProfileChallengeCard(bookProvider: bookProvider),
+                // Daily Reading Goal & 2026 Reading Challenge
+                ProfileChallengeCard(bookProvider: bookProvider),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Reading Habits & Time of Day Insights
-              const ProfileHabitsCard(),
+                // Reading Habits & Time of Day Insights
+                const ProfileHabitsCard(),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Statistics & Achievements
-              ProfileAchievementsCard(bookProvider: bookProvider),
+                // Statistics & Achievements
+                ProfileAchievementsCard(bookProvider: bookProvider),
 
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Personalization / Retake Onboarding Card
-              const ProfileRetakeCard(),
+                // Personalization / Retake Onboarding Card
+                const ProfileRetakeCard(),
 
-              const SizedBox(height: 28),
+                const SizedBox(height: 28),
+              ],
 
               // Settings Card
               ProfileSettingsCard(

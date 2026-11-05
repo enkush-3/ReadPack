@@ -44,13 +44,71 @@ class ReaderPageView extends StatelessWidget {
     final bookProvider = context.watch<BookProvider>();
     final pages = ReaderThemeHelpers.paginateChapter(currentChapter.content);
     final pageCount = pages.length;
+    final hasNextChapter =
+        chapters.isNotEmpty && currentChapterIndex < chapters.length - 1;
+    final totalPageCount = pageCount + (hasNextChapter ? 1 : 0);
 
     return PageView.builder(
       controller: pageController,
-      itemCount: pageCount,
+      itemCount: totalPageCount,
       physics: const BouncingScrollPhysics(),
       onPageChanged: onPageChanged,
       itemBuilder: (context, pIndex) {
+        if (pIndex >= pageCount) {
+          final nextChapter = chapters[currentChapterIndex + 1];
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('🎉', style: TextStyle(fontSize: 48)),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${currentChapter.title} уншиж дууслаа!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'Serif',
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: readerTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Дараагийн бүлэг: ${nextChapter.title}',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: readerTextColor.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: () => onGoToChapter(currentChapterIndex + 1),
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: Text(
+                      l10n?.t('reader.next_chapter') ?? 'Дараагийн бүлэг',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         final pageText = pages[pIndex];
         final isLastPage = pIndex == pageCount - 1;
 

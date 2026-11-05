@@ -65,13 +65,24 @@ class _SignInPageState extends State<SignInPage> {
     if (mounted) {
       setState(() => _isLoading = false);
       context.read<BookProvider>().loginWithEmail(email, 'Enkush');
-      Navigator.of(context).pushReplacementNamed(Routes.appshell);
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        Navigator.of(context).pushReplacementNamed(
+          Routes.appshell,
+          arguments: 3,
+        );
+      }
     }
   }
 
   void _continueAsGuest() {
     context.read<BookProvider>().loginAsGuest();
-    Navigator.of(context).pushReplacementNamed(Routes.appshell);
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushReplacementNamed(Routes.appshell);
+    }
   }
 
   @override

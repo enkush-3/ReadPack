@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
-import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/profile/widgets/profile_edit_dialog.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
@@ -133,71 +132,6 @@ class ProfileHeaderCard extends StatelessWidget {
             ),
           ],
         ),
-
-        // Guest Mode Banner Card
-        if (profile.isGuest) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  colorScheme.primaryContainer.withValues(alpha: 0.35),
-                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: colorScheme.primary.withValues(alpha: 0.2),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline_rounded,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    l10n?.t('profile.guest_prompt') ??
-                        'Та зочны горимоор орсон байна. Бүртгэл үүсгэж уншлагын ахицаа хадгалаарай.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 0,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(Routes.auth);
-                  },
-                  child: Text(
-                    l10n?.t('profile.login_signup') ?? 'Нэвтрэх',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }
