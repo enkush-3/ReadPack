@@ -7,6 +7,8 @@ import 'package:readpack/features/profile/widgets/profile_challenge_card.dart';
 import 'package:readpack/features/profile/widgets/profile_edit_dialog.dart';
 import 'package:readpack/features/quotes/presentation/phone_widget_sheet.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/user_avatar.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -17,16 +19,22 @@ class SettingsPage extends StatelessWidget {
     final bookProvider = Provider.of<BookProvider>(context);
     final profile = bookProvider.userProfile;
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context);
+    final dangerColor =
+        isDark ? const Color(0xFFF87171) : const Color(0xFFB84A4A);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
         title: Text(
           l10n?.t('profile.settings') ?? 'Тохиргоо',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Serif',
             fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
           ),
         ),
         elevation: 0,
@@ -37,48 +45,27 @@ class SettingsPage extends StatelessWidget {
         children: [
           // Section 1: Профайл & Бүртгэл (Profile & Account)
           _buildSectionHeader(
-            'Профайл & Бүртгэл',
+            l10n?.t('settings.profile_account') ?? 'Профайл & Бүртгэл',
             colorScheme,
           ),
           const SizedBox(height: 8),
           _buildCard(
             colorScheme: colorScheme,
+            isDark: isDark,
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: profile.isGuest
-                            ? colorScheme.surfaceContainerHighest
-                            : null,
-                        gradient: profile.isGuest
-                            ? null
-                            : LinearGradient(
-                                colors: [
-                                  colorScheme.primary,
-                                  colorScheme.primary.withValues(alpha: 0.7),
-                                ],
-                              ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: profile.isGuest
-                            ? Icon(Icons.person_outline_rounded,
-                                color: colorScheme.primary)
-                            : Text(
-                                profile.name.isNotEmpty
-                                    ? profile.name[0].toUpperCase()
-                                    : 'U',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onPrimary,
-                                ),
-                              ),
+                    AnimatedPressable(
+                      onTap: profile.isGuest
+                          ? null
+                          : () => ProfileEditDialog.show(context, bookProvider),
+                      child: UserAvatar(
+                        profile: profile,
+                        size: 56,
+                        fontSize: 22,
+                        showEditBadge: !profile.isGuest,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -104,14 +91,18 @@ class SettingsPage extends StatelessWidget {
                               const SizedBox(width: 6),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
+                                    horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: colorScheme.primary
-                                      .withValues(alpha: 0.12),
+                                      .withValues(alpha: 0.10),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  profile.isGuest ? 'Зочин' : 'Бүртгэлтэй',
+                                  profile.isGuest
+                                      ? (l10n?.t('profile.guest_badge') ??
+                                          'Зочин')
+                                      : (l10n?.t('settings.registered_badge') ??
+                                          'Бүртгэлтэй'),
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
@@ -124,11 +115,13 @@ class SettingsPage extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             profile.isGuest
-                                ? 'Нэвтэрч өөрийн бүртгэлийг үүсгээрэй'
+                                ? (l10n?.t('settings.guest_subtitle') ??
+                                    'Нэвтэрч өөрийн бүртгэлийг үүсгээрэй')
                                 : profile.email,
                             style: TextStyle(
                               fontSize: 12,
-                              color: colorScheme.onSurface.withValues(alpha: 0.6),
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -144,18 +137,21 @@ class SettingsPage extends StatelessWidget {
               if (!profile.isGuest) ...[
                 ListTile(
                   leading: Icon(
-                    Icons.badge_outlined,
+                    Icons.camera_alt_outlined,
                     color: colorScheme.primary,
                   ),
-                  title: const Text(
-                    'Профайл мэдээлэл засах',
-                    style: TextStyle(fontWeight: FontWeight.w500),
+                  title: Text(
+                    l10n?.t('settings.edit_profile_title') ??
+                        'Профайл зураг & мэдээлэл засах',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  subtitle: const Text(
-                    'Нэр болон уншлагын тохиргоог шинэчлэх',
-                    style: TextStyle(fontSize: 12),
+                  subtitle: Text(
+                    l10n?.t('settings.edit_profile_sub') ??
+                        'Зураг, нэр болон уншлагын тохиргоог шинэчлэх',
+                    style: const TextStyle(fontSize: 12),
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  trailing:
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                   onTap: () => ProfileEditDialog.show(context, bookProvider),
                 ),
                 Divider(
@@ -163,28 +159,29 @@ class SettingsPage extends StatelessWidget {
                   color: colorScheme.outlineVariant.withValues(alpha: 0.25),
                 ),
                 ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.logout_rounded,
-                    color: Colors.redAccent,
+                    color: dangerColor,
                   ),
-                  title: const Text(
-                    'Бүртгэлээс гарах',
+                  title: Text(
+                    l10n?.t('profile.logout') ?? 'Бүртгэлээс гарах',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.redAccent,
+                      color: dangerColor,
                     ),
                   ),
                   onTap: () {
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Бүртгэлээс гарах уу?'),
-                        content: const Text(
+                        title: Text(l10n?.t('settings.logout_confirm_title') ??
+                            'Бүртгэлээс гарах уу?'),
+                        content: Text(l10n?.t('settings.logout_confirm_desc') ??
                             'Та гарвал зочин горимд шилжих болно.'),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx),
-                            child: const Text('Болих'),
+                            child: Text(l10n?.t('common.cancel') ?? 'Болих'),
                           ),
                           TextButton(
                             onPressed: () {
@@ -192,9 +189,9 @@ class SettingsPage extends StatelessWidget {
                               bookProvider.logout();
                               Navigator.pop(context);
                             },
-                            child: const Text(
-                              'Гарах',
-                              style: TextStyle(color: Colors.redAccent),
+                            child: Text(
+                              l10n?.t('profile.logout') ?? 'Гарах',
+                              style: TextStyle(color: dangerColor),
                             ),
                           ),
                         ],
@@ -208,15 +205,18 @@ class SettingsPage extends StatelessWidget {
                     Icons.login_rounded,
                     color: colorScheme.primary,
                   ),
-                  title: const Text(
-                    'Нэвтрэх / Бүртгүүлэх',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  title: Text(
+                    l10n?.t('settings.login_register') ??
+                        'Нэвтрэх / Бүртгүүлэх',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  subtitle: const Text(
-                    'Өөрийн хувийн сан, лиг болон тэмдэглэлүүдээ хадгалах',
-                    style: TextStyle(fontSize: 12),
+                  subtitle: Text(
+                    l10n?.t('settings.login_register_sub') ??
+                        'Өөрийн хувийн сан, лиг болон тэмдэглэлүүдээ хадгалах',
+                    style: const TextStyle(fontSize: 12),
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  trailing:
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                   onTap: () {
                     Navigator.of(context).pushNamed(Routes.auth);
                   },
@@ -229,7 +229,8 @@ class SettingsPage extends StatelessWidget {
 
           // Section 2: Уншлагын зорилго & 2026 челленж
           _buildSectionHeader(
-            'Уншлагын зорилго & 2026 челленж',
+            l10n?.t('settings.goals_and_challenge') ??
+                'Уншлагын зорилго & 2026 челленж',
             colorScheme,
           ),
           const SizedBox(height: 12),
@@ -237,19 +238,22 @@ class SettingsPage extends StatelessWidget {
           const SizedBox(height: 16),
           _buildCard(
             colorScheme: colorScheme,
+            isDark: isDark,
             children: [
               ListTile(
                 leading: Icon(
                   Icons.tune_rounded,
                   color: colorScheme.primary,
                 ),
-                title: const Text(
-                  'Зорилго & Сонирхол шинэчлэх',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                title: Text(
+                  l10n?.t('settings.update_goals_interests') ??
+                      'Зорилго & Сонирхол шинэчлэх',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: const Text(
-                  'Унших жанр, өдрийн минутын зорилгоо шинээр тодорхойлох',
-                  style: TextStyle(fontSize: 12),
+                subtitle: Text(
+                  l10n?.t('settings.update_goals_interests_sub') ??
+                      'Унших жанр, өдрийн минутын зорилгоо шинээр тодорхойлох',
+                  style: const TextStyle(fontSize: 12),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                 onTap: () {
@@ -268,15 +272,15 @@ class SettingsPage extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Өдрийн зорилго:',
-                          style: TextStyle(
+                        Text(
+                          '${l10n?.t('profile.daily_goal') ?? 'Өдрийн зорилго'}:',
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
-                          '${profile.dailyGoalMinutes} минут/өдөр',
+                          '${profile.dailyGoalMinutes} ${l10n?.t('settings.mins_per_day') ?? 'минут/өдөр'}',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -297,26 +301,37 @@ class SettingsPage extends StatelessWidget {
                               );
                             },
                             child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 150),
+                              duration: const Duration(milliseconds: 160),
                               margin: const EdgeInsets.symmetric(horizontal: 3),
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               decoration: BoxDecoration(
                                 color: isSel
-                                    ? colorScheme.primary
+                                    ? (isDark
+                                        ? colorScheme.primary
+                                        : colorScheme.primary
+                                            .withValues(alpha: 0.14))
                                     : colorScheme.surfaceContainerHighest
-                                        .withValues(alpha: 0.4),
+                                        .withValues(alpha: 0.35),
                                 borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: isSel
+                                      ? colorScheme.primary
+                                          .withValues(alpha: 0.6)
+                                      : Colors.transparent,
+                                ),
                               ),
                               child: Center(
                                 child: Text(
-                                  '$mins мин',
+                                  '$mins ${l10n?.t('book.minutes_short') ?? 'мин'}',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: isSel
                                         ? FontWeight.bold
                                         : FontWeight.w500,
                                     color: isSel
-                                        ? colorScheme.onPrimary
+                                        ? (isDark
+                                            ? colorScheme.onPrimary
+                                            : colorScheme.primary)
                                         : colorScheme.onSurface,
                                   ),
                                 ),
@@ -338,9 +353,10 @@ class SettingsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Сонирхсон төрлүүд:',
-                      style: TextStyle(
+                    Text(
+                      l10n?.t('settings.favorite_genres') ??
+                          'Сонирхсон төрлүүд:',
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -360,7 +376,8 @@ class SettingsPage extends StatelessWidget {
                         final isFav = profile.favoriteGenres.contains(genre);
                         return GestureDetector(
                           onTap: () {
-                            final current = List<String>.from(profile.favoriteGenres);
+                            final current =
+                                List<String>.from(profile.favoriteGenres);
                             if (isFav) {
                               if (current.length > 1) current.remove(genre);
                             } else {
@@ -376,13 +393,13 @@ class SettingsPage extends StatelessWidget {
                                 horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
                               color: isFav
-                                  ? colorScheme.primary.withValues(alpha: 0.15)
+                                  ? colorScheme.primary.withValues(alpha: 0.12)
                                   : colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.35),
+                                      .withValues(alpha: 0.32),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: isFav
-                                    ? colorScheme.primary
+                                    ? colorScheme.primary.withValues(alpha: 0.5)
                                     : Colors.transparent,
                               ),
                             ),
@@ -429,21 +446,72 @@ class SettingsPage extends StatelessWidget {
           const SizedBox(height: 8),
           _buildCard(
             colorScheme: colorScheme,
+            isDark: isDark,
             children: [
-              ListTile(
-                leading: Icon(
-                  themeProvider.isDarkMode
-                      ? Icons.dark_mode_rounded
-                      : Icons.light_mode_rounded,
-                  color: colorScheme.primary,
-                ),
-                title: Text(
-                  l10n?.t('profile.dark_mode') ?? 'Харанхуй горим',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                trailing: Switch(
-                  value: themeProvider.isDarkMode,
-                  onChanged: (_) => themeProvider.toggleTheme(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          themeProvider.themeMode == ThemeMode.system
+                              ? Icons.brightness_auto_rounded
+                              : (themeProvider.isDarkMode
+                                  ? Icons.dark_mode_rounded
+                                  : Icons.light_mode_rounded),
+                          size: 20,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          l10n?.t('settings.theme_mode_title') ??
+                              'Өнгөний горим (Theme)',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _buildThemeModeChip(
+                          label: l10n?.t('settings.theme_system') ?? 'Систем',
+                          icon: Icons.brightness_auto_rounded,
+                          isSelected:
+                              themeProvider.themeMode == ThemeMode.system,
+                          onTap: () =>
+                              themeProvider.setThemeMode(ThemeMode.system),
+                          colorScheme: colorScheme,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildThemeModeChip(
+                          label: l10n?.t('settings.theme_light') ?? 'Цайвар',
+                          icon: Icons.light_mode_rounded,
+                          isSelected:
+                              themeProvider.themeMode == ThemeMode.light,
+                          onTap: () =>
+                              themeProvider.setThemeMode(ThemeMode.light),
+                          colorScheme: colorScheme,
+                          isDark: isDark,
+                        ),
+                        const SizedBox(width: 8),
+                        _buildThemeModeChip(
+                          label: l10n?.t('settings.theme_dark') ?? 'Харанхуй',
+                          icon: Icons.dark_mode_rounded,
+                          isSelected: themeProvider.themeMode == ThemeMode.dark,
+                          onTap: () =>
+                              themeProvider.setThemeMode(ThemeMode.dark),
+                          colorScheme: colorScheme,
+                          isDark: isDark,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
               Divider(
@@ -486,6 +554,7 @@ class SettingsPage extends StatelessWidget {
           const SizedBox(height: 8),
           _buildCard(
             colorScheme: colorScheme,
+            isDark: isDark,
             children: [
               ListTile(
                 leading: Icon(
@@ -533,25 +602,29 @@ class SettingsPage extends StatelessWidget {
 
           // Section 5: Утасны дэлгэцийн виджет (Phone Screen Widget)
           _buildSectionHeader(
-            'Утасны дэлгэцийн виджет',
+            l10n?.t('settings.phone_widget_section') ??
+                'Утасны дэлгэцийн виджет',
             colorScheme,
           ),
           const SizedBox(height: 8),
           _buildCard(
             colorScheme: colorScheme,
+            isDark: isDark,
             children: [
               ListTile(
                 leading: Icon(
                   Icons.widgets_rounded,
                   color: colorScheme.primary,
                 ),
-                title: const Text(
-                  'Ишлэлийн виджет тохируулах',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                title: Text(
+                  l10n?.t('settings.configure_widget') ??
+                      'Ишлэлийн виджет тохируулах',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                subtitle: const Text(
-                  'Өдрийн ишлэл эсвэл хадгалсан ишлэлээ утасны дэлгэцэнд байршуулах',
-                  style: TextStyle(fontSize: 12),
+                subtitle: Text(
+                  l10n?.t('settings.configure_widget_sub') ??
+                      'Өдрийн ишлэл эсвэл хадгалсан ишлэлээ утасны дэлгэцэнд байршуулах',
+                  style: const TextStyle(fontSize: 12),
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                 onTap: () => PhoneWidgetSheet.show(context),
@@ -589,6 +662,65 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  Widget _buildThemeModeChip({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required ColorScheme colorScheme,
+    required bool isDark,
+  }) {
+    return Expanded(
+      child: AnimatedPressable(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? (isDark
+                    ? colorScheme.primary
+                    : colorScheme.primary.withValues(alpha: 0.14))
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.32),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? colorScheme.primary.withValues(alpha: 0.65)
+                  : colorScheme.outlineVariant.withValues(alpha: 0.3),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: isSelected
+                    ? (isDark ? colorScheme.onPrimary : colorScheme.primary)
+                    : colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected
+                        ? (isDark ? colorScheme.onPrimary : colorScheme.primary)
+                        : colorScheme.onSurface.withValues(alpha: 0.8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(String title, ColorScheme colorScheme) {
     return Text(
       title,
@@ -596,21 +728,25 @@ class SettingsPage extends StatelessWidget {
         fontSize: 13,
         fontWeight: FontWeight.bold,
         color: colorScheme.primary,
-        letterSpacing: 0.5,
+        letterSpacing: 0.4,
       ),
     );
   }
 
   Widget _buildCard({
     required ColorScheme colorScheme,
+    required bool isDark,
     required List<Widget> children,
   }) {
     return Material(
-      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+      color: isDark
+          ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.25)
+          : colorScheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
         side: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+          color: colorScheme.outlineVariant
+              .withValues(alpha: isDark ? 0.3 : 0.45),
         ),
       ),
       clipBehavior: Clip.antiAlias,

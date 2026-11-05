@@ -6,13 +6,16 @@ class BookGamificationManager {
     final oldMinutes = profile.minutesReadToday;
     final newMinutes = oldMinutes + minutes;
     int earnedXp = minutes * 5;
+    int newStreak = profile.streakDays;
     if (oldMinutes < profile.dailyGoalMinutes &&
         newMinutes >= profile.dailyGoalMinutes) {
       earnedXp += 50;
+      newStreak += 1;
     }
 
     var updated = profile.copyWith(
       minutesReadToday: newMinutes,
+      streakDays: newStreak,
       xp: profile.xp + earnedXp,
     );
 

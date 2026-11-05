@@ -106,11 +106,9 @@ class ReaderBookmarkModal {
                       decoration: BoxDecoration(
                         color: Color(selectedColorHex).withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border(
-                          left: BorderSide(
-                            color: Color(selectedColorHex),
-                            width: 4,
-                          ),
+                        border: Border.all(
+                          color: Color(selectedColorHex).withValues(alpha: 0.8),
+                          width: 1.5,
                         ),
                       ),
                       child: Text(

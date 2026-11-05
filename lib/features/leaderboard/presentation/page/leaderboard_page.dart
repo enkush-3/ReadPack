@@ -1,10 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/features/shared/common/refresh.dart';
 import 'package:readpack/helper/translation.dart';
 
-class LeaderboardPage extends StatelessWidget {
+class LeaderboardPage extends StatefulWidget {
   const LeaderboardPage({super.key});
+
+  @override
+  State<LeaderboardPage> createState() => _LeaderboardPageState();
+}
+
+class _LeaderboardPageState extends State<LeaderboardPage> {
+  bool _isRefreshing = false;
+  int _refreshSeed = 0;
+
+  int _daysRemainingInMonth() {
+    final now = DateTime.now();
+    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
+    final remaining = lastDayOfMonth - now.day;
+    return remaining > 0 ? remaining : 1;
+  }
+
+  Future<void> _handleRefresh(BookProvider provider) async {
+    setState(() => _isRefreshing = true);
+    await provider.refresh();
+    await Future.delayed(const Duration(milliseconds: 350));
+    if (mounted) {
+      setState(() {
+        _isRefreshing = false;
+        _refreshSeed++;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,11 +40,32 @@ class LeaderboardPage extends StatelessWidget {
     final userProfile = bookProvider.userProfile;
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
+    final now = DateTime.now();
+    final daysLeft = _daysRemainingInMonth();
 
+    final bonus = (_refreshSeed % 3) * 5;
     final competitors = [
-      {'rank': 1, 'name': 'Номин-Эрдэнэ', 'xp': 4820, 'badge': '🥇', 'isUser': false},
-      {'rank': 2, 'name': 'Тэмүүлэн Б.', 'xp': 4150, 'badge': '🥈', 'isUser': false},
-      {'rank': 3, 'name': 'Билгүүн Т.', 'xp': 3890, 'badge': '🥉', 'isUser': false},
+      {
+        'rank': 1,
+        'name': 'Номин-Эрдэнэ',
+        'xp': 4820 + bonus,
+        'badge': '🥇',
+        'isUser': false
+      },
+      {
+        'rank': 2,
+        'name': 'Тэмүүлэн Б.',
+        'xp': 4150 + bonus,
+        'badge': '🥈',
+        'isUser': false
+      },
+      {
+        'rank': 3,
+        'name': 'Билгүүн Т.',
+        'xp': 3890 + bonus,
+        'badge': '🥉',
+        'isUser': false
+      },
       {
         'rank': 4,
         'name': userProfile.name,
@@ -24,10 +73,34 @@ class LeaderboardPage extends StatelessWidget {
         'badge': '4',
         'isUser': true,
       },
-      {'rank': 5, 'name': 'Анударь С.', 'xp': 3120, 'badge': '5', 'isUser': false},
-      {'rank': 6, 'name': 'Энхжин М.', 'xp': 2890, 'badge': '6', 'isUser': false},
-      {'rank': 7, 'name': 'Бат-Эрдэнэ О.', 'xp': 2450, 'badge': '7', 'isUser': false},
-      {'rank': 8, 'name': 'Сарнай Х.', 'xp': 2100, 'badge': '8', 'isUser': false},
+      {
+        'rank': 5,
+        'name': 'Анударь С.',
+        'xp': 3120 + bonus,
+        'badge': '5',
+        'isUser': false
+      },
+      {
+        'rank': 6,
+        'name': 'Энхжин М.',
+        'xp': 2890 + bonus,
+        'badge': '6',
+        'isUser': false
+      },
+      {
+        'rank': 7,
+        'name': 'Бат-Эрдэнэ О.',
+        'xp': 2450 + bonus,
+        'badge': '7',
+        'isUser': false
+      },
+      {
+        'rank': 8,
+        'name': 'Сарнай Х.',
+        'xp': 2100 + bonus,
+        'badge': '8',
+        'isUser': false
+      },
     ];
 
     // Sort by XP descending and re-assign ranks
@@ -46,75 +119,140 @@ class LeaderboardPage extends StatelessWidget {
     }
 
     final leagueName = l10n?.t('profile.diamond_league') ?? 'Алмазан Лиг';
+    final daysRemainingLabel = l10n?.t(
+          'leaderboard.days_remaining_month',
+          {'days': '$daysLeft'},
+        ) ??
+        '$daysLeft өдөр үлдсэн';
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
         title: Text(
-          l10n?.t('profile.leaderboard') ?? 'Лидерборд',
+          l10n?.t('leaderboard.monthly_title') ?? 'Сарын Лидерборд',
           style: const TextStyle(
             fontFamily: 'Serif',
             fontWeight: FontWeight.bold,
           ),
         ),
         elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: l10n?.t('common.refresh') ?? 'Шинэчлэх',
+            onPressed:
+                _isRefreshing ? null : () => _handleRefresh(bookProvider),
+            icon: _isRefreshing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh_rounded),
+          ),
+        ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        children: [
-          // League Header Banner
-          _buildLeagueHeader(
-            leagueName: leagueName,
-            colorScheme: colorScheme,
-            l10n: l10n,
+      body: RefreshWrapper(
+        onRefresh: () => _handleRefresh(bookProvider),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
           ),
-          const SizedBox(height: 16),
-
-          // Podium preview for top 3
-          if (competitors.length >= 3)
-            _buildPodium(
-              topThree: competitors.take(3).toList(),
-              colorScheme: colorScheme,
-            ),
-          const SizedBox(height: 16),
-
-          // Competitors list
-          Text(
-            l10n?.t('leaderboard.weekly_rankings') ?? '7 хоногийн чансаа',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.primary,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          ...competitors.map((c) => _buildCompetitorTile(
-                competitor: c,
-                colorScheme: colorScheme,
-                l10n: l10n,
-              )),
-          const SizedBox(height: 16),
-
-          Center(
-            child: Text(
-              l10n?.t('profile.diamond_promotion') ??
-                  '💎 Эхний 3 байр Алмазан Лиг рүү дэвшинэ',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.teal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          children: [
+            // Swipe-down pill handle
+            Center(
+              child: GestureDetector(
+                onVerticalDragEnd: (details) {
+                  if ((details.primaryVelocity ?? 0) > 250) {
+                    Navigator.of(context).maybePop();
+                  }
+                },
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-        ],
+
+            // League Header Banner (Monthly)
+            _buildLeagueHeader(
+              leagueName: leagueName,
+              daysRemainingLabel: daysRemainingLabel,
+              colorScheme: colorScheme,
+              l10n: l10n,
+            ),
+            const SizedBox(height: 16),
+
+            // Podium preview for top 3
+            if (competitors.length >= 3)
+              _buildPodium(
+                topThree: competitors.take(3).toList(),
+                colorScheme: colorScheme,
+              ),
+            const SizedBox(height: 16),
+
+            // Competitors list header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l10n?.t(
+                        'leaderboard.monthly_rankings',
+                        {'month': '${now.month}'},
+                      ) ??
+                      '${now.month}-р сарын чансаа',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  l10n?.t('leaderboard.pull_to_refresh_hint') ??
+                      'Доош татаж шинэчлэх',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            ...competitors.map((c) => _buildCompetitorTile(
+                  competitor: c,
+                  colorScheme: colorScheme,
+                  l10n: l10n,
+                )),
+            const SizedBox(height: 16),
+
+            Center(
+              child: Text(
+                l10n?.t('profile.diamond_promotion') ??
+                    '💎 Сарын эхний 3 байр Алмазан Лиг рүү дэвшинэ',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.teal,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildLeagueHeader({
     required String leagueName,
+    required String daysRemainingLabel,
     required ColorScheme colorScheme,
     required AppLocalizations? l10n,
   }) {
@@ -160,8 +298,8 @@ class LeaderboardPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  l10n?.t('leaderboard.weekly_reset_info') ??
-                      'Долоо хоног бүрийн Ням гарагт 23:59 цагт шинэчлэгдэнэ',
+                  l10n?.t('leaderboard.monthly_reset_info') ??
+                      'Сар бүрийн сүүлийн өдөр 23:59 цагт шинэчлэгдэнэ',
                   style: TextStyle(
                     fontSize: 12,
                     color: colorScheme.onSurface.withValues(alpha: 0.65),
@@ -170,6 +308,7 @@ class LeaderboardPage extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -177,7 +316,7 @@ class LeaderboardPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              l10n?.t('profile.days_remaining') ?? '2 өдөр үлдсэн',
+              daysRemainingLabel,
               style: const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -194,7 +333,6 @@ class LeaderboardPage extends StatelessWidget {
     required List<Map<String, dynamic>> topThree,
     required ColorScheme colorScheme,
   }) {
-    // 2nd, 1st, 3rd display
     final first = topThree[0];
     final second = topThree[1];
     final third = topThree[2];
@@ -258,7 +396,8 @@ class LeaderboardPage extends StatelessWidget {
           height: height,
           decoration: BoxDecoration(
             color: medalColor.withValues(alpha: 0.2),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(12)),
             border: Border.all(color: medalColor.withValues(alpha: 0.5)),
           ),
           child: Center(

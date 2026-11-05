@@ -15,8 +15,13 @@ class ProfileChallengeCard extends StatelessWidget {
   void _showEditChallengeDialog(
       BuildContext context, BookProvider provider, int currentGoal) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor =
+        isDark ? const Color(0xFF52B788) : const Color(0xFF3B6E5C);
+    final l10n = AppLocalizations.of(context);
     int selectedGoal = currentGoal;
     final textController = TextEditingController(text: '$currentGoal');
+    final booksWord = l10n?.t('home.books_count') ?? 'ном';
 
     showDialog(
       context: context,
@@ -33,23 +38,26 @@ class ProfileChallengeCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50).withValues(alpha: 0.15),
+                      color: accentColor.withValues(alpha: 0.14),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.emoji_events_rounded,
-                      color: Color(0xFF4CAF50),
+                      color: accentColor,
                       size: 22,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    '2026 оны зорилго',
-                    style: TextStyle(
-                      fontFamily: 'Serif',
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.onSurface,
+                  Expanded(
+                    child: Text(
+                      l10n?.t('profile.challenge_dialog_title') ??
+                          '2026 оны зорилго',
+                      style: TextStyle(
+                        fontFamily: 'Serif',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ],
@@ -59,7 +67,8 @@ class ProfileChallengeCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '2026 онд хэдэн ном уншиж дуусгах зорилготой вэ?',
+                    l10n?.t('profile.challenge_dialog_desc') ??
+                        '2026 онд хэдэн ном уншиж дуусгах зорилготой вэ?',
                     style: TextStyle(
                       fontSize: 13,
                       color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -83,18 +92,26 @@ class ProfileChallengeCard extends StatelessWidget {
                               horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: isSel
-                                ? const Color(0xFF4CAF50)
+                                ? (isDark
+                                    ? accentColor
+                                    : accentColor.withValues(alpha: 0.16))
                                 : colorScheme.surfaceContainerHighest
                                     .withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSel
+                                  ? accentColor
+                                  : colorScheme.outlineVariant
+                                      .withValues(alpha: 0.3),
+                            ),
                           ),
                           child: Text(
-                            '$g ном',
+                            '$g $booksWord',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                               color: isSel
-                                  ? Colors.white
+                                  ? (isDark ? Colors.white : accentColor)
                                   : colorScheme.onSurface,
                             ),
                           ),
@@ -107,8 +124,9 @@ class ProfileChallengeCard extends StatelessWidget {
                     controller: textController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'Өөр тоо оруулах',
-                      suffixText: 'ном',
+                      labelText: l10n?.t('profile.custom_number') ??
+                          'Өөр тоо оруулах',
+                      suffixText: booksWord,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -128,14 +146,14 @@ class ProfileChallengeCard extends StatelessWidget {
                 TextButton(
                   onPressed: () => Navigator.of(dialogCtx).pop(),
                   child: Text(
-                    'Болих',
+                    l10n?.t('common.cancel') ?? 'Болих',
                     style: TextStyle(
                         color: colorScheme.onSurface.withValues(alpha: 0.6)),
                   ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
+                    backgroundColor: accentColor,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -146,12 +164,16 @@ class ProfileChallengeCard extends StatelessWidget {
                     Navigator.of(dialogCtx).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('2026 оны зорилго $selectedGoal ном болж шинэчлэгдлээ! 🎯'),
+                        content: Text(
+                          l10n?.t('profile.challenge_updated_toast',
+                                  {'goal': '$selectedGoal'}) ??
+                              '2026 оны зорилго $selectedGoal ном болж шинэчлэгдлээ! 🎯',
+                        ),
                         duration: const Duration(seconds: 2),
                       ),
                     );
                   },
-                  child: const Text('Хадгалах'),
+                  child: Text(l10n?.t('common.save') ?? 'Хадгалах'),
                 ),
               ],
             );
@@ -164,11 +186,14 @@ class ProfileChallengeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final challengeAccent =
+        isDark ? const Color(0xFF52B788) : const Color(0xFF3B6E5C);
     final l10n = AppLocalizations.of(context);
     final profile = bookProvider.userProfile;
-    final dailyGoal = profile.dailyGoalMinutes > 0 ? profile.dailyGoalMinutes : 30;
-    final goalProgress =
-        (profile.minutesReadToday / dailyGoal).clamp(0.0, 1.0);
+    final dailyGoal =
+        profile.dailyGoalMinutes > 0 ? profile.dailyGoalMinutes : 30;
+    final goalProgress = (profile.minutesReadToday / dailyGoal).clamp(0.0, 1.0);
     final yearlyGoal =
         profile.yearlyGoalBooks > 0 ? profile.yearlyGoalBooks : 24;
     final yearlyProgress =
@@ -250,14 +275,16 @@ class ProfileChallengeCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              l10n?.t('profile.reading_challenge') ??
-                  '2026 оны уншлагын челленж',
-              style: TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+            Expanded(
+              child: Text(
+                l10n?.t('profile.reading_challenge') ??
+                    '2026 оны уншлагын челленж',
+                style: TextStyle(
+                  fontFamily: 'Serif',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
             AnimatedPressable(
@@ -267,13 +294,13 @@ class ProfileChallengeCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withValues(alpha: 0.15),
+                  color: challengeAccent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                    color: challengeAccent.withValues(alpha: 0.3),
                   ),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
@@ -281,14 +308,14 @@ class ProfileChallengeCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF4CAF50),
+                        color: challengeAccent,
                       ),
                     ),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Icon(
                       Icons.edit_outlined,
                       size: 13,
-                      color: Color(0xFF4CAF50),
+                      color: challengeAccent,
                     ),
                   ],
                 ),
@@ -319,14 +346,13 @@ class ProfileChallengeCard extends StatelessWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color:
-                            const Color(0xFF4CAF50).withValues(alpha: 0.15),
+                        color: challengeAccent.withValues(alpha: 0.13),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.emoji_events_rounded,
-                          color: Color(0xFF4CAF50),
+                          color: challengeAccent,
                           size: 24,
                         ),
                       ),
@@ -385,7 +411,7 @@ class ProfileChallengeCard extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     backgroundColor:
                         colorScheme.outlineVariant.withValues(alpha: 0.3),
-                    progressColor: const Color(0xFF4CAF50),
+                    progressColor: challengeAccent,
                   ),
                 ),
               ],

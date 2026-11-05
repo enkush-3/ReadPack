@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:readpack/core/providers/book_provider.dart';
@@ -7,14 +8,20 @@ import 'package:readpack/models/bookmark.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 
 class PhoneWidgetSheet extends StatefulWidget {
-  const PhoneWidgetSheet({super.key});
+  final Bookmark? initialBookmark;
 
-  static void show(BuildContext context) {
+  const PhoneWidgetSheet({
+    super.key,
+    this.initialBookmark,
+  });
+
+  static void show(BuildContext context, {Bookmark? initialBookmark}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      enableDrag: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => const PhoneWidgetSheet(),
+      builder: (ctx) => PhoneWidgetSheet(initialBookmark: initialBookmark),
     );
   }
 
@@ -23,44 +30,95 @@ class PhoneWidgetSheet extends StatefulWidget {
 }
 
 class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
-  // 0: Quote of the Day, 1: Random Saved, 2: Specific Quote
+  static const MethodChannel _widgetChannel =
+      MethodChannel('com.example.readpact/widget');
+
+  // 0: Quote of the Day, 1: Saved Quotes, 2: Specific Chosen Quote
   int _selectedSource = 0;
   // 0: Small (2x2), 1: Medium (4x2), 2: Large (4x4)
   int _selectedSize = 1;
-  // 0: Amber Paper, 1: OLED Dark, 2: Deep Blue
-  int _selectedTheme = 0;
+  // 'system', 'light', 'dark'
+  String _selectedThemeMode = 'system';
   Bookmark? _selectedCustomBookmark;
 
   @override
   void initState() {
     super.initState();
+    if (widget.initialBookmark != null) {
+      _selectedSource = 2;
+      _selectedCustomBookmark = widget.initialBookmark;
+    }
     _loadSavedWidgetSettings();
   }
 
   Future<void> _loadSavedWidgetSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
-      _selectedSource = prefs.getInt('widget_quote_mode') ?? 0;
+      if (widget.initialBookmark == null) {
+        _selectedSource = prefs.getInt('widget_quote_mode') ?? 0;
+      }
       _selectedSize = prefs.getInt('widget_quote_size') ?? 1;
-      _selectedTheme = prefs.getInt('widget_quote_theme') ?? 0;
+      _selectedThemeMode =
+          prefs.getString('widget_quote_theme_mode') ?? 'system';
+      final savedBmId = prefs.getString('widget_quote_bookmark_id');
+      if (widget.initialBookmark == null && savedBmId != null) {
+        final provider = context.read<BookProvider>();
+        final found =
+            provider.bookmarks.where((b) => b.id == savedBmId).firstOrNull;
+        if (found != null) {
+          _selectedCustomBookmark = found;
+        }
+      }
     });
   }
 
-  Future<void> _saveWidgetSettings(String quoteText, String quoteAuthor) async {
+  Future<void> _saveWidgetSettings({
+    required String quoteText,
+    required String quoteAuthor,
+    required String quoteBook,
+  }) async {
+    final l10n = AppLocalizations.of(context);
     final prefs = await SharedPreferences.getInstance();
+    final sourceStr = _selectedSource == 0
+        ? 'daily'
+        : (_selectedSource == 1 ? 'saved' : 'custom');
+
     await prefs.setInt('widget_quote_mode', _selectedSource);
     await prefs.setInt('widget_quote_size', _selectedSize);
-    await prefs.setInt('widget_quote_theme', _selectedTheme);
+    await prefs.setString('widget_quote_theme_mode', _selectedThemeMode);
+    await prefs.setString('widget_quote_source', sourceStr);
     await prefs.setString('widget_quote_text', quoteText);
     await prefs.setString('widget_quote_author', quoteAuthor);
+    await prefs.setString('widget_quote_book', quoteBook);
+
+    // Also write legacy keys so any existing native reader stays in sync
+    await prefs.setString('phone_widget_source', sourceStr);
+    await prefs.setString('phone_widget_quote_text', quoteText);
+    await prefs.setString('phone_widget_author', quoteAuthor);
+    await prefs.setString('phone_widget_book', quoteBook);
+
+    if (_selectedCustomBookmark != null) {
+      await prefs.setString(
+          'widget_quote_bookmark_id', _selectedCustomBookmark!.id);
+    }
+
+    try {
+      await _widgetChannel.invokeMethod('updateWidget');
+    } catch (_) {
+      // Ignore on web/unit tests where native Android AppWidgetManager is absent
+    }
 
     if (mounted) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Утасны дэлгэцийн виджет амжилттай тохируулагдлаа! 📱'),
-          backgroundColor: Color(0xFF2E7D32),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(
+            l10n?.t('widget.saved_toast') ??
+                'Утасны дэлгэцийн виджет амжилттай шинэчлэгдлээ! 📱',
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -79,24 +137,42 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
 
     String previewQuote = dailyQuote;
     String previewAuthor = dailyAuthor;
+    String previewBook = 'ReadPack';
 
     if (_selectedSource == 1) {
       if (bookProvider.bookmarks.isNotEmpty) {
-        previewQuote = bookProvider.bookmarks.first.quote;
-        previewAuthor = bookProvider.bookmarks.first.bookTitle.isNotEmpty
-            ? bookProvider.bookmarks.first.bookTitle
-            : 'Хадгалсан ишлэл';
+        final bm = _selectedCustomBookmark ?? bookProvider.bookmarks.first;
+        previewQuote = bm.quote;
+        previewBook = bm.bookTitle.isNotEmpty ? bm.bookTitle : 'ReadPack';
+        final matchingBook =
+            bookProvider.books.where((b) => b.id == bm.bookId).firstOrNull;
+        previewAuthor = matchingBook?.author ??
+            (bm.chapterTitle.isNotEmpty ? bm.chapterTitle : previewBook);
       } else {
-        previewQuote = 'Та одоогоор өөрийн ишлэл хадгалаагүй байна.';
+        previewQuote = l10n?.t('widget.no_saved_quotes') ??
+            'Та одоогоор өөрийн ишлэл хадгалаагүй байна.';
         previewAuthor = 'ReadPack';
+        previewBook = '';
       }
-    } else if (_selectedSource == 2 && _selectedCustomBookmark != null) {
-      previewQuote = _selectedCustomBookmark!.quote;
-      previewAuthor = _selectedCustomBookmark!.bookTitle;
+    } else if (_selectedSource == 2) {
+      final bm = _selectedCustomBookmark ??
+          (bookProvider.bookmarks.isNotEmpty
+              ? bookProvider.bookmarks.first
+              : null);
+      if (bm != null) {
+        previewQuote = bm.quote;
+        previewBook = bm.bookTitle.isNotEmpty ? bm.bookTitle : 'ReadPack';
+        final matchingBook =
+            bookProvider.books.where((b) => b.id == bm.bookId).firstOrNull;
+        previewAuthor = matchingBook?.author ??
+            (bm.chapterTitle.isNotEmpty ? bm.chapterTitle : previewBook);
+      }
     }
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.88,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.90,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -109,15 +185,16 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 12),
           Center(
             child: Container(
-              width: 40,
-              height: 4,
+              width: 42,
+              height: 4.5,
               decoration: BoxDecoration(
-                color: colorScheme.onSurface.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(2),
+                color: colorScheme.onSurface.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(3),
               ),
             ),
           ),
@@ -142,7 +219,7 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      'Утасны виджет',
+                      l10n?.t('widget.title') ?? 'Утасны виджет',
                       style: TextStyle(
                         fontFamily: 'Serif',
                         fontSize: 19,
@@ -160,16 +237,17 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
             ),
           ),
           const Divider(height: 1),
-          Expanded(
+          Flexible(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 1. Live Phone Mockup with Widget Preview
                   Text(
-                    'Утасны дэлгэц дээр харагдах байдал:',
+                    l10n?.t('widget.preview_label') ??
+                        'Утасны дэлгэц дээр харагдах байдал:',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -177,13 +255,20 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildPhoneMockup(previewQuote, previewAuthor, colorScheme),
+                  _buildPhoneMockup(
+                    context: context,
+                    quote: previewQuote,
+                    author: previewAuthor,
+                    book: previewBook,
+                    colorScheme: colorScheme,
+                    l10n: l10n,
+                  ),
 
                   const SizedBox(height: 22),
 
                   // 2. Select Quote Source
                   Text(
-                    'Виджетэд гаргах ишлэл:',
+                    l10n?.t('widget.source_label') ?? 'Виджетэд гаргах ишлэл:',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -193,58 +278,84 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _buildSourceChip(0, 'Өдрийн ишлэл', Icons.wb_sunny_outlined, colorScheme),
+                      _buildSourceChip(
+                        0,
+                        l10n?.t('widget.source_daily') ?? 'Өдрийн ишлэл',
+                        Icons.wb_sunny_outlined,
+                        colorScheme,
+                      ),
                       const SizedBox(width: 8),
-                      _buildSourceChip(1, 'Хадгалсан (${bookProvider.bookmarks.length})', Icons.bookmark_added_outlined, colorScheme),
+                      _buildSourceChip(
+                        1,
+                        '${l10n?.t('widget.source_saved') ?? 'Хадгалсан'} (${bookProvider.bookmarks.length})',
+                        Icons.bookmark_added_outlined,
+                        colorScheme,
+                      ),
                     ],
                   ),
                   if (bookProvider.bookmarks.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      l10n?.t('widget.choose_specific_quote') ??
+                          'Хадгалсан ишлэлээс сонгох:',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
                     const SizedBox(height: 8),
-                    _buildSourceChip(2, 'Сонгосон ишлэл', Icons.touch_app_outlined, colorScheme),
-                    if (_selectedSource == 2) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<Bookmark>(
-                            isExpanded: true,
-                            hint: const Text('Ишлэлээс сонгоно уу'),
-                            value: _selectedCustomBookmark ?? bookProvider.bookmarks.first,
-                            items: bookProvider.bookmarks.map((bm) {
-                              return DropdownMenuItem<Bookmark>(
-                                value: bm,
-                                child: Text(
-                                  bm.quote,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 13),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (bm) {
-                              setState(() {
-                                _selectedSource = 2;
-                                _selectedCustomBookmark = bm;
-                              });
-                            },
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant
+                              .withValues(alpha: 0.35),
                         ),
                       ),
-                    ],
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          value: (_selectedCustomBookmark ??
+                                  bookProvider.bookmarks.first)
+                              .id,
+                          items: bookProvider.bookmarks.map((bm) {
+                            return DropdownMenuItem<String>(
+                              value: bm.id,
+                              child: Text(
+                                '${bm.bookTitle}: “${bm.quote}”',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (bmId) {
+                            if (bmId == null) return;
+                            final chosen = bookProvider.bookmarks
+                                .where((b) => b.id == bmId)
+                                .firstOrNull;
+                            if (chosen != null) {
+                              setState(() {
+                                _selectedSource = 1;
+                                _selectedCustomBookmark = chosen;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
                   ],
 
                   const SizedBox(height: 22),
 
-                  // 3. Widget Size Choice
+                  // 3. Widget Theme (System / Light / Dark)
                   Text(
-                    'Виджетийн хэмжээ:',
+                    l10n?.t('widget.theme_label') ??
+                        'Өнгөний загвар (Систем / Цайвар / Харанхуй):',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -254,19 +365,40 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _buildSizeOption(0, 'Жижиг (2x2)', colorScheme),
+                      _buildThemeOption(
+                        mode: 'system',
+                        label: l10n?.t('settings.theme_system') ?? 'Систем',
+                        icon: Icons.brightness_auto_rounded,
+                        bgColor: colorScheme.surfaceContainerHighest,
+                        textColor: colorScheme.onSurface,
+                        colorScheme: colorScheme,
+                      ),
                       const SizedBox(width: 8),
-                      _buildSizeOption(1, 'Дунд (4x2)', colorScheme),
+                      _buildThemeOption(
+                        mode: 'light',
+                        label: l10n?.t('settings.theme_light') ?? 'Цайвар',
+                        icon: Icons.light_mode_rounded,
+                        bgColor: const Color(0xFFFAF7F2),
+                        textColor: const Color(0xFF1E293B),
+                        colorScheme: colorScheme,
+                      ),
                       const SizedBox(width: 8),
-                      _buildSizeOption(2, 'Том (4x4)', colorScheme),
+                      _buildThemeOption(
+                        mode: 'dark',
+                        label: l10n?.t('settings.theme_dark') ?? 'Харанхуй',
+                        icon: Icons.dark_mode_rounded,
+                        bgColor: const Color(0xFF0F172A),
+                        textColor: const Color(0xFFF8FAFC),
+                        colorScheme: colorScheme,
+                      ),
                     ],
                   ),
 
-                  const SizedBox(height: 22),
+                  const SizedBox(height: 20),
 
-                  // 4. Widget Color Theme
+                  // 4. Widget Size Choice
                   Text(
-                    'Өнгөний сэдэв:',
+                    l10n?.t('widget.size_label') ?? 'Виджетийн хэмжээ:',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -276,15 +408,24 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _buildThemeOption(0, 'Амбер цаас', const Color(0xFFFFF8E7), Colors.brown, colorScheme),
+                      _buildSizeOption(
+                          0,
+                          l10n?.t('widget.size_small') ?? 'Жижиг (2x2)',
+                          colorScheme),
                       const SizedBox(width: 8),
-                      _buildThemeOption(1, 'OLED Хар', const Color(0xFF121212), Colors.white, colorScheme),
+                      _buildSizeOption(
+                          1,
+                          l10n?.t('widget.size_medium') ?? 'Дунд (4x2)',
+                          colorScheme),
                       const SizedBox(width: 8),
-                      _buildThemeOption(2, 'Шөнийн хөх', const Color(0xFF1A237E), Colors.white, colorScheme),
+                      _buildSizeOption(
+                          2,
+                          l10n?.t('widget.size_large') ?? 'Том (4x4)',
+                          colorScheme),
                     ],
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 26),
 
                   // 5. Apply Button
                   SizedBox(
@@ -298,11 +439,17 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      onPressed: () => _saveWidgetSettings(previewQuote, previewAuthor),
+                      onPressed: () => _saveWidgetSettings(
+                        quoteText: previewQuote,
+                        quoteAuthor: previewAuthor,
+                        quoteBook: previewBook,
+                      ),
                       icon: const Icon(Icons.check_circle_rounded),
-                      label: const Text(
-                        'Утасны виджетэд тохируулах',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      label: Text(
+                        l10n?.t('widget.apply_button') ??
+                            'Утасны виджетэд тохируулах',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                     ),
                   ),
@@ -315,64 +462,98 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
     );
   }
 
-  Widget _buildPhoneMockup(String quote, String author, ColorScheme colorScheme) {
-    Color widgetBg;
-    Color widgetText;
-    Color widgetAccent;
+  Widget _buildPhoneMockup({
+    required BuildContext context,
+    required String quote,
+    required String author,
+    required String book,
+    required ColorScheme colorScheme,
+    required AppLocalizations? l10n,
+  }) {
+    final systemIsDark =
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final useDark = _selectedThemeMode == 'dark'
+        ? true
+        : (_selectedThemeMode == 'light' ? false : systemIsDark);
 
-    if (_selectedTheme == 1) {
-      widgetBg = const Color(0xFF1E1E1E);
-      widgetText = Colors.white;
-      widgetAccent = Colors.amber;
-    } else if (_selectedTheme == 2) {
-      widgetBg = const Color(0xFF1A237E);
-      widgetText = Colors.white;
-      widgetAccent = const Color(0xFF80D8FF);
-    } else {
-      widgetBg = const Color(0xFFFFF8E1);
-      widgetText = const Color(0xFF3E2723);
-      widgetAccent = const Color(0xFFFF8F00);
-    }
+    final Color widgetBg =
+        useDark ? const Color(0xFF0F172A) : const Color(0xFFFAF7F2);
+    final Color widgetBorder =
+        useDark ? const Color(0xFF334155) : const Color(0xFFE2D9C8);
+    final Color widgetText =
+        useDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B);
+    final Color widgetSubText =
+        useDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
+    final Color widgetAccent =
+        useDark ? const Color(0xFFFBBF24) : const Color(0xFF9A6B26);
+
+    final badgeText = _selectedSource == 0
+        ? (l10n?.t('widget.badge_daily') ?? '📖 ӨДРИЙН ЭШЛЭЛ')
+        : (l10n?.t('widget.badge_saved') ?? '📌 ХАДГАЛСАН ИШЛЭЛ');
+
+    final footerText = (book.isNotEmpty && book != author)
+        ? '— $author · $book'
+        : '— $author';
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
+        gradient: LinearGradient(
+          colors: useDark
+              ? [const Color(0xFF1E293B), const Color(0xFF090D16)]
+              : [const Color(0xFFDCEBFA), const Color(0xFFC3DDFD)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 2),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
       ),
       child: Column(
         children: [
-          // Simulated phone status bar
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '20:45',
-                style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                '21:20',
+                style: TextStyle(
+                  color: useDark ? Colors.white70 : const Color(0xFF334155),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Row(
                 children: [
-                  Icon(Icons.wifi, size: 14, color: Colors.white70),
-                  SizedBox(width: 4),
-                  Icon(Icons.battery_full, size: 14, color: Colors.white70),
+                  Icon(
+                    Icons.wifi,
+                    size: 14,
+                    color: useDark ? Colors.white70 : const Color(0xFF334155),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.battery_full,
+                    size: 14,
+                    color: useDark ? Colors.white70 : const Color(0xFF334155),
+                  ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Widget Card on Phone
+          const SizedBox(height: 14),
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 220),
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: widgetBg,
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: widgetBorder, width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
+                  color: Colors.black.withValues(alpha: useDark ? 0.35 : 0.10),
                   blurRadius: 14,
                   offset: const Offset(0, 4),
                 ),
@@ -384,52 +565,48 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.format_quote_rounded, size: 16, color: widgetAccent),
-                        const SizedBox(width: 4),
-                        Text(
-                          'ReadPack',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                            color: widgetAccent,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      badgeText,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                        color: widgetAccent,
+                      ),
                     ),
                     Text(
-                      'Өнөөдөр',
+                      'ReadPack',
                       style: TextStyle(
                         fontSize: 10,
-                        color: widgetText.withValues(alpha: 0.5),
+                        fontWeight: FontWeight.w600,
+                        color: widgetSubText.withValues(alpha: 0.75),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
-                  '"$quote"',
-                  maxLines: _selectedSize == 0 ? 2 : (_selectedSize == 1 ? 3 : 5),
+                  '“$quote”',
+                  maxLines:
+                      _selectedSize == 0 ? 2 : (_selectedSize == 1 ? 3 : 5),
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Serif',
-                    fontSize: _selectedSize == 0 ? 12 : 13.5,
+                    fontSize: _selectedSize == 0 ? 12.5 : 14,
                     fontStyle: FontStyle.italic,
                     color: widgetText,
-                    height: 1.35,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
-                  '— $author',
+                  footerText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.bold,
-                    color: widgetAccent,
+                    color: widgetSubText,
                   ),
                 ),
               ],
@@ -440,21 +617,29 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
     );
   }
 
-  Widget _buildSourceChip(int index, String label, IconData icon, ColorScheme colorScheme) {
-    final isSel = _selectedSource == index;
+  Widget _buildSourceChip(
+      int index, String label, IconData icon, ColorScheme colorScheme) {
+    final isSel = (_selectedSource == index) ||
+        (index == 1 && _selectedSource == 2);
     return Expanded(
       child: AnimatedPressable(
         onTap: () => setState(() => _selectedSource = index),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
           decoration: BoxDecoration(
-            color: isSel ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            color: isSel
+                ? colorScheme.primary
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 14, color: isSel ? colorScheme.onPrimary : colorScheme.onSurface),
+              Icon(
+                icon,
+                size: 15,
+                color: isSel ? colorScheme.onPrimary : colorScheme.onSurface,
+              ),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
@@ -464,7 +649,8 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                    color: isSel ? colorScheme.onPrimary : colorScheme.onSurface,
+                    color:
+                        isSel ? colorScheme.onPrimary : colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -481,9 +667,11 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
       child: AnimatedPressable(
         onTap: () => setState(() => _selectedSize = size),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
-            color: isSel ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            color: isSel
+                ? colorScheme.primary
+                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Center(
@@ -501,30 +689,48 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
     );
   }
 
-  Widget _buildThemeOption(int index, String label, Color bgColor, Color textColor, ColorScheme colorScheme) {
-    final isSel = _selectedTheme == index;
+  Widget _buildThemeOption({
+    required String mode,
+    required String label,
+    required IconData icon,
+    required Color bgColor,
+    required Color textColor,
+    required ColorScheme colorScheme,
+  }) {
+    final isSel = _selectedThemeMode == mode;
     return Expanded(
       child: AnimatedPressable(
-        onTap: () => setState(() => _selectedTheme = index),
+        onTap: () => setState(() => _selectedThemeMode = mode),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSel ? colorScheme.primary : Colors.grey.withValues(alpha: 0.3),
-              width: isSel ? 2.5 : 1,
+              color: isSel
+                  ? colorScheme.primary
+                  : colorScheme.outlineVariant.withValues(alpha: 0.4),
+              width: isSel ? 2.2 : 1,
             ),
           ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: textColor,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: textColor),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.bold,
+                    color: textColor,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

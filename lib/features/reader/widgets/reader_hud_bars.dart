@@ -108,21 +108,22 @@ class ReaderTopHud extends StatelessWidget {
                     ),
                   ),
                 ),
-                AnimatedPressable(
-                  onTap: onToggleAudio,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      isAudioPlaying
-                          ? Icons.headphones_rounded
-                          : Icons.headphones_outlined,
-                      size: 20,
-                      color: isAudioPlaying
-                          ? Theme.of(context).colorScheme.primary
-                          : readerTextColor,
+                if (book.hasAudio)
+                  AnimatedPressable(
+                    onTap: onToggleAudio,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        isAudioPlaying
+                            ? Icons.headphones_rounded
+                            : Icons.headphones_outlined,
+                        size: 20,
+                        color: isAudioPlaying
+                            ? Theme.of(context).colorScheme.primary
+                            : readerTextColor,
+                      ),
                     ),
                   ),
-                ),
                 AnimatedPressable(
                   onTap: onAddBookmark,
                   child: Padding(

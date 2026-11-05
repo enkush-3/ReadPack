@@ -39,7 +39,7 @@ class UserLevelDetailPage extends StatelessWidget {
         backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 28),
           color: colorScheme.onSurface,
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -54,13 +54,41 @@ class UserLevelDetailPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 36),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Current Level Hero Card
+      body: NotificationListener<OverscrollNotification>(
+        onNotification: (overscroll) {
+          if (overscroll.overscroll < -45) {
+            Navigator.of(context).pop();
+            return true;
+          }
+          return false;
+        },
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onVerticalDragEnd: (details) {
+                  if ((details.primaryVelocity ?? 0) > 200) {
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: Center(
+                  child: Container(
+                    width: 42,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                ),
+              ),
+              // 1. Current Level Hero Card
             Container(
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
@@ -344,6 +372,7 @@ class UserLevelDetailPage extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -380,3 +409,4 @@ class UserLevelDetailPage extends StatelessWidget {
     );
   }
 }
+

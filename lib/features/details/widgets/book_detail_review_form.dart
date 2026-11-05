@@ -23,7 +23,6 @@ class BookDetailReviewForm extends StatefulWidget {
 class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
   double _userRating = 5.0;
   late TextEditingController _commentController;
-  bool _isReviewSubmitted = false;
 
   @override
   void initState() {
@@ -57,20 +56,7 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
 
     context.read<BookProvider>().addReview(widget.currentBook.id, newReview);
     _commentController.clear();
-
-    setState(() {
-      _isReviewSubmitted = true;
-    });
-
-    final l10n = widget.l10n ?? AppLocalizations.of(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          l10n?.t('reviews.success') ?? 'Таны сэтгэгдэл амжилттай нэмэгдлээ!',
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    setState(() {});
   }
 
   Widget _buildGuestPrompt(
@@ -263,35 +249,6 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
               ),
             ],
           ),
-          if (_isReviewSubmitted) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle_rounded,
-                      color: Colors.green, size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      l10n?.t('reviews.success') ??
-                          'Таны сэтгэгдэл амжилттай нэмэгдлээ!',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.green,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           const SizedBox(height: 14),
           TextField(
             controller: _commentController,

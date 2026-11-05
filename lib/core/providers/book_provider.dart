@@ -212,6 +212,8 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   void updateUserProfile(
       {String? name,
       String? email,
+      String? avatarUrl,
+      int? streakDays,
       int? dailyGoalMinutes,
       bool? notificationsEnabled,
       bool? recommendationsEnabled,
@@ -221,6 +223,8 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     _userProfile = _userProfile.copyWith(
       name: name,
       email: email,
+      avatarUrl: avatarUrl,
+      streakDays: streakDays,
       dailyGoalMinutes: dailyGoalMinutes,
       notificationsEnabled: notificationsEnabled,
       recommendationsEnabled: recommendationsEnabled,
@@ -231,6 +235,18 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
     BookProviderPersistence.syncProfilePreferences(_apiService, _userProfile);
+  }
+
+  void incrementStreak() {
+    _userProfile = _userProfile.copyWith(
+      streakDays: _userProfile.streakDays + 1,
+      minutesReadToday: _userProfile.minutesReadToday < _userProfile.dailyGoalMinutes
+          ? _userProfile.dailyGoalMinutes
+          : _userProfile.minutesReadToday,
+      xp: _userProfile.xp + 50,
+    );
+    notifyListeners();
+    BookProviderPersistence.persistUserProfile(_userProfile);
   }
 
   void updateYearlyGoalBooks(int goal) {
@@ -280,6 +296,9 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       commitSearchQuery(query);
     } else {
       notifyListeners();
+    }
+    if (query.trim().length >= 3 && searchResults.isEmpty && !_isFetchingRemote) {
+      fetchRemoteBooks(query: query.trim());
     }
   }
 

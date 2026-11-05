@@ -86,19 +86,21 @@ class BookDetailStats extends StatelessWidget {
             label: l10n?.t('book.pages') ?? 'Хуудас',
             colorScheme: colorScheme,
           ),
-          Container(
-            height: 30,
-            width: 1,
-            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-          ),
-          _buildStatItem(
-            icon: Icons.access_time_rounded,
-            iconColor: colorScheme.secondary,
-            value:
-                '${book.readTimeMinutes} ${l10n?.t('common.minutes_short') ?? 'м'}',
-            label: l10n?.t('book.duration') ?? 'Хугацаа',
-            colorScheme: colorScheme,
-          ),
+          if (book.hasAudio) ...[
+            Container(
+              height: 30,
+              width: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+            _buildStatItem(
+              icon: Icons.access_time_rounded,
+              iconColor: colorScheme.secondary,
+              value:
+                  '${book.audioDurationMinutes > 0 ? book.audioDurationMinutes : book.readTimeMinutes} ${l10n?.t('common.minutes_short') ?? 'м'}',
+              label: l10n?.t('book.duration') ?? 'Хугацаа',
+              colorScheme: colorScheme,
+            ),
+          ],
         ],
       ),
     );
@@ -180,35 +182,37 @@ class BookDetailActionButtons extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 1,
-          child: AnimatedPressable(
-            onTap: onToggleAudio,
-            child: Container(
-              height: 52,
-              decoration: BoxDecoration(
-                color: showAudioPlayer
-                    ? colorScheme.primary.withValues(alpha: 0.15)
-                    : colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
+        if (book.hasAudio) ...[
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 1,
+            child: AnimatedPressable(
+              onTap: onToggleAudio,
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
                   color: showAudioPlayer
-                      ? colorScheme.primary
-                      : colorScheme.outlineVariant.withValues(alpha: 0.3),
+                      ? colorScheme.primary.withValues(alpha: 0.15)
+                      : colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: showAudioPlayer
+                        ? colorScheme.primary
+                        : colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  ),
                 ),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.headphones_rounded,
-                  color: colorScheme.primary,
-                  size: 22,
+                child: Center(
+                  child: Icon(
+                    Icons.headphones_rounded,
+                    color: colorScheme.primary,
+                    size: 22,
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }

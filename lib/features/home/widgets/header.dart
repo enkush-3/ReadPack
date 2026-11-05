@@ -6,6 +6,7 @@ import 'package:readpack/features/home/widgets/streak_modal_sheet.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/readpacklogo.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/user_avatar.dart';
 
 class HomeHeader extends StatelessWidget {
   final String userName;
@@ -100,38 +101,10 @@ class HomeHeader extends StatelessWidget {
             children: [
               AnimatedPressable(
                 onTap: onAvatarTap,
-                child: Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primary,
-                        colorScheme.primary.withValues(alpha: 0.7),
-                      ],
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.primary.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      displayName.isNotEmpty
-                          ? displayName[0].toUpperCase()
-                          : 'U',
-                      style: TextStyle(
-                        fontFamily: 'Serif',
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onPrimary,
-                      ),
-                    ),
-                  ),
+                child: UserAvatar(
+                  profile: profile.copyWith(name: displayName),
+                  size: 46,
+                  fontSize: 18,
                 ),
               ),
               const SizedBox(width: 10),

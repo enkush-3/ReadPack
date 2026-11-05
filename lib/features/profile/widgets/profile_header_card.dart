@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/features/profile/widgets/profile_edit_dialog.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/user_avatar.dart';
 
 class ProfileHeaderCard extends StatelessWidget {
   final BookProvider bookProvider;
@@ -27,55 +29,15 @@ class ProfileHeaderCard extends StatelessWidget {
         // User Avatar & Name Row
         Row(
           children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: profile.isGuest
-                    ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
-                    : null,
-                gradient: profile.isGuest
-                    ? null
-                    : LinearGradient(
-                        colors: [
-                          colorScheme.primary,
-                          colorScheme.primary.withValues(alpha: 0.7),
-                        ],
-                      ),
-                shape: BoxShape.circle,
-                border: profile.isGuest
-                    ? Border.all(
-                        color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                      )
-                    : null,
-                boxShadow: profile.isGuest
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: colorScheme.primary.withValues(alpha: 0.25),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-              ),
-              child: Center(
-                child: profile.isGuest
-                    ? Icon(
-                        Icons.person_outline_rounded,
-                        size: 28,
-                        color: colorScheme.primary,
-                      )
-                    : Text(
-                        displayName.isNotEmpty
-                            ? displayName[0].toUpperCase()
-                            : 'U',
-                        style: TextStyle(
-                          fontFamily: 'Serif',
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onPrimary,
-                        ),
-                      ),
+            AnimatedPressable(
+              onTap: profile.isGuest
+                  ? null
+                  : () => ProfileEditDialog.show(context, bookProvider),
+              child: UserAvatar(
+                profile: profile,
+                size: 60,
+                fontSize: 24,
+                showEditBadge: !profile.isGuest,
               ),
             ),
             const SizedBox(width: 16),

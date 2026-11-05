@@ -6,13 +6,13 @@ import 'package:readpack/features/library/widgets/library_reading_card.dart';
 import 'package:readpack/features/library/widgets/library_saved_card.dart';
 import 'package:readpack/features/library/widgets/library_shelves_view.dart';
 import 'package:readpack/features/library/widgets/library_sort_bar.dart';
+import 'package:readpack/features/quotes/presentation/phone_widget_sheet.dart';
 import 'package:readpack/features/shared/common/refresh.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/bookmark.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/empty_state_view.dart';
 import 'package:readpack/shared/widgets/error_state_view.dart';
-import 'package:readpack/features/quotes/presentation/phone_widget_sheet.dart';
 import 'package:readpack/shared/widgets/skeleton_loader.dart';
 
 class SavedPage extends StatefulWidget {
@@ -32,12 +32,22 @@ class SavedPage extends StatefulWidget {
 class _SavedPageState extends State<SavedPage> {
   // 0: Currently Reading, 1: Saved, 2: Shelves / Collections, 3: Quotes
   late int _selectedSegment;
+  int _previousSegment = 0;
   int _quoteFilterIndex = 0; // 0: All, 1: Bookmarked, 2: Liked
 
   @override
   void initState() {
     super.initState();
     _selectedSegment = widget.initialSegment;
+    _previousSegment = widget.initialSegment;
+  }
+
+  void _selectSegment(int index) {
+    if (_selectedSegment == index) return;
+    setState(() {
+      _previousSegment = _selectedSegment;
+      _selectedSegment = index;
+    });
   }
 
   @override
@@ -101,21 +111,57 @@ class _SavedPageState extends State<SavedPage> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // 4-Segment Switcher
+                      // 4-Segment Switcher with Sliding Pill Animation
                       Container(
+                        height: 44,
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerHighest
                               .withValues(alpha: 0.35),
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Row(
-                          children: [
-                            _buildSegmentItem(0, readingSegment, colorScheme),
-                            _buildSegmentItem(1, savedSegment, colorScheme),
-                            _buildSegmentItem(2, shelvesSegment, colorScheme),
-                            _buildSegmentItem(3, quotesSegment, colorScheme),
-                          ],
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final tabWidth = constraints.maxWidth / 4;
+                            return Stack(
+                              children: [
+                                AnimatedPositioned(
+                                  duration: const Duration(milliseconds: 260),
+                                  curve: Curves.easeOutCubic,
+                                  left: _selectedSegment * tabWidth,
+                                  top: 0,
+                                  bottom: 0,
+                                  width: tabWidth,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.primary,
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: colorScheme.primary
+                                              .withValues(alpha: 0.22),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    _buildSegmentItem(
+                                        0, readingSegment, colorScheme),
+                                    _buildSegmentItem(
+                                        1, savedSegment, colorScheme),
+                                    _buildSegmentItem(
+                                        2, shelvesSegment, colorScheme),
+                                    _buildSegmentItem(
+                                        3, quotesSegment, colorScheme),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -145,35 +191,23 @@ class _SavedPageState extends State<SavedPage> {
     final isSelected = _selectedSegment == index;
 
     return Expanded(
-      child: AnimatedPressable(
-        onTap: () => setState(() => _selectedSegment = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            color: isSelected ? colorScheme.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _selectSegment(index),
+        child: Center(
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 220),
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected
+                  ? colorScheme.onPrimary
+                  : colorScheme.onSurface.withValues(alpha: 0.72),
+            ),
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
@@ -307,11 +341,16 @@ class _SavedPageState extends State<SavedPage> {
       displayedBookmarks = allBookmarks;
     }
 
+    final filterAllText = l10n?.t('library.filter_all') ?? 'Бүгд';
+    final filterBookmarkedText =
+        l10n?.t('library.filter_bookmarked') ?? 'Тэмдэглэсэн';
+    final filterLikedText = l10n?.t('library.filter_liked') ?? 'Таалагдсан';
+
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       sliver: SliverList(
         delegate: SliverChildListDelegate([
-          // Sub-Filter Bar & Add Quote Button
+          // Sub-Filter Bar & Phone Widget Button
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: Row(
@@ -324,21 +363,21 @@ class _SavedPageState extends State<SavedPage> {
                       children: [
                         _buildQuoteFilterChip(
                           index: 0,
-                          label: 'Бүгд (${allBookmarks.length})',
+                          label: '$filterAllText (${allBookmarks.length})',
                           colorScheme: colorScheme,
                         ),
                         const SizedBox(width: 8),
                         _buildQuoteFilterChip(
                           index: 1,
                           label:
-                              'Тэмдэглэсэн (${allBookmarks.where((b) => !b.isLiked).length})',
+                              '$filterBookmarkedText (${allBookmarks.where((b) => !b.isLiked).length})',
                           colorScheme: colorScheme,
                         ),
                         const SizedBox(width: 8),
                         _buildQuoteFilterChip(
                           index: 2,
                           label:
-                              'Таалагдсан ❤️ (${allBookmarks.where((b) => b.isLiked).length})',
+                              '$filterLikedText ❤️ (${allBookmarks.where((b) => b.isLiked).length})',
                           colorScheme: colorScheme,
                         ),
                       ],
@@ -365,7 +404,7 @@ class _SavedPageState extends State<SavedPage> {
                             size: 14, color: colorScheme.primary),
                         const SizedBox(width: 4),
                         Text(
-                          'Утасны виджет',
+                          l10n?.t('widget.title') ?? 'Утасны виджет',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -380,55 +419,81 @@ class _SavedPageState extends State<SavedPage> {
             ),
           ),
 
-          if (displayedBookmarks.isEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    _quoteFilterIndex == 2
-                        ? Icons.favorite_border_rounded
-                        : Icons.format_quote_rounded,
-                    size: 40,
-                    color: colorScheme.primary.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _quoteFilterIndex == 2
-                        ? 'Таалагдсан ишлэл хараахан алга'
-                        : 'Ишлэл олдсонгүй',
-                    style: const TextStyle(
-                      fontFamily: 'Serif',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _quoteFilterIndex == 2
-                        ? 'Ишлэлүүд дээрх зүрхэн дээр дарж таалагдсандаа нэмээрэй.'
-                        : 'Ном уншиж байхдаа онцлох эшлэлээ тэмдэглэн аваарай.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            ...displayedBookmarks.map((bm) {
-              return LibraryQuoteCard(
-                bm: bm,
-                provider: provider,
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 260),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            transitionBuilder: (child, animation) {
+              final slide = Tween<Offset>(
+                begin: Offset(_selectedSegment >= _previousSegment ? 0.06 : -0.06, 0),
+                end: Offset.zero,
+              ).animate(animation);
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(position: slide, child: child),
               );
-            }),
+            },
+            child: displayedBookmarks.isEmpty
+                ? Container(
+                    key: ValueKey('empty_quotes_$_quoteFilterIndex'),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 40, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _quoteFilterIndex == 2
+                              ? Icons.favorite_border_rounded
+                              : Icons.format_quote_rounded,
+                          size: 40,
+                          color: colorScheme.primary.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _quoteFilterIndex == 2
+                              ? (l10n?.t('library.empty_liked_quotes_title') ??
+                                  'Таалагдсан ишлэл хараахан алга')
+                              : (l10n?.t('library.empty_quotes_title') ??
+                                  'Ишлэл олдсонгүй'),
+                          style: const TextStyle(
+                            fontFamily: 'Serif',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          _quoteFilterIndex == 2
+                              ? (l10n?.t('library.empty_liked_quotes_desc') ??
+                                  'Ишлэлүүд дээрх зүрхэн дээр дарж таалагдсандаа нэмээрэй.')
+                              : (l10n?.t('library.empty_quotes_desc') ??
+                                  'Ном уншиж байхдаа онцлох эшлэлээ тэмдэглэн аваарай.'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    key: ValueKey(
+                        'quotes_list_${_quoteFilterIndex}_${displayedBookmarks.length}'),
+                    children: displayedBookmarks.map((bm) {
+                      return LibraryQuoteCard(
+                        bm: bm,
+                        provider: provider,
+                      );
+                    }).toList(),
+                  ),
+          ),
         ]),
       ),
     );
@@ -443,18 +508,28 @@ class _SavedPageState extends State<SavedPage> {
     return GestureDetector(
       onTap: () => setState(() => _quoteFilterIndex = index),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected
               ? colorScheme.primary
               : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
                 ? colorScheme.primary
                 : colorScheme.outlineVariant.withValues(alpha: 0.3),
           ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
@@ -463,11 +538,10 @@ class _SavedPageState extends State<SavedPage> {
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             color: isSelected
                 ? colorScheme.onPrimary
-                : colorScheme.onSurface.withValues(alpha: 0.7),
+                : colorScheme.onSurface.withValues(alpha: 0.72),
           ),
         ),
       ),
     );
   }
-
 }

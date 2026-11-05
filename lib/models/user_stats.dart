@@ -56,6 +56,7 @@ class ReadingAchievement {
 class UserProfile {
   final String name;
   final String email;
+  final String avatarUrl;
   final int streakDays;
   final int dailyGoalMinutes;
   final int minutesReadToday;
@@ -76,6 +77,7 @@ class UserProfile {
   const UserProfile({
     this.name = 'Enkush',
     this.email = 'enkush@readpack.app',
+    this.avatarUrl = '',
     this.streakDays = 7,
     this.dailyGoalMinutes = 30,
     this.minutesReadToday = 24,
@@ -167,6 +169,7 @@ class UserProfile {
   UserProfile copyWith({
     String? name,
     String? email,
+    String? avatarUrl,
     int? streakDays,
     int? dailyGoalMinutes,
     int? minutesReadToday,
@@ -187,6 +190,7 @@ class UserProfile {
     return UserProfile(
       name: name ?? this.name,
       email: email ?? this.email,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       streakDays: streakDays ?? this.streakDays,
       dailyGoalMinutes: dailyGoalMinutes ?? this.dailyGoalMinutes,
       minutesReadToday: minutesReadToday ?? this.minutesReadToday,
@@ -212,6 +216,7 @@ class UserProfile {
   Map<String, dynamic> toJson() => {
     'name': name,
     'email': email,
+    'avatarUrl': avatarUrl,
     'streakDays': streakDays,
     'dailyGoalMinutes': dailyGoalMinutes,
     'minutesReadToday': minutesReadToday,
@@ -233,6 +238,7 @@ class UserProfile {
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
     name: json['name'] as String? ?? 'Enkush',
     email: json['email'] as String? ?? 'enkush@readpack.app',
+    avatarUrl: json['avatarUrl'] as String? ?? '',
     streakDays: json['streakDays'] as int? ?? 7,
     dailyGoalMinutes: json['dailyGoalMinutes'] as int? ?? 30,
     minutesReadToday: json['minutesReadToday'] as int? ?? 24,

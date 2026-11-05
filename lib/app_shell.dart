@@ -21,19 +21,38 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell>
+    with SingleTickerProviderStateMixin {
   late int _selectedIndex;
+  int _previousIndex = 0;
   bool _showContinueReadingModal = true;
+  late AnimationController _tabAnimController;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _previousIndex = _selectedIndex;
+    _tabAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 240),
+      value: 1.0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabAnimController.dispose();
+    super.dispose();
   }
 
   void _onNavTap(int index) {
-    if (index >= 0 && index < 4) {
-      setState(() => _selectedIndex = index);
+    if (index >= 0 && index < 4 && index != _selectedIndex) {
+      setState(() {
+        _previousIndex = _selectedIndex;
+        _selectedIndex = index;
+      });
+      _tabAnimController.forward(from: 0.0);
     }
   }
 
@@ -49,18 +68,34 @@ class _AppShellState extends State<AppShell> {
       const ProfilePage(),
     ];
 
+    final direction = _selectedIndex >= _previousIndex ? 1.0 : -1.0;
+
     return PopScope(
       canPop: _selectedIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (_selectedIndex != 0) {
-          setState(() => _selectedIndex = 0);
+          _onNavTap(0);
         }
       },
       child: Scaffold(
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: pages,
+        body: AnimatedBuilder(
+          animation: _tabAnimController,
+          builder: (context, child) {
+            final curved = Curves.easeOutCubic.transform(_tabAnimController.value);
+            final dx = (1.0 - curved) * 18.0 * direction;
+            return Opacity(
+              opacity: 0.35 + (0.65 * curved),
+              child: Transform.translate(
+                offset: Offset(dx, 0),
+                child: child,
+              ),
+            );
+          },
+          child: IndexedStack(
+            index: _selectedIndex,
+            children: pages,
+          ),
         ),
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,

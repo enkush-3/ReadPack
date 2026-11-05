@@ -13,6 +13,7 @@ class ReaderScrollView extends StatefulWidget {
   final int currentChapterIndex;
   final List<String> paragraphs;
   final int activeAudioParagraph;
+  final int activeAudioSentence;
   final bool isAudioPlaying;
   final ScrollController scrollController;
   final ThemeProvider themeProvider;
@@ -29,6 +30,7 @@ class ReaderScrollView extends StatefulWidget {
     required this.currentChapterIndex,
     required this.paragraphs,
     required this.activeAudioParagraph,
+    this.activeAudioSentence = 0,
     required this.isAudioPlaying,
     required this.scrollController,
     required this.themeProvider,
@@ -45,6 +47,15 @@ class ReaderScrollView extends StatefulWidget {
 
 class _ReaderScrollViewState extends State<ReaderScrollView> {
   String? _selectedText;
+
+  static List<String> splitIntoSentences(String paragraph) {
+    final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(paragraph);
+    final sentences = matches
+        .map((m) => m.group(0) ?? '')
+        .where((s) => s.trim().isNotEmpty)
+        .toList();
+    return sentences.isEmpty ? [paragraph] : sentences;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +75,8 @@ class _ReaderScrollViewState extends State<ReaderScrollView> {
           final items = [
             ...defaultItems,
             ContextMenuButtonItem(
-              label: '📌 Ишлэл хадгалах',
+              label:
+                  '📌 ${widget.l10n?.t('reader.save_quote') ?? 'Ишлэл хадгалах'}',
               onPressed: () {
                 final text = _selectedText;
                 selectableRegionState.hideToolbar();
@@ -103,150 +115,172 @@ class _ReaderScrollViewState extends State<ReaderScrollView> {
                         height: 1.3,
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.book.author,
-                    style: TextStyle(
-                      fontSize: (13 * widget.themeProvider.fontSizeScale)
-                          .clamp(11.0, 18.0),
-                      color: widget.readerTextColor.withValues(alpha: 0.6),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.book.author,
+                      style: TextStyle(
+                        fontSize: (13 * widget.themeProvider.fontSizeScale)
+                            .clamp(11.0, 18.0),
+                        color: widget.readerTextColor.withValues(alpha: 0.6),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  ...List.generate(widget.paragraphs.length, (pIndex) {
-                    final paragraph = widget.paragraphs[pIndex];
-                    final isAudioActive =
-                        widget.isAudioPlaying && pIndex == widget.activeAudioParagraph;
+                    const SizedBox(height: 24),
+                    ...List.generate(widget.paragraphs.length, (pIndex) {
+                      final paragraph = widget.paragraphs[pIndex];
+                      final isAudioActive = widget.isAudioPlaying &&
+                          pIndex == widget.activeAudioParagraph;
 
-                    final matchingBookmark = bookProvider.bookmarks.where(
-                      (b) =>
-                          b.bookId == widget.book.id &&
-                          paragraph.contains(b.quote.substring(
-                              0,
-                              b.quote.length > 25
-                                  ? 25
-                                  : b.quote.length)),
-                    ).firstOrNull;
-                    final hasBookmark = matchingBookmark != null;
-                    final highlightColor = matchingBookmark != null
-                        ? Color(matchingBookmark.colorHex)
-                        : Colors.amber;
+                      final matchingBookmark = bookProvider.bookmarks
+                          .where(
+                            (b) =>
+                                b.bookId == widget.book.id &&
+                                paragraph.contains(b.quote.substring(
+                                    0,
+                                    b.quote.length > 25
+                                        ? 25
+                                        : b.quote.length)),
+                          )
+                          .firstOrNull;
+                      final hasBookmark = matchingBookmark != null;
+                      final highlightColor = matchingBookmark != null
+                          ? Color(matchingBookmark.colorHex)
+                          : Colors.amber;
 
-                    return GestureDetector(
-                      onLongPress: () => widget.onShowHighlight(paragraph),
-                      onDoubleTap: () => widget.onShowHighlight(paragraph),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.only(bottom: 20),
-                        padding: (isAudioActive || hasBookmark)
-                            ? const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8)
-                            : EdgeInsets.zero,
-                        decoration: BoxDecoration(
-                          color: isAudioActive
-                              ? colorScheme.primary.withValues(alpha: 0.12)
-                              : (hasBookmark
-                                  ? highlightColor.withValues(alpha: 0.16)
-                                  : Colors.transparent),
-                          borderRadius: BorderRadius.circular(10),
-                          border: isAudioActive
-                              ? Border(
-                                  left: BorderSide(
-                                    color: colorScheme.primary,
-                                    width: 3.5,
+                      final baseStyle = ReaderThemeHelpers.getReaderTextStyle(
+                        widget.themeProvider,
+                        widget.readerTextColor,
+                      );
+
+                      final sentences = splitIntoSentences(paragraph);
+                      final activeSentIdx = widget.activeAudioSentence
+                          .clamp(0, sentences.length - 1);
+
+                      return GestureDetector(
+                        onLongPress: () => widget.onShowHighlight(paragraph),
+                        onDoubleTap: () => widget.onShowHighlight(paragraph),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          margin: const EdgeInsets.only(bottom: 20),
+                          padding: hasBookmark
+                              ? const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                )
+                              : EdgeInsets.zero,
+                          decoration: BoxDecoration(
+                            color: hasBookmark
+                                ? highlightColor.withValues(alpha: 0.18)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: isAudioActive
+                              ? Text.rich(
+                                  TextSpan(
+                                    style: baseStyle,
+                                    children: List.generate(
+                                      sentences.length,
+                                      (sIdx) {
+                                        final isSentenceHighlighted =
+                                            sIdx == activeSentIdx;
+                                        return TextSpan(
+                                          text: sentences[sIdx],
+                                          style: isSentenceHighlighted
+                                              ? baseStyle.copyWith(
+                                                  backgroundColor: colorScheme
+                                                      .primary
+                                                      .withValues(alpha: 0.24),
+                                                  fontWeight: FontWeight.w600,
+                                                )
+                                              : baseStyle,
+                                        );
+                                      },
+                                    ),
                                   ),
                                 )
-                              : (hasBookmark
-                                  ? Border(
-                                      left: BorderSide(
-                                        color: highlightColor,
-                                        width: 3.5,
+                              : Text(
+                                  paragraph,
+                                  style: baseStyle,
+                                ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 24),
+                    if (hasChapters)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (widget.currentChapterIndex > 0)
+                            AnimatedPressable(
+                              onTap: () => widget.onGoToChapter(
+                                  widget.currentChapterIndex - 1),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: widget.readerTextColor
+                                      .withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.arrow_back_ios_rounded,
+                                        size: 14, color: widget.readerTextColor),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      widget.l10n?.t('reader.prev_chapter') ??
+                                          'Өмнөх бүлэг',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: widget.readerTextColor,
                                       ),
-                                    )
-                                  : null),
-                        ),
-                        child: Text(
-                          paragraph,
-                          style: ReaderThemeHelpers.getReaderTextStyle(
-                              widget.themeProvider, widget.readerTextColor),
-                        ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            const SizedBox.shrink(),
+                          if (widget.currentChapterIndex <
+                              widget.book.chapters.length - 1)
+                            AnimatedPressable(
+                              onTap: () => widget.onGoToChapter(
+                                  widget.currentChapterIndex + 1),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      widget.l10n?.t('reader.next_chapter') ??
+                                          'Дараагийн бүлэг',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Icon(Icons.arrow_forward_ios_rounded,
+                                        size: 14, color: colorScheme.onPrimary),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    );
-                  }),
-                  const SizedBox(height: 24),
-                  if (hasChapters)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (widget.currentChapterIndex > 0)
-                          AnimatedPressable(
-                            onTap: () => widget.onGoToChapter(widget.currentChapterIndex - 1),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: widget.readerTextColor
-                                    .withValues(alpha: 0.08),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.arrow_back_ios_rounded,
-                                      size: 14, color: widget.readerTextColor),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    widget.l10n?.t('reader.prev_chapter') ??
-                                        'Өмнөх бүлэг',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: widget.readerTextColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else
-                          const SizedBox.shrink(),
-                        if (widget.currentChapterIndex < widget.book.chapters.length - 1)
-                          AnimatedPressable(
-                            onTap: () => widget.onGoToChapter(widget.currentChapterIndex + 1),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    widget.l10n?.t('reader.next_chapter') ??
-                                        'Дараагийн бүлэг',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Icon(Icons.arrow_forward_ios_rounded,
-                                      size: 14,
-                                      color: colorScheme.onPrimary),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  const SizedBox(height: 120),
-                ],
+                    const SizedBox(height: 120),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

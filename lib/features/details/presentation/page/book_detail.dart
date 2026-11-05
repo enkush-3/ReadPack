@@ -221,6 +221,45 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       ),
                     ),
                   ],
+                  if (!currentBook.hasAudio) ...[
+                    const SizedBox(height: 10),
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant
+                                .withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.headset_off_rounded,
+                              size: 13,
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              l10n?.t('book.no_audio') ?? 'Аудиогүй',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.65),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   BookDetailStats(book: currentBook, l10n: l10n),
                   const SizedBox(height: 20),
@@ -228,6 +267,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     book: currentBook,
                     showAudioPlayer: _showAudioPlayer,
                     onToggleAudio: () {
+                      if (!currentBook.hasAudio) return;
                       setState(() {
                         _showAudioPlayer = !_showAudioPlayer;
                         if (_showAudioPlayer) {
@@ -237,7 +277,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     },
                     l10n: l10n,
                   ),
-                  if (_showAudioPlayer) ...[
+                  if (currentBook.hasAudio && _showAudioPlayer) ...[
                     const SizedBox(height: 20),
                     BookDetailAudioPlayer(
                       currentBook: currentBook,

@@ -68,7 +68,7 @@ class _ReaderPageState extends State<ReaderPage>
 
     _initChapterAudio();
 
-    if (widget.openAudioInitially) {
+    if (widget.openAudioInitially && widget.book.hasAudio) {
       _startAudio();
     }
 
@@ -96,6 +96,7 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _startAudio() {
+    if (!widget.book.hasAudio) return;
     _audioPlaybackTimer?.cancel();
     setState(() => _isAudioPlaying = true);
     if (_isTesting) return;
@@ -264,11 +265,38 @@ class _ReaderPageState extends State<ReaderPage>
           );
 
     final paragraphs = currentChapter.content.split('\n\n');
-    final activeAudioParagraph = _audioTotalSeconds > 0
-        ? ((_audioCurrentSeconds / _audioTotalSeconds) * paragraphs.length)
+    final paragraphSentences = paragraphs
+        .map((p) {
+          final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(p);
+          final list = matches
+              .map((m) => m.group(0) ?? '')
+              .where((s) => s.trim().isNotEmpty)
+              .toList();
+          return list.isEmpty ? [p] : list;
+        })
+        .toList();
+    final totalSentences = paragraphSentences.fold<int>(
+      0,
+      (sum, list) => sum + list.length,
+    );
+    final globalSentenceIndex = (_audioTotalSeconds > 0 && totalSentences > 0)
+        ? ((_audioCurrentSeconds / _audioTotalSeconds) * totalSentences)
             .floor()
-            .clamp(0, paragraphs.isEmpty ? 0 : paragraphs.length - 1)
+            .clamp(0, totalSentences - 1)
         : 0;
+
+    int activeAudioParagraph = 0;
+    int activeAudioSentence = 0;
+    int runningCount = 0;
+    for (int i = 0; i < paragraphSentences.length; i++) {
+      final count = paragraphSentences[i].length;
+      if (globalSentenceIndex < runningCount + count) {
+        activeAudioParagraph = i;
+        activeAudioSentence = globalSentenceIndex - runningCount;
+        break;
+      }
+      runningCount += count;
+    }
 
     return Scaffold(
       backgroundColor: readerBg,
@@ -285,6 +313,9 @@ class _ReaderPageState extends State<ReaderPage>
                 pageController: _pageController,
                 themeProvider: themeProvider,
                 readerTextColor: readerTextColor,
+                isAudioPlaying: _isAudioPlaying,
+                activeAudioParagraph: activeAudioParagraph,
+                activeAudioSentence: activeAudioSentence,
                 onPageChanged: (idx) {
                   setState(() => _currentPageInChapter = idx);
                   _reportPaginatedProgress(
@@ -305,6 +336,7 @@ class _ReaderPageState extends State<ReaderPage>
                 currentChapterIndex: _currentChapterIndex,
                 paragraphs: paragraphs,
                 activeAudioParagraph: activeAudioParagraph,
+                activeAudioSentence: activeAudioSentence,
                 isAudioPlaying: _isAudioPlaying,
                 scrollController: _scrollController,
                 themeProvider: themeProvider,
@@ -324,6 +356,7 @@ class _ReaderPageState extends State<ReaderPage>
               onOpenToc: _showTableOfContents,
               onOpenAppearance: _showAppearanceSheet,
               onToggleAudio: () {
+                if (!widget.book.hasAudio) return;
                 if (_isAudioPlaying) {
                   _pauseAudio();
                 } else {
@@ -337,7 +370,8 @@ class _ReaderPageState extends State<ReaderPage>
                 _showHighlightModal(quote);
               },
             ),
-            if (_isAudioPlaying || _audioCurrentSeconds > 0)
+            if (widget.book.hasAudio &&
+                (_isAudioPlaying || _audioCurrentSeconds > 0))
               ReaderAudioBar(
                 currentChapter: currentChapter,
                 isAudioPlaying: _isAudioPlaying,

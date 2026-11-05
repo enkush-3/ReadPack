@@ -15,6 +15,9 @@ class ReaderPageView extends StatefulWidget {
   final PageController pageController;
   final ThemeProvider themeProvider;
   final Color readerTextColor;
+  final bool isAudioPlaying;
+  final int activeAudioParagraph;
+  final int activeAudioSentence;
   final ValueChanged<int> onPageChanged;
   final ValueChanged<int> onGoToChapter;
   final VoidCallback onToggleControls;
@@ -31,6 +34,9 @@ class ReaderPageView extends StatefulWidget {
     required this.pageController,
     required this.themeProvider,
     required this.readerTextColor,
+    this.isAudioPlaying = false,
+    this.activeAudioParagraph = 0,
+    this.activeAudioSentence = 0,
     required this.onPageChanged,
     required this.onGoToChapter,
     required this.onToggleControls,
@@ -44,6 +50,15 @@ class ReaderPageView extends StatefulWidget {
 
 class _ReaderPageViewState extends State<ReaderPageView> {
   String? _selectedText;
+
+  static List<String> _splitIntoSentences(String paragraph) {
+    final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(paragraph);
+    final sentences = matches
+        .map((m) => m.group(0) ?? '')
+        .where((s) => s.trim().isNotEmpty)
+        .toList();
+    return sentences.isEmpty ? [paragraph] : sentences;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +88,7 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                   const Text('🎉', style: TextStyle(fontSize: 48)),
                   const SizedBox(height: 16),
                   Text(
-                    '${widget.currentChapter.title} уншиж дууслаа!',
+                    '${widget.currentChapter.title} ${widget.l10n?.t('reader.chapter_finished') ?? 'уншиж дууслаа!'}',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Serif',
@@ -84,7 +99,7 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Дараагийн бүлэг: ${nextChapter.title}',
+                    '${widget.l10n?.t('reader.next_chapter') ?? 'Дараагийн бүлэг'}: ${nextChapter.title}',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -104,10 +119,12 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    onPressed: () => widget.onGoToChapter(widget.currentChapterIndex + 1),
+                    onPressed: () =>
+                        widget.onGoToChapter(widget.currentChapterIndex + 1),
                     icon: const Icon(Icons.arrow_forward_rounded),
                     label: Text(
-                      widget.l10n?.t('reader.next_chapter') ?? 'Дараагийн бүлэг',
+                      widget.l10n?.t('reader.next_chapter') ??
+                          'Дараагийн бүлэг',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -142,7 +159,8 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOutCubic,
                 );
-              } else if (widget.currentChapterIndex < widget.chapters.length - 1) {
+              } else if (widget.currentChapterIndex <
+                  widget.chapters.length - 1) {
                 widget.onGoToChapter(widget.currentChapterIndex + 1);
               }
             } else {
@@ -204,7 +222,8 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                       final items = [
                         ...defaultItems,
                         ContextMenuButtonItem(
-                          label: '📌 Ишлэл хадгалах',
+                          label:
+                              '📌 ${widget.l10n?.t('reader.save_quote') ?? 'Ишлэл хадгалах'}',
                           onPressed: () {
                             final text = _selectedText;
                             selectableRegionState.hideToolbar();
@@ -230,55 +249,90 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                             ? [pageText]
                             : pageParagraphs;
 
+                        final baseStyle =
+                            ReaderThemeHelpers.getReaderTextStyle(
+                          widget.themeProvider,
+                          widget.readerTextColor,
+                        );
+
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: paragraphsToRender.map((p) {
-                            final matchingBm = bookProvider.bookmarks.where(
-                              (b) =>
-                                  b.bookId == widget.book.id &&
-                                  p.contains(b.quote.substring(
-                                      0,
-                                      b.quote.length > 25
-                                          ? 25
-                                          : b.quote.length)),
-                            ).firstOrNull;
-                            final hasBm = matchingBm != null;
-                            final highlightColor = matchingBm != null
-                                ? Color(matchingBm.colorHex)
-                                : Colors.amber;
+                          children: List.generate(
+                            paragraphsToRender.length,
+                            (idx) {
+                              final p = paragraphsToRender[idx];
+                              final matchingBm = bookProvider.bookmarks
+                                  .where(
+                                    (b) =>
+                                        b.bookId == widget.book.id &&
+                                        p.contains(b.quote.substring(
+                                            0,
+                                            b.quote.length > 25
+                                                ? 25
+                                                : b.quote.length)),
+                                  )
+                                  .firstOrNull;
+                              final hasBm = matchingBm != null;
+                              final highlightColor = matchingBm != null
+                                  ? Color(matchingBm.colorHex)
+                                  : Colors.amber;
 
-                            return GestureDetector(
-                              onLongPress: () => widget.onShowHighlight(p),
-                              onDoubleTap: () => widget.onShowHighlight(p),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: hasBm
-                                    ? const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 6)
-                                    : EdgeInsets.zero,
-                                decoration: hasBm
-                                    ? BoxDecoration(
-                                        color: highlightColor
-                                            .withValues(alpha: 0.16),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                        border: Border(
-                                          left: BorderSide(
-                                            color: highlightColor,
-                                            width: 3.5,
+                              final sentences = _splitIntoSentences(p);
+                              final isActivePara = widget.isAudioPlaying &&
+                                  idx ==
+                                      (widget.activeAudioParagraph %
+                                          paragraphsToRender.length);
+                              final activeSentIdx = widget.activeAudioSentence
+                                  .clamp(0, sentences.length - 1);
+
+                              return GestureDetector(
+                                onLongPress: () => widget.onShowHighlight(p),
+                                onDoubleTap: () => widget.onShowHighlight(p),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: hasBm
+                                      ? const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 6)
+                                      : EdgeInsets.zero,
+                                  decoration: hasBm
+                                      ? BoxDecoration(
+                                          color: highlightColor
+                                              .withValues(alpha: 0.18),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        )
+                                      : null,
+                                  child: isActivePara
+                                      ? Text.rich(
+                                          TextSpan(
+                                            style: baseStyle,
+                                            children: List.generate(
+                                              sentences.length,
+                                              (sIdx) => TextSpan(
+                                                text: sentences[sIdx],
+                                                style: sIdx == activeSentIdx
+                                                    ? baseStyle.copyWith(
+                                                        backgroundColor:
+                                                            colorScheme.primary
+                                                                .withValues(
+                                                                    alpha:
+                                                                        0.24),
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      )
+                                                    : baseStyle,
+                                              ),
+                                            ),
                                           ),
+                                        )
+                                      : Text(
+                                          p,
+                                          style: baseStyle,
                                         ),
-                                      )
-                                    : null,
-                                child: Text(
-                                  p,
-                                  style: ReaderThemeHelpers.getReaderTextStyle(
-                                      widget.themeProvider,
-                                      widget.readerTextColor),
                                 ),
-                              ),
-                            );
-                          }).toList(),
+                              );
+                            },
+                          ),
                         );
                       }),
                     ),
@@ -296,7 +350,8 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                         ),
                         onPressed: () =>
                             widget.onGoToChapter(widget.currentChapterIndex + 1),
-                        icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                        icon:
+                            const Icon(Icons.arrow_forward_rounded, size: 16),
                         label: Text(
                           widget.l10n?.t('reader.next_chapter') ??
                               'Дараагийн бүлэг рүү шилжих',

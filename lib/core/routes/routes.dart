@@ -141,7 +141,7 @@ class Routes {
           curve: Curves.easeOutCubic,
         );
         final slideTween = Tween<Offset>(
-          begin: const Offset(0.04, 0.0),
+          begin: const Offset(0.08, 0.0),
           end: Offset.zero,
         ).animate(curve);
         final fadeTween = Tween<double>(begin: 0.0, end: 1.0).animate(curve);
@@ -154,7 +154,7 @@ class Routes {
           ),
         );
       },
-      transitionDuration: const Duration(milliseconds: 250),
+      transitionDuration: const Duration(milliseconds: 260),
     );
   }
 

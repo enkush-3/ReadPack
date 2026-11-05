@@ -11,6 +11,13 @@ class ProfileLeagueCard extends StatelessWidget {
     required this.bookProvider,
   });
 
+  int _daysRemainingInMonth() {
+    final now = DateTime.now();
+    final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
+    final remaining = lastDayOfMonth - now.day;
+    return remaining > 0 ? remaining : 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -19,10 +26,28 @@ class ProfileLeagueCard extends StatelessWidget {
     final leagueName = profile.weeklyLeague.isNotEmpty
         ? profile.weeklyLeague
         : (l10n?.t('profile.diamond_league') ?? 'Алмазан Лиг');
+    final daysLeft = _daysRemainingInMonth();
+    final daysRemainingLabel = l10n?.t(
+          'leaderboard.days_remaining_month',
+          {'days': '$daysLeft'},
+        ) ??
+        '$daysLeft өдөр үлдсэн';
 
     final competitors = [
-      {'rank': '1', 'name': 'Төмөрөө', 'xp': 1820, 'badge': '🥇', 'isUser': false},
-      {'rank': '2', 'name': 'Ану-Үжин', 'xp': 1610, 'badge': '🥈', 'isUser': false},
+      {
+        'rank': '1',
+        'name': 'Төмөрөө',
+        'xp': 1820,
+        'badge': '🥇',
+        'isUser': false
+      },
+      {
+        'rank': '2',
+        'name': 'Ану-Үжин',
+        'xp': 1610,
+        'badge': '🥈',
+        'isUser': false
+      },
       {
         'rank': '3',
         'name': profile.isGuest
@@ -32,8 +57,20 @@ class ProfileLeagueCard extends StatelessWidget {
         'badge': '🥉',
         'isUser': true,
       },
-      {'rank': '4', 'name': 'Бат-Эрдэнэ', 'xp': 1290, 'badge': '4', 'isUser': false},
-      {'rank': '5', 'name': 'Хулан', 'xp': 1150, 'badge': '5', 'isUser': false},
+      {
+        'rank': '4',
+        'name': 'Бат-Эрдэнэ',
+        'xp': 1290,
+        'badge': '4',
+        'isUser': false
+      },
+      {
+        'rank': '5',
+        'name': 'Хулан',
+        'xp': 1150,
+        'badge': '5',
+        'isUser': false
+      },
     ];
 
     return InkWell(
@@ -56,22 +93,30 @@ class ProfileLeagueCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Text('🏆', style: TextStyle(fontSize: 20)),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$leagueName • ${l10n?.t('profile.leaderboard') ?? 'Лидерборд'}',
-                      style: TextStyle(
-                        fontFamily: 'Serif',
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
+                Flexible(
+                  child: Row(
+                    children: [
+                      const Text('🏆', style: TextStyle(fontSize: 20)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$leagueName • ${l10n?.t('leaderboard.monthly_title') ?? 'Сарын Лидерборд'}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Serif',
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 6),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -83,7 +128,7 @@ class ProfileLeagueCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        l10n?.t('profile.days_remaining') ?? '2 өдөр үлдсэн',
+                        daysRemainingLabel,
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -106,7 +151,8 @@ class ProfileLeagueCard extends StatelessWidget {
               final isUser = c['isUser'] as bool;
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: isUser
                       ? colorScheme.primary.withValues(alpha: 0.12)
@@ -165,7 +211,7 @@ class ProfileLeagueCard extends StatelessWidget {
             Center(
               child: Text(
                 l10n?.t('profile.diamond_promotion') ??
-                    '💎 Эхний 3 байр Алмазан Лиг рүү дэвшинэ',
+                    '💎 Сарын эхний 3 байр Алмазан Лиг рүү дэвшинэ',
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
