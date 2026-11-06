@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class ContinueReadingCard extends StatelessWidget {
   final Book book;
@@ -51,26 +52,16 @@ class ContinueReadingCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
             child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    width: 44,
-                    height: 60,
-                    child: book.image != null
-                        ? Image.asset(
-                            book.image!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: Colors.black26,
-                              child: const Icon(Icons.menu_book,
-                                  color: Colors.white, size: 20),
-                            ),
-                          )
-                        : Container(
-                            color: Colors.black26,
-                            child: const Icon(Icons.menu_book,
-                                color: Colors.white, size: 20),
-                          ),
+                SizedBox(
+                  width: 44,
+                  height: 60,
+                  child: BookCoverImage(
+                    image: book.image,
+                    colorHex: book.colorHex,
+                    title: book.title,
+                    author: book.author,
+                    borderRadius: 8,
+                    fit: BoxFit.cover,
                   ),
                 ),
                 const SizedBox(width: 12),

@@ -108,7 +108,7 @@ class ProfileHeaderCard extends StatelessWidget {
                   ),
                   child: Icon(
                     Icons.edit_outlined,
-                    size: 18,
+                    size: 20,
                     color: colorScheme.primary,
                   ),
                 ),

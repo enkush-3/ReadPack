@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class BookCard extends StatelessWidget {
   final Book? book;
@@ -21,20 +22,12 @@ class BookCard extends StatelessWidget {
   });
 
   Widget _buildCoverImage() {
-    if (image == null || image!.isEmpty) {
-      return _buildPlaceholder();
-    }
-    if (image!.startsWith('http://') || image!.startsWith('https://')) {
-      return Image.network(
-        image!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildPlaceholder(),
-      );
-    }
-    return Image.asset(
-      image!,
+    return BookCoverImage(
+      image: image,
+      colorHex: book?.colorHex ?? 0xFF182350,
+      title: title,
+      author: author,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _buildPlaceholder(),
     );
   }
 
@@ -127,34 +120,6 @@ class BookCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      color: Color(book?.colorHex ?? 0xFF182350),
-      padding: const EdgeInsets.all(12),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.auto_stories_rounded,
-                color: Colors.white70, size: 28),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: const TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

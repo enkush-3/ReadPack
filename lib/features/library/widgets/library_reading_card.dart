@@ -4,6 +4,7 @@ import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class LibraryReadingCard extends StatelessWidget {
   final Book book;
@@ -36,17 +37,16 @@ class LibraryReadingCard extends StatelessWidget {
         children: [
           Hero(
             tag: 'saved_book_${book.id}',
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                width: 68,
-                height: 96,
-                child: book.image != null
-                    ? Image.asset(book.image!, fit: BoxFit.cover)
-                    : Container(
-                        color: Color(book.colorHex),
-                        child: const Icon(Icons.menu_book, color: Colors.white),
-                      ),
+            child: SizedBox(
+              width: 68,
+              height: 96,
+              child: BookCoverImage(
+                image: book.image,
+                colorHex: book.colorHex,
+                title: book.title,
+                author: book.author,
+                borderRadius: 12,
+                fit: BoxFit.cover,
               ),
             ),
           ),
@@ -93,8 +93,13 @@ class LibraryReadingCard extends StatelessWidget {
                           SnackBar(
                             content: Text(
                               provider.isBookDownloaded(book.id)
-                                  ? 'Ном оффлайн уншихаар татагдлаа (${provider.getDownloadedSizeMb(book.id)} MB)'
-                                  : 'Ном оффлайн сангаас хасагдлаа',
+                                  ? (l10n?.t('library.downloaded_success', {
+                                        'size':
+                                            '${provider.getDownloadedSizeMb(book.id)}'
+                                      }) ??
+                                      'Ном оффлайн уншихаар татагдлаа (${provider.getDownloadedSizeMb(book.id)} MB)')
+                                  : (l10n?.t('library.removed_download') ??
+                                      'Ном оффлайн сангаас хасагдлаа'),
                             ),
                             duration: const Duration(seconds: 1),
                           ),

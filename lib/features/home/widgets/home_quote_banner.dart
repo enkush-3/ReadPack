@@ -100,18 +100,22 @@ class HomeQuoteBanner extends StatelessWidget {
                                 ),
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text(
-                                      'Өдрийн эшлэл амжилттай хадгалагдлаа! 📌'),
-                                  duration: Duration(seconds: 2),
+                                    l10n?.t('home.quote_saved_success') ??
+                                        'Өдрийн эшлэл амжилттай хадгалагдлаа! 📌',
+                                  ),
+                                  duration: const Duration(seconds: 2),
                                 ),
                               );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text(
-                                      'Энэ эшлэл таны санд хадгалагдсан байна ❤️'),
-                                  duration: Duration(seconds: 1),
+                                    l10n?.t('home.quote_already_saved') ??
+                                        'Энэ эшлэл таны санд хадгалагдсан байна ❤️',
+                                  ),
+                                  duration: const Duration(seconds: 1),
                                 ),
                               );
                             }
@@ -141,7 +145,9 @@ class HomeQuoteBanner extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 3),
                                 Text(
-                                  isAlreadySaved ? 'Хадгалсан' : 'Хадгалах',
+                                  isAlreadySaved
+                                      ? (l10n?.t('home.saved_quote') ?? 'Хадгалсан')
+                                      : (l10n?.t('home.save_quote') ?? 'Хадгалах'),
                                   style: TextStyle(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.bold,

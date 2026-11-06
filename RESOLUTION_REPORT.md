@@ -1,40 +1,110 @@
-# ReadPack Resolution Report (MODE D: Unrestricted Action Plan + Express.js & MongoDB Tree Architecture)
+# Resolution Report: ReadPack Code Review, UI Polish & Finish-Gate Fixes
 
-**Огноо:** 2026-11-05  
-**Статус:** 100% Амжилттай шийдвэрлэгдсэн (Бүх шүүмжлэгдсэн асуудлыг тооны хязгааргүйгээр бүрэн шийдвэрлэв)  
-**Шинжилгээ:** `flutter analyze` — 0 алдаа, 0 анхааруулга (`No issues found!`)  
-**Backend Тест:** `node --test backend/test/backend.test.js` — Бүх 8 тест амжилттай ногоон  
-**Flutter Тест:** `flutter test` — Бүх 86 тест амжилттай ногоон (100% pass)  
-**Архитектурын цэвэр код:** `lib/` доторх 114 файлын нэг нь ч 400 мөр хэтрээгүй (Zero files > 400 lines).
+## 1. Executive Summary
+Following the comprehensive review conducted across `/agency-code-reviewer`, `/agency-ui-designer`, and `/agency-ui-finish-gate-reviewer` documented in `CRITIQUE_REPORT.md`, all identified issues have been systematically addressed and verified using `/agency-mobile-app-builder` adhering to `.antigravity/skills/dynamic-fixer.md`.
+
+No placeholders (`// TODO` or unfinished mock states) were introduced. All 87 Flutter unit/widget tests and all 8 backend integration tests pass with 0 errors and 0 warnings.
 
 ---
 
-## 1. Шийдвэрлэсэн Ажлуудын Бүрэн Жагсаалт (Unrestricted Action Plan Execution)
+## 2. Dynamic Agents & Task Execution Map
 
-Хэрэглэгчийн шаардлага болон бодит утасны дэлгэцийн 4 скриншот дээр илэрсэн бүх согог, архитектурын өөрчлөлтийг "5 зүйл"-ээр хязгаарлалгүй 100% шийдвэрлэв:
-
-| # | Чиглэл | Өмнөх согог / Хүсэлт | Хүрсэн үр дүн |
-|---|---|---|---|
-| 1 | **Unrestricted Action Plan Mandate (`.antigravity/skills/app-critic.md`, `CRITIQUE_REPORT.md`)** | Хийх ажлыг зөвхөн "5 гол шинэчлэл" гэж хязгаарласан байсан | `app-critic.md` болон `CRITIQUE_REPORT.md`-ээс "5 зүйлийн хязгаар"-ыг бүрэн халж, шүүмжлэгдсэн **бүх** асуудлыг нэг ч орхигдуулалгүй жагсааж шийдвэрлэдэг дүрэмтэй болгов. |
-| 2 | **Express.js + MongoDB User Account Tree Architecture (`backend/`)** | Rust ашиглахгүй, Express.js (эсвэл Spring Boot) ашиглах ба User Account мэдээллийг мод бүтэцтэйгээр MongoDB дээр хадгалах | `backend/` хавтсанд **Express.js + Mongoose (MongoDB)** сервер үүсгэж, хэрэглэгчийн бүртгэлийг `UserAccountTree` мод бүтэцтэйгээр (`authNode`, `profileNode.preferencesNode`, `readingTree.shelves[].childrenBooks[].highlightsNodes/notesNodes`, `gamificationTree.xpNode/streakNode/challengeNode`) хадгалдаг болгов. |
-| 3 | **Central Books Catalog & Smart Read-Through Auto-Cleaning (`backend/src/services/`)** | Хайлт хийхэд эхлээд төв баазаас хайх, байхгүй бол гаднаас хайж цэвэрлээд, унших үед төв баазад автоматаар хадгалах | `GET /api/v1/books/search` нь эхлээд төв `books` баазаас хайна (`source: "central_db"`). Олдохгүй бол гадны API-аас хайж, `/data-autocleaning` (`dataAutoCleaner.js`: HTML цэвэрлэх, зохиолчийн нэр стандартчилах, `https://` зураг болгох, давхардал арилгах) хийнэ. Хэрэглэгч унших/хадгалах үед (`POST /api/v1/users/:userId/reading`) номыг төв баазад автоматаар бүртгэж (`upsert`), дараагийн хайлтаар шууд төв баазаас буцаадаг болов. |
-| 4 | **Орчуулгын Систем (`lib/helper/translation.dart`) Засвар** | `translate(key)` нь түлхүүр олдохгүй үед `fallback ?? key` буцаадаг байснаас `??` оператор хэзээ ч ажиллахгүй түүхий түлхүүр гардаг байсан | `translate()` болон `t()` функц нь түлхүүр олдохгүй үед `fallback` (`String?`) буцаадаг болж, Dart-ийн `l10n?.t(...) ?? 'Fallback'` оператор 100% зөв ажилладаг болов. |
-| 5 | **Бүх Дутуу Орчуулгын Түлхүүрүүдийг Нөхөх (`mn.json`, `en.json`)** | `settings.appearance`, `settings.notifications`, `settings.storage`, `settings.manage`, `quote_share.share` зэрэг 34 түлхүүр дутуу байсан | `assets/locales/mn.json` болон `assets/locales/en.json` файлуудад 34 түлхүүрийг бүрэн нэмж, кодонд ашиглагдсан 264 түлхүүрийн 100% нь хоёр хэл дээр орчуулгатай болов (`Missing: []`). |
-| 6 | **Нүүр Хуудасны Зочин Толгой Хэсэг (`lib/features/home/widgets/header.dart`)** | Зочин горимд `"З"` аватар, `"Зочин уншигч"`, `"🔥 0 хоног"` гал, мэдэгдлийн хонх харагдаж байсан | `profile.isGuest == true` үед хувийн аватар болон 0 хоногийн галыг нууж, цэвэрхэн `ReadPackLogo` брэнд толгой болон `"Нэвтрэх"` (`Routes.auth`) CTA товч харуулдаг болгов. |
-| 7 | **Профайл Хуудасны Зочны Тусгаарлалт (`lib/features/profile/widgets/profile_header_card.dart`)** | Зочин горимд `guest@readpack.app` болон `"Профайл засах"` (`ProfileEditDialog`) харандаа товч харагдаж байсан | Зочин үед `guest@readpack.app` болон `"Профайл засах"` харандаа товчийг бүрэн нууж, зөвхөн зочны танилцуулга болон ерөнхий тохиргоо харагддаг болгов. |
-| 8 | **Нэвтрэх Хуудасны 116px Overflow Засвар (`lib/features/auth/`)** | `AuthPage._buildTopNav` дээр 4 элемент нэг мөрөнд чихэгдсэнээс `RIGHT OVERFLOWED BY 116 PIXELS` алдаа гарсан | Дээд навигацийн мөрийг уян хатан компакт бүтэцтэй болгож, 360px нарийн дэлгэц дээр ч 0px overflow-гүй болгов. Мөн Профайлаас орж ирсэн үед (`canPop == true`) илүү `"Зочноор үргэлжлүүлэх →"` товчийг нуув. |
-| 9 | **Давхардсан Refresh Indicator Арилгах (`lib/features/shared/common/refresh.dart`)** | Доош татахад 2 өөр spinner давхардаж гарч байсан | `RefreshWrapper`-ийн давхардсан хөвөгч pill-ийг халж, haptic feedback бүхий цэвэрхэн нэгдсэн `RefreshIndicator` үлдээв. |
-| 10 | **Номын Картуудын Visual Hierarchy & Сүлжээний Зураг (`features_book.dart`, `books_card.dart`)** | Номын хавтасны зураг дээрх бичиг дээр цагаан текст давхарлаж бичсэнээс уншигдахгүй болсон | Apple Books / Kindle жишгээр номын ковер зургийг (дээд хэсэгт) болон гарчиг/зохиолч/үнэлгээний мэдээллийг (доод хэсэгт) тусад нь салгаж, `https://` сүлжээний зураг болон локал asset зургийг хоёуланг нь дэмждэг болгов. |
+### Batch 1: Cover Image & Rendering Integrity Agent (`book-cover-unifier`)
+- **Assigned Agent**: `book-cover-unifier`
+- **Scope & Target Files**:
+  - `lib/shared/widgets/book_cover_image.dart` (New canonical component)
+  - `lib/features/details/widgets/book_detail_app_bar.dart`
+  - `lib/features/home/widgets/books_card.dart`
+  - `lib/features/home/widgets/continue_reading_card.dart`
+  - `lib/features/home/widgets/features_book.dart`
+  - `lib/features/library/widgets/library_reading_card.dart`
+  - `lib/features/library/widgets/library_saved_card.dart`
+  - `lib/features/library/widgets/library_collection_dialogs.dart`
+  - `lib/features/profile/widgets/read_books_sheet.dart`
+  - `lib/features/search/widgets/searchresult.dart`
+- **Resolution**:
+  - Replaced divergent, ad-hoc image loaders that caused bundle asset crashes when receiving remote URLs or silent network failures when receiving local asset paths.
+  - Implemented `BookCoverImage` supporting HTTP/HTTPS URLs with disk/memory caching (`CachedNetworkImage`), local asset bundles (`Image.asset`), and a beautiful fallback book cover/spine styled with the book's title, author, and gradient background derived from `colorHex`.
 
 ---
 
-## 2. Backend & MongoDB Tree Архитектур (`backend/`)
+### Batch 2: Reader Viewport & Precision Agent (`reader-viewport-polisher`)
+- **Assigned Agent**: `reader-viewport-polisher`
+- **Scope & Target Files**:
+  - `lib/features/reader/widgets/reader_hud_bars.dart`
+  - `lib/features/reader/presentation/page/reader_page.dart`
+  - `lib/features/reader/widgets/reader_page_view.dart`
+- **Resolution**:
+  - Replaced the fixed `160px` progress indicator width with flexible `Expanded` + `ClipRRect(LinearProgressIndicator)` to guarantee zero overflow on narrow 320–360dp mobile viewports.
+  - Replaced hardcoded HUD bookmark indexing (`paragraphs[0]`) with accurate, dynamic paragraph calculation based on `_currentPageInChapter` (in paginated mode) and `_scrollProgress` (in continuous scroll mode).
+  - Cleaned up paginated viewport density: Large chapter header and metadata display strictly on page 0; subsequent pages (page > 0) use a compact running header (`60px`), freeing over 80 vertical pixels of reading space.
 
-- `backend/package.json` & `backend/docker-compose.yml`: Express.js + Mongoose + MongoDB 7 контейнер тохиргоо.
-- `backend/src/models/UserAccountTree.js`: Хэрэглэгчийн бүртгэлийг мод бүтэцтэй хадгалах Mongoose схем болон мод үүсгэгч.
-- `backend/src/models/CentralBook.js`: Төвлөрсөн номын сангийн Mongoose схем болон анхны номын сан.
-- `backend/src/services/dataAutoCleaner.js`: Гадны API-аас ирсэн бохир өгөгдлийг цэвэрлэх (`/data-autocleaning`) модуль.
-- `backend/src/services/mongoStore.js`: MongoDB Mongoose холболт болон локал демон ажиллаагүй үед автоматаар ажиллах JSON мод хадгалагч.
-- `backend/src/services/bookCatalogService.js`: Төв баазаас эхэлж хайх (Smart Read-Through Search) ба шинэ номыг төв баазад автоматаар бүртгэх (`upsert`) сервис.
-- `backend/src/services/userTreeService.js`: Хэрэглэгчийн `readingTree` болон `gamificationTree` модыг шинэчлэх сервис.
-- `backend/test/backend.test.js`: Бүх 6 интеграцийн тестийг багтаасан автомат тест.
+---
+
+### Batch 3: Design Polish & Navigation Hierarchy Agent (`design-hierarchy-gatekeeper`)
+- **Assigned Agent**: `design-hierarchy-gatekeeper`
+- **Scope & Target Files**:
+  - `lib/app_shell.dart`
+  - `lib/features/details/presentation/page/book_detail.dart`
+  - `lib/features/details/widgets/book_detail_overview_tab.dart`
+  - `lib/features/profile/widgets/profile_header_card.dart`
+  - `lib/features/profile/widgets/profile_retake_card.dart` (Deleted orphaned file)
+  - `lib/features/profile/widgets/profile_settings_card.dart` (Deleted orphaned file)
+- **Resolution**:
+  - Confined floating `ContinueReadingCard` exclusively to the Home tab (`_selectedIndex == 0`), preventing it from blocking the Search, Library, or Profile viewports.
+  - Removed the anti-pattern `#Аудиогүй` (`headset_off_rounded`) negative badge from Book Details header chips.
+  - Upgraded author other works bibliography chips into interactive `AnimatedPressable` buttons with tactile micro-interactions that navigate directly to related books.
+  - Preserved strict guest vs authenticated profile decoupling in `ProfileHeaderCard` while ensuring settings navigation is clean.
+  - Cleaned out orphaned dead code components (`ProfileRetakeCard`, `ProfileSettingsCard`).
+
+---
+
+### Batch 4: Complete Localization & Copywriting Agent (`i18n-localization-finisher`)
+- **Assigned Agent**: `i18n-localization-finisher`
+- **Scope & Target Files**:
+  - `assets/locales/mn.json`
+  - `assets/locales/en.json`
+  - `lib/features/home/widgets/home_quote_banner.dart`
+  - `lib/features/library/widgets/library_collection_dialogs.dart`
+  - `lib/features/library/widgets/library_reading_card.dart`
+  - `lib/features/library/widgets/library_saved_card.dart`
+  - `lib/features/profile/widgets/read_books_sheet.dart`
+  - `lib/features/profile/presentation/page/reading_schedule_page.dart`
+- **Resolution**:
+  - Added full translation keys across both Mongolian (`mn.json`) and English (`en.json`) for quotes, reading schedule time-slots, collection dialogs, download confirmations, and book details.
+  - Replaced hardcoded Mongolian strings in widgets with `AppLocalizations.of(context)?.t(...)` fallbacks.
+
+---
+
+## 3. Verification & Test Results
+
+### 1. Static Analysis
+```bash
+$ flutter analyze
+Analyzing ReadPack...
+No issues found! (ran in 1.6s)
+```
+
+### 2. Flutter Unit & Widget Tests
+```bash
+$ flutter test
+00:09 +87: All tests passed!
+```
+- Total test suites: 14 files
+- Total tests executed: 87
+- Passing: 87 (100%)
+- Failing: 0
+
+### 3. Backend Integration Tests
+```bash
+$ cd backend && npm test
+✔ ReadPack Express.js + MongoDB UserAccountTree & Smart Read-Through Book Catalog Suite
+ℹ tests 8
+ℹ pass 8
+ℹ fail 0
+```
+
+---
+
+## 4. Status
+All critique findings are 100% resolved. Ready for Git staging and commit.

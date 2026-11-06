@@ -1,9 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class ReadBooksSheet {
   static void show(BuildContext context, BookProvider provider) {
@@ -70,7 +70,9 @@ class ReadBooksSheet {
                           ),
                         ),
                         Text(
-                          'Нийт ${readBooks.length} ном уншиж дуусгасан байна',
+                          l10n?.t('profile.books_finished_count',
+                                  {'count': '${readBooks.length}'}) ??
+                              'Нийт ${readBooks.length} ном уншиж дуусгасан байна',
                           style: TextStyle(
                             fontSize: 12,
                             color:
@@ -101,7 +103,8 @@ class ReadBooksSheet {
                             ),
                             const SizedBox(height: 14),
                             Text(
-                              'Та одоогоор ном уншиж дуусгаагүй байна',
+                              l10n?.t('profile.no_books_finished_title') ??
+                                  'Та одоогоор ном уншиж дуусгаагүй байна',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -110,7 +113,8 @@ class ReadBooksSheet {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Ном уншиж эхлээд дуусгасны дараа энд түүх хадгалагдана.',
+                              l10n?.t('profile.no_books_finished_desc') ??
+                                  'Ном уншиж эхлээд дуусгасны дараа энд түүх хадгалагдана.',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: colorScheme.onSurface
@@ -143,19 +147,16 @@ class ReadBooksSheet {
                             ),
                             child: Row(
                               children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: CachedNetworkImage(
-                                    imageUrl: book.image ?? '',
-                                    width: 55,
-                                    height: 75,
+                                SizedBox(
+                                  width: 55,
+                                  height: 75,
+                                  child: BookCoverImage(
+                                    image: book.image,
+                                    colorHex: book.colorHex,
+                                    title: book.title,
+                                    author: book.author,
+                                    borderRadius: 10,
                                     fit: BoxFit.cover,
-                                    errorWidget: (_, __, ___) => Container(
-                                      width: 55,
-                                      height: 75,
-                                      color: colorScheme.surfaceContainerHighest,
-                                      child: const Icon(Icons.book, size: 24),
-                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 14),

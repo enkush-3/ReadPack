@@ -100,7 +100,9 @@ class _AppShellState extends State<AppShell>
         bottomNavigationBar: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_showContinueReadingModal && continueBooks.isNotEmpty)
+            if (_showContinueReadingModal &&
+                _selectedIndex == 0 &&
+                continueBooks.isNotEmpty)
               ContinueReadingCard(
                 book: continueBooks.first,
                 onTap: () {

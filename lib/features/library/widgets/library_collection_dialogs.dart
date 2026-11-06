@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/collection.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class LibraryCollectionDialogs {
   static IconData getCollectionIcon(String iconKey) {
@@ -38,14 +40,15 @@ class LibraryCollectionDialogs {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final colorScheme = Theme.of(context).colorScheme;
+            final l10n = AppLocalizations.of(context);
             return AlertDialog(
               backgroundColor: colorScheme.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
-              title: const Text(
-                'Шинэ цуглуулга үүсгэх',
-                style: TextStyle(
+              title: Text(
+                l10n?.t('collection.create_new') ?? 'Шинэ цуглуулга үүсгэх',
+                style: const TextStyle(
                   fontFamily: 'Serif',
                   fontWeight: FontWeight.bold,
                 ),
@@ -56,22 +59,26 @@ class LibraryCollectionDialogs {
                 children: [
                   TextField(
                     controller: nameCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Цуглуулгын нэр',
-                      hintText: 'ж.нь 2026 онд унших номууд',
+                    decoration: InputDecoration(
+                      labelText: l10n?.t('collection.name_label') ??
+                          'Цуглуулгын нэр',
+                      hintText: l10n?.t('collection.name_hint') ??
+                          'ж.нь 2026 онд унших номууд',
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: descCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Тайлбар (Заавал биш)',
+                    decoration: InputDecoration(
+                      labelText: l10n?.t('collection.desc_label') ??
+                          'Тайлбар (Заавал биш)',
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Икон сонгох:',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  Text(
+                    l10n?.t('collection.select_icon') ?? 'Икон сонгох:',
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -113,7 +120,7 @@ class LibraryCollectionDialogs {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Цуцлах'),
+                  child: Text(l10n?.t('common.cancel') ?? 'Цуцлах'),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -125,16 +132,17 @@ class LibraryCollectionDialogs {
                       );
                       Navigator.pop(ctx);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text(
-                            'Шинэ цуглуулга амжилттай үүсгэгдлээ! (+30 XP)',
+                            l10n?.t('collection.created_success') ??
+                                'Шинэ цуглуулга амжилттай үүсгэгдлээ! (+30 XP)',
                           ),
-                          duration: Duration(seconds: 2),
+                          duration: const Duration(seconds: 2),
                         ),
                       );
                     }
                   },
-                  child: const Text('Үүсгэх'),
+                  child: Text(l10n?.t('common.create') ?? 'Үүсгэх'),
                 ),
               ],
             );
@@ -155,6 +163,7 @@ class LibraryCollectionDialogs {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final colorScheme = Theme.of(context).colorScheme;
+        final l10n = AppLocalizations.of(context);
         final booksInCollection = provider.books
             .where((b) => collection.bookIds.contains(b.id))
             .toList();
@@ -224,7 +233,8 @@ class LibraryCollectionDialogs {
                           size: 18, color: colorScheme.primary),
                       const SizedBox(width: 6),
                       Text(
-                        '+ Энэ цуглуулгад ном нэмэх',
+                        l10n?.t('collection.add_books') ??
+                            '+ Энэ цуглуулгад ном нэмэх',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -240,7 +250,8 @@ class LibraryCollectionDialogs {
                 child: booksInCollection.isEmpty
                     ? Center(
                         child: Text(
-                          'Цуглуулгад одоогоор ном ороогүй байна.',
+                          l10n?.t('collection.empty') ??
+                              'Цуглуулгад одоогоор ном ороогүй байна.',
                           style: TextStyle(
                             fontSize: 13,
                             color:
@@ -266,22 +277,14 @@ class LibraryCollectionDialogs {
                                     Routes.bookDetail,
                                     arguments: b);
                               },
-                              leading: Container(
+                              leading: BookCoverImage(
+                                image: b.image,
+                                colorHex: b.colorHex,
+                                title: b.title,
+                                author: b.author,
                                 width: 36,
                                 height: 48,
-                                decoration: BoxDecoration(
-                                  color: Color(b.colorHex),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    b.title.isNotEmpty ? b.title[0] : '',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                                borderRadius: 6,
                               ),
                               title: Text(
                                 b.title,
@@ -337,6 +340,7 @@ class LibraryCollectionDialogs {
       backgroundColor: Colors.transparent,
       builder: (pickerCtx) {
         final colorScheme = Theme.of(context).colorScheme;
+        final l10n = AppLocalizations.of(context);
         final availableBooks = provider.books
             .where((b) => !collection.bookIds.contains(b.id))
             .toList();
@@ -352,10 +356,11 @@ class LibraryCollectionDialogs {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Цуглуулгад нэмэх номоо сонгоно уу',
-                style:
-                    TextStyle(fontFamily: 'Serif', fontWeight: FontWeight.bold),
+              Text(
+                l10n?.t('collection.select_books_to_add') ??
+                    'Цуглуулгад нэмэх номоо сонгоно уу',
+                style: const TextStyle(
+                    fontFamily: 'Serif', fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               Expanded(
@@ -364,6 +369,15 @@ class LibraryCollectionDialogs {
                   itemBuilder: (context, i) {
                     final b = availableBooks[i];
                     return ListTile(
+                      leading: BookCoverImage(
+                        image: b.image,
+                        colorHex: b.colorHex,
+                        title: b.title,
+                        author: b.author,
+                        width: 32,
+                        height: 44,
+                        borderRadius: 6,
+                      ),
                       title: Text(
                         b.title,
                         style: const TextStyle(

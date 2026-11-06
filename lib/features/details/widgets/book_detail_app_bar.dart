@@ -4,6 +4,7 @@ import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/backbutton.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class BookDetailAppBar extends StatelessWidget {
   final Book currentBook;
@@ -16,42 +17,6 @@ class BookDetailAppBar extends StatelessWidget {
     required this.bookProvider,
     this.l10n,
   });
-
-  Widget _buildPlaceholderCover(Book book) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(book.colorHex),
-            Color(book.colorHex).withValues(alpha: 0.7),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.menu_book_rounded, color: Colors.white, size: 36),
-            const SizedBox(height: 12),
-            Text(
-              book.title,
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              style: const TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,16 +134,13 @@ class BookDetailAppBar extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: currentBook.image != null
-                          ? Image.asset(
-                              currentBook.image!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  _buildPlaceholderCover(currentBook),
-                            )
-                          : _buildPlaceholderCover(currentBook),
+                    child: BookCoverImage(
+                      image: currentBook.image,
+                      colorHex: currentBook.colorHex,
+                      title: currentBook.title,
+                      author: currentBook.author,
+                      borderRadius: 16,
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),

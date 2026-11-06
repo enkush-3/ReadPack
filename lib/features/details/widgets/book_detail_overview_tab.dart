@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
+import 'package:readpack/shared/widgets/animated_pressable.dart';
 
 class BookDetailOverviewTab extends StatefulWidget {
   final Book currentBook;
@@ -135,7 +137,8 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
           if (relatedBooks.isNotEmpty) ...[
             const SizedBox(height: 14),
             Text(
-              '${currentBook.author} зохиогчийн бусад бүтээл:',
+              l10n?.t('book.author_other_works', {'author': currentBook.author}) ??
+                  '${currentBook.author} зохиогчийн бусад бүтээл:',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -147,19 +150,41 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
               spacing: 8,
               runSpacing: 6,
               children: relatedBooks.map((b) {
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    b.title,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.primary,
+                return AnimatedPressable(
+                  onTap: () {
+                    Navigator.of(context).pushNamed(
+                      Routes.bookDetail,
+                      arguments: b,
+                    );
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.menu_book_rounded,
+                          size: 11,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          b.title,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );

@@ -15,14 +15,14 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
   int _selectedHour = 20; // 20:00 default
   bool _remindersEnabled = true;
 
-  final List<Map<String, dynamic>> _weekDays = [
-    {'day': 'Да', 'minutes': 35, 'isToday': false},
-    {'day': 'Мя', 'minutes': 45, 'isToday': false},
-    {'day': 'Лх', 'minutes': 25, 'isToday': false},
-    {'day': 'Пү', 'minutes': 40, 'isToday': false},
-    {'day': 'Ба', 'minutes': 50, 'isToday': false},
-    {'day': 'Бя', 'minutes': 60, 'isToday': false},
-    {'day': 'Ня', 'minutes': 30, 'isToday': true},
+  List<Map<String, dynamic>> _getWeekDays(AppLocalizations? l10n) => [
+    {'day': l10n?.t('home.days.mon') ?? 'Да', 'minutes': 35, 'isToday': false},
+    {'day': l10n?.t('home.days.tue') ?? 'Мя', 'minutes': 45, 'isToday': false},
+    {'day': l10n?.t('home.days.wed') ?? 'Лх', 'minutes': 25, 'isToday': false},
+    {'day': l10n?.t('home.days.thu') ?? 'Пү', 'minutes': 40, 'isToday': false},
+    {'day': l10n?.t('home.days.fri') ?? 'Ба', 'minutes': 50, 'isToday': false},
+    {'day': l10n?.t('home.days.sat') ?? 'Бя', 'minutes': 60, 'isToday': false},
+    {'day': l10n?.t('home.days.sun') ?? 'Ня', 'minutes': 30, 'isToday': true},
   ];
 
   @override
@@ -127,7 +127,8 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                                 size: 14, color: colorScheme.primary),
                             const SizedBox(width: 5),
                             Text(
-                              'Идэвхтэй хуваарь',
+                              l10n?.t('schedule.active_schedule') ??
+                                  'Идэвхтэй хуваарь',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -149,7 +150,8 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    'Таны оройн тогтмол уншлага',
+                    l10n?.t('schedule.evening_routine') ??
+                        'Таны оройн тогтмол уншлага',
                     style: TextStyle(
                       fontFamily: 'Serif',
                       fontSize: 18,
@@ -159,7 +161,8 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Өдөрт $dailyGoal минут унших зорилготой байна. Судалгаагаар өдөр бүр ижил цагт унших нь тархинд унших дадлыг 3 дахин хурдан суулгадаг.',
+                    l10n?.t('schedule.routine_desc', {'mins': '$dailyGoal'}) ??
+                        'Өдөрт $dailyGoal минут унших зорилготой байна. Судалгаагаар өдөр бүр ижил цагт унших нь тархинд унших дадлыг 3 дахин хурдан суулгадаг.',
                     style: TextStyle(
                       fontSize: 13,
                       height: 1.45,
@@ -174,7 +177,8 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
 
             // 2. Weekly Consistency Bar Chart
             Text(
-              '7 хоногийн уншлагын идэвх',
+              l10n?.t('schedule.weekly_activity') ??
+                  '7 хоногийн уншлагын идэвх',
               style: TextStyle(
                 fontFamily: 'Serif',
                 fontSize: 17,
@@ -198,7 +202,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: _weekDays.map((w) {
+                    children: _getWeekDays(l10n).map((w) {
                       final minutes = w['minutes'] as int;
                       final isToday = w['isToday'] as bool;
                       final heightFraction = (minutes / 70).clamp(0.15, 1.0);
@@ -207,7 +211,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            '$minutesм',
+                            '$minutes${l10n?.t('book.minutes_short') ?? 'м'}',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -268,14 +272,16 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Нийт уншсан: 285 минут',
+                        l10n?.t('schedule.total_read', {'mins': '285'}) ??
+                            'Нийт уншсан: 285 минут',
                         style: TextStyle(
                           fontSize: 12,
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                       Text(
-                        'Зорилго биелэлт: 92%',
+                        l10n?.t('schedule.goal_completion', {'pct': '92'}) ??
+                            'Зорилго биелэлт: 92%',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -292,7 +298,8 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
 
             // 3. Time of Day Distribution
             Text(
-              'Унших цагийн хуваарилалт',
+              l10n?.t('schedule.time_distribution') ??
+                  'Унших цагийн хуваарилалт',
               style: TextStyle(
                 fontFamily: 'Serif',
                 fontSize: 17,
@@ -302,8 +309,10 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
             ),
             const SizedBox(height: 12),
             _buildTimeSlotItem(
-              title: 'Орой (18:00 - 23:00)',
-              subtitle: 'Таны хамгийн идэвхтэй цаг 🔥',
+              title: l10n?.t('schedule.slot_evening') ??
+                  'Орой (18:00 - 23:00)',
+              subtitle: l10n?.t('schedule.slot_evening_desc') ??
+                  'Таны хамгийн идэвхтэй цаг 🔥',
               percentage: 0.52,
               icon: Icons.nightlight_round,
               isBest: true,
@@ -311,8 +320,10 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
             ),
             const SizedBox(height: 10),
             _buildTimeSlotItem(
-              title: 'Өдөр (12:00 - 18:00)',
-              subtitle: 'Ажлын завсарлагаанаар',
+              title: l10n?.t('schedule.slot_afternoon') ??
+                  'Өдөр (12:00 - 18:00)',
+              subtitle: l10n?.t('schedule.slot_afternoon_desc') ??
+                  'Ажлын завсарлагаанаар',
               percentage: 0.26,
               icon: Icons.wb_sunny_rounded,
               isBest: false,
@@ -320,8 +331,10 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
             ),
             const SizedBox(height: 10),
             _buildTimeSlotItem(
-              title: 'Өглөө (06:00 - 12:00)',
-              subtitle: 'Эртэч уншлага',
+              title: l10n?.t('schedule.slot_morning') ??
+                  'Өглөө (06:00 - 12:00)',
+              subtitle: l10n?.t('schedule.slot_morning_desc') ??
+                  'Эртэч уншлага',
               percentage: 0.14,
               icon: Icons.coffee_rounded,
               isBest: false,
@@ -329,8 +342,10 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
             ),
             const SizedBox(height: 10),
             _buildTimeSlotItem(
-              title: 'Шөнө (23:00 - 06:00)',
-              subtitle: 'Орондоо унших',
+              title: l10n?.t('schedule.slot_night') ??
+                  'Шөнө (23:00 - 06:00)',
+              subtitle: l10n?.t('schedule.slot_night_desc') ??
+                  'Орондоо унших',
               percentage: 0.08,
               icon: Icons.bedtime_rounded,
               isBest: false,
@@ -341,7 +356,8 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
 
             // 4. Reminder Time Selector
             Text(
-              'Өдөр тутмын уншлагын сануулга',
+              l10n?.t('schedule.daily_reminder_title') ??
+                  'Өдөр тутмын уншлагын сануулга',
               style: TextStyle(
                 fontFamily: 'Serif',
                 fontSize: 17,
@@ -372,7 +388,8 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                               size: 20, color: colorScheme.primary),
                           const SizedBox(width: 10),
                           Text(
-                            'Унших цагийн сануулга',
+                            l10n?.t('profile.daily_reminder') ??
+                                'Унших цагийн сануулга',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -394,7 +411,8 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   if (_remindersEnabled) ...[
                     const SizedBox(height: 12),
                     Text(
-                      'Сануулах цаг сонгох:',
+                      l10n?.t('schedule.select_reminder_time') ??
+                          'Сануулах цаг сонгох:',
                       style: TextStyle(
                         fontSize: 12,
                         color: colorScheme.onSurface.withValues(alpha: 0.6),

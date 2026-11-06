@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class LibrarySavedCard extends StatelessWidget {
   final Book book;
@@ -17,6 +19,7 @@ class LibrarySavedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
     final isDownloaded = provider.isBookDownloaded(book.id);
 
     return AnimatedPressable(
@@ -44,18 +47,13 @@ class LibrarySavedCard extends StatelessWidget {
                   ClipRRect(
                     borderRadius:
                         const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: book.image != null
-                        ? Image.asset(book.image!, fit: BoxFit.cover)
-                        : Container(
-                            color: Color(book.colorHex),
-                            child: const Center(
-                              child: Icon(
-                                Icons.menu_book,
-                                color: Colors.white,
-                                size: 36,
-                              ),
-                            ),
-                          ),
+                    child: BookCoverImage(
+                      image: book.image,
+                      colorHex: book.colorHex,
+                      title: book.title,
+                      author: book.author,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   Positioned(
                     top: 8,
@@ -110,7 +108,7 @@ class LibrarySavedCard extends StatelessWidget {
                             Text(
                               isDownloaded
                                   ? '${provider.getDownloadedSizeMb(book.id)}MB'
-                                  : 'Татах',
+                                  : (l10n?.t('library.download') ?? 'Татах'),
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,

@@ -174,43 +174,72 @@ class _ReaderPageViewState extends State<ReaderPageView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 76),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.currentChapter.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: 'Serif',
-                          fontSize: (18 * widget.themeProvider.fontSizeScale)
-                              .clamp(14.0, 26.0),
-                          fontWeight: FontWeight.bold,
-                          color: widget.readerTextColor,
+                SizedBox(height: pIndex == 0 ? 76 : 60),
+                if (pIndex == 0) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.currentChapter.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Serif',
+                            fontSize: (18 * widget.themeProvider.fontSizeScale)
+                                .clamp(14.0, 26.0),
+                            fontWeight: FontWeight.bold,
+                            color: widget.readerTextColor,
+                          ),
                         ),
                       ),
-                    ),
-                    Text(
-                      '${widget.l10n?.t('reader.chapter') ?? 'Бүлэг'} ${widget.currentChapterIndex + 1}/${widget.chapters.isEmpty ? 1 : widget.chapters.length}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: widget.readerTextColor.withValues(alpha: 0.5),
+                      Text(
+                        '${widget.l10n?.t('reader.chapter') ?? 'Бүлэг'} ${widget.currentChapterIndex + 1}/${widget.chapters.isEmpty ? 1 : widget.chapters.length}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: widget.readerTextColor.withValues(alpha: 0.5),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.book.author,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: widget.readerTextColor.withValues(alpha: 0.6),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.book.author,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: widget.readerTextColor.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.currentChapter.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.4,
+                            color: widget.readerTextColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${pIndex + 1} / $pageCount',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: widget.readerTextColor.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 Expanded(
                   child: SelectionArea(
                     onSelectionChanged: (content) {

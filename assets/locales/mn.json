@@ -41,7 +41,11 @@
       "fri": "Ба",
       "sat": "Бя",
       "sun": "Ня"
-    }
+    },
+    "quote_saved_success": "Өдрийн эшлэл амжилттай хадгалагдлаа! 📌",
+    "quote_already_saved": "Энэ эшлэл таны санд хадгалагдсан байна ❤️",
+    "saved_quote": "Хадгалсан",
+    "save_quote": "Хадгалах"
   },
   "book": {
     "feature": "Онцлох номнууд",
@@ -84,7 +88,8 @@
       "reviews": "Сэтгэгдэл",
       "similar": "Ижил төстэй"
     },
-    "no_audio": "Аудиогүй"
+    "no_audio": "Аудиогүй",
+    "author_other_works": "{author} зохиогчийн бусад бүтээл:"
   },
   "reviews": {
     "title": "Үнэлгээ & Сэтгэгдэл",
@@ -186,7 +191,10 @@
     "sort_progress": "Явцаар",
     "sort_rating": "Үнэлгээгээр",
     "share_story": "Instagram Story болгох",
-    "share_story_btn": "Story карт"
+    "share_story_btn": "Story карт",
+    "download": "Татах",
+    "downloaded_success": "Ном оффлайн уншихаар татагдлаа ({size} MB)",
+    "removed_download": "Ном оффлайн сангаас хасагдлаа"
   },
   "search": {
     "did_you_mean": "Та үүнийг хайсан уу?",
@@ -320,7 +328,10 @@
       "night_owl_desc": "Шөнийн цагаар 30 минут унших",
       "speed_reader_title": "⚡ Хурдан уншигч",
       "speed_reader_desc": "Минутанд 240-өөс дээш үг унших"
-    }
+    },
+    "books_finished_count": "Нийт {count} ном уншиж дуусгасан байна",
+    "no_books_finished_title": "Та одоогоор ном уншиж дуусгаагүй байна",
+    "no_books_finished_desc": "Ном уншиж эхлээд дуусгасны дараа энд түүх хадгалагдана."
   },
   "settings": {
     "manage": "Удирдах",
@@ -490,5 +501,37 @@
     "password_reset_sent": "Нууц үг сэргээх холбоос илгээгдлээ",
     "password_changed": "Нууц үг амжилттай солигдлоо",
     "profile_updated": "Профайл амжилттай шинэчлэгдлээ"
+  },
+  "schedule": {
+    "active_schedule": "Идэвхтэй хуваарь",
+    "evening_routine": "Таны оройн тогтмол уншлага",
+    "routine_desc": "Өдөрт {mins} минут унших зорилготой байна. Өдөр бүр тогтмол цагт унших нь унших дадлыг 3 дахин хурдан суулгадаг.",
+    "weekly_activity": "7 хоногийн уншлагын идэвх",
+    "total_read": "Нийт уншсан: {mins} минут",
+    "goal_completion": "Зорилго биелэлт: {pct}%",
+    "time_distribution": "Унших цагийн хуваарилалт",
+    "slot_evening": "Орой (18:00 - 23:00)",
+    "slot_evening_desc": "Таны хамгийн идэвхтэй цаг 🔥",
+    "slot_afternoon": "Өдөр (12:00 - 18:00)",
+    "slot_afternoon_desc": "Ажлын завсарлагаанаар",
+    "slot_morning": "Өглөө (06:00 - 12:00)",
+    "slot_morning_desc": "Эртэч уншлага",
+    "slot_night": "Шөнө (23:00 - 06:00)",
+    "slot_night_desc": "Орондоо унших",
+    "daily_reminder_title": "Өдөр тутмын уншлагын сануулга",
+    "select_reminder_time": "Сануулах цаг сонгох:",
+    "save": "Хадгалах",
+    "saved_success": "Сануулга амжилттай тохируулагдлаа!"
+  },
+  "collection": {
+    "create_new": "Шинэ цуглуулга үүсгэх",
+    "name_label": "Цуглуулгын нэр",
+    "name_hint": "ж.нь 2026 онд унших номууд",
+    "desc_label": "Тайлбар (Заавал биш)",
+    "select_icon": "Икон сонгох:",
+    "created_success": "Шинэ цуглуулга амжилттай үүсгэгдлээ! (+30 XP)",
+    "add_books": "+ Энэ цуглуулгад ном нэмэх",
+    "empty": "Цуглуулгад одоогоор ном ороогүй байна.",
+    "select_books_to_add": "Цуглуулгад нэмэх номоо сонгоно уу"
   }
 }

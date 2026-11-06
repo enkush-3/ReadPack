@@ -364,9 +364,27 @@ class _ReaderPageState extends State<ReaderPage>
                 }
               },
               onAddBookmark: () {
-                final quote = paragraphs.isNotEmpty
-                    ? paragraphs[0]
-                    : widget.book.title;
+                String quote;
+                if (themeProvider.isPaginated) {
+                  final pages = ReaderThemeHelpers.paginateChapter(currentChapter.content);
+                  final curPageText = (pages.isNotEmpty && _currentPageInChapter < pages.length)
+                      ? pages[_currentPageInChapter]
+                      : currentChapter.content;
+                  final pageParas = curPageText
+                      .split('\n\n')
+                      .where((p) => p.trim().isNotEmpty)
+                      .toList();
+                  quote = pageParas.isNotEmpty ? pageParas.first : curPageText;
+                } else {
+                  if (paragraphs.isNotEmpty) {
+                    final targetIndex = (_scrollProgress * paragraphs.length)
+                        .floor()
+                        .clamp(0, paragraphs.length - 1);
+                    quote = paragraphs[targetIndex];
+                  } else {
+                    quote = widget.book.title;
+                  }
+                }
                 _showHighlightModal(quote);
               },
             ),

@@ -5,6 +5,7 @@ import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/home/widgets/books_card.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 import 'package:readpack/shared/widgets/empty_state_view.dart';
 
 class SearchResult extends StatelessWidget {
@@ -79,23 +80,16 @@ class SearchResult extends StatelessWidget {
                         arguments: book,
                       );
                     },
-                    leading: Container(
+                    leading: SizedBox(
                       width: 44,
                       height: 58,
-                      decoration: BoxDecoration(
-                        color: Color(book.colorHex),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          book.title.isNotEmpty ? book.title[0] : '',
-                          style: const TextStyle(
-                            fontFamily: 'Serif',
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
-                        ),
+                      child: BookCoverImage(
+                        image: book.image,
+                        colorHex: book.colorHex,
+                        title: book.title,
+                        author: book.author,
+                        borderRadius: 8,
+                        fit: BoxFit.cover,
                       ),
                     ),
                     title: Text(

@@ -41,7 +41,11 @@
       "fri": "Fri",
       "sat": "Sat",
       "sun": "Sun"
-    }
+    },
+    "quote_saved_success": "Daily quote saved successfully! 📌",
+    "quote_already_saved": "This quote is already in your library ❤️",
+    "saved_quote": "Saved",
+    "save_quote": "Save"
   },
   "book": {
     "feature": "Featured Books",
@@ -84,7 +88,8 @@
       "reviews": "Reviews",
       "similar": "Similar"
     },
-    "no_audio": "No Audio"
+    "no_audio": "No Audio",
+    "author_other_works": "Other works by {author}:"
   },
   "reviews": {
     "title": "Ratings & Reviews",
@@ -186,7 +191,10 @@
     "sort_progress": "By Progress",
     "sort_rating": "By Rating",
     "share_story": "Share to Instagram Story",
-    "share_story_btn": "Story Card"
+    "share_story_btn": "Story Card",
+    "download": "Download",
+    "downloaded_success": "Book downloaded for offline reading ({size} MB)",
+    "removed_download": "Book removed from offline storage"
   },
   "search": {
     "did_you_mean": "Did you mean?",
@@ -320,7 +328,10 @@
       "night_owl_desc": "Read past midnight for 30 minutes",
       "speed_reader_title": "⚡ Speed Reader",
       "speed_reader_desc": "Read at over 240 words per minute"
-    }
+    },
+    "books_finished_count": "Total {count} books completed",
+    "no_books_finished_title": "You haven't finished any books yet",
+    "no_books_finished_desc": "Your reading history will appear here once you finish reading."
   },
   "settings": {
     "manage": "Manage",
@@ -490,5 +501,37 @@
     "password_reset_sent": "Password reset link has been sent",
     "password_changed": "Password changed successfully",
     "profile_updated": "Profile updated successfully"
+  },
+  "schedule": {
+    "active_schedule": "Active Schedule",
+    "evening_routine": "Your Evening Reading Routine",
+    "routine_desc": "You aim to read {mins} minutes daily. Reading at the same time each day builds habits 3x faster.",
+    "weekly_activity": "7-Day Reading Activity",
+    "total_read": "Total read: {mins} mins",
+    "goal_completion": "Goal Completion: {pct}%",
+    "time_distribution": "Time of Day Distribution",
+    "slot_evening": "Evening (18:00 - 23:00)",
+    "slot_evening_desc": "Your peak reading hours 🔥",
+    "slot_afternoon": "Afternoon (12:00 - 18:00)",
+    "slot_afternoon_desc": "During workday breaks",
+    "slot_morning": "Morning (06:00 - 12:00)",
+    "slot_morning_desc": "Early morning focus",
+    "slot_night": "Night (23:00 - 06:00)",
+    "slot_night_desc": "Bedtime reading",
+    "daily_reminder_title": "Daily Reading Reminder",
+    "select_reminder_time": "Select reminder time:",
+    "save": "Save",
+    "saved_success": "Reminder scheduled successfully!"
+  },
+  "collection": {
+    "create_new": "Create New Collection",
+    "name_label": "Collection Name",
+    "name_hint": "e.g. Books to read in 2026",
+    "desc_label": "Description (Optional)",
+    "select_icon": "Choose Icon:",
+    "created_success": "New collection created successfully! (+30 XP)",
+    "add_books": "+ Add books to collection",
+    "empty": "No books in this collection yet.",
+    "select_books_to_add": "Select books to add to collection"
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class FeaturedBookCard extends StatelessWidget {
   final Book? book;
@@ -24,20 +25,12 @@ class FeaturedBookCard extends StatelessWidget {
   });
 
   Widget _buildCoverImage() {
-    if (image.isEmpty) {
-      return _buildArtworkCover();
-    }
-    if (image.startsWith('http://') || image.startsWith('https://')) {
-      return Image.network(
-        image,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildArtworkCover(),
-      );
-    }
-    return Image.asset(
-      image,
+    return BookCoverImage(
+      image: image,
+      colorHex: color.toARGB32(),
+      title: title,
+      author: author,
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => _buildArtworkCover(),
     );
   }
 
@@ -229,26 +222,6 @@ class FeaturedBookCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildArtworkCover() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color, color.withValues(alpha: 0.7)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Center(
-        child: Icon(
-          Icons.auto_stories_rounded,
-          color: Colors.white.withValues(alpha: 0.85),
-          size: 42,
         ),
       ),
     );
