@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:readpack/features/reader/widgets/reader_theme_helpers.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
@@ -15,6 +14,7 @@ class ReaderTopHud extends StatelessWidget {
   final VoidCallback onOpenAppearance;
   final VoidCallback onToggleAudio;
   final VoidCallback onAddBookmark;
+  final VoidCallback? onOpenSearch;
 
   const ReaderTopHud({
     super.key,
@@ -28,6 +28,7 @@ class ReaderTopHud extends StatelessWidget {
     required this.onOpenAppearance,
     required this.onToggleAudio,
     required this.onAddBookmark,
+    this.onOpenSearch,
   });
 
   @override
@@ -86,6 +87,18 @@ class ReaderTopHud extends StatelessWidget {
             ),
             Row(
               children: [
+                if (onOpenSearch != null)
+                  AnimatedPressable(
+                    onTap: onOpenSearch,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.search_rounded,
+                        size: 20,
+                        color: readerTextColor,
+                      ),
+                    ),
+                  ),
                 AnimatedPressable(
                   onTap: onOpenToc,
                   child: Padding(
@@ -172,15 +185,7 @@ class ReaderBottomHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final paginatedPagesCount =
-        ReaderThemeHelpers.paginateChapter(currentChapter.content).length;
-    final effectiveProgress = isPaginated
-        ? (((currentChapterIndex +
-                    (currentPageInChapter + 1) /
-                        (paginatedPagesCount > 0 ? paginatedPagesCount : 1)) /
-                (chapters.isEmpty ? 1 : chapters.length))
-            .clamp(0.0, 1.0))
-        : scrollProgress;
+    final effectiveProgress = scrollProgress.clamp(0.0, 1.0);
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 250),

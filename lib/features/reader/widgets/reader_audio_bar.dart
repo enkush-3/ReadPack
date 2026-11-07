@@ -16,6 +16,8 @@ class ReaderAudioBar extends StatelessWidget {
   final ValueChanged<double> onSkip;
   final VoidCallback onChangeSpeed;
   final VoidCallback onClose;
+  final int? sleepTimerMinutes;
+  final VoidCallback? onOpenSleepTimer;
   final AppLocalizations? l10n;
 
   const ReaderAudioBar({
@@ -31,6 +33,8 @@ class ReaderAudioBar extends StatelessWidget {
     required this.onSkip,
     required this.onChangeSpeed,
     required this.onClose,
+    this.sleepTimerMinutes,
+    this.onOpenSleepTimer,
     this.l10n,
   });
 
@@ -101,6 +105,45 @@ class ReaderAudioBar extends StatelessWidget {
                     ],
                   ),
                 ),
+                // Sleep Timer Button
+                if (onOpenSleepTimer != null) ...[
+                  AnimatedPressable(
+                    onTap: onOpenSleepTimer,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: (sleepTimerMinutes != null && sleepTimerMinutes! > 0)
+                            ? Colors.amber.withValues(alpha: 0.35)
+                            : Colors.white24,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.bedtime_rounded,
+                            size: 13,
+                            color: (sleepTimerMinutes != null && sleepTimerMinutes! > 0)
+                                ? Colors.amber
+                                : Colors.white,
+                          ),
+                          if (sleepTimerMinutes != null && sleepTimerMinutes! > 0) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              '${sleepTimerMinutes}m',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.amber,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 // Speed selector
                 AnimatedPressable(
                   onTap: onChangeSpeed,
@@ -151,21 +194,38 @@ class ReaderAudioBar extends StatelessWidget {
                 onChanged: onSeek,
               ),
             ),
-            // Audio Controls: Skip -10s, Play/Pause, Skip +10s
+            // Audio Controls: Skip -15s, Play/Pause, Skip +15s
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.replay_10_rounded,
-                      color: Colors.white, size: 22),
-                  onPressed: () => onSkip(-10),
+                  tooltip: '-15с',
+                  icon: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const Icon(Icons.replay_rounded,
+                          color: Colors.white, size: 28),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '15',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white.withValues(alpha: 0.95),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  onPressed: () => onSkip(-15),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 GestureDetector(
                   onTap: onTogglePlay,
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    width: 38,
+                    height: 38,
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
@@ -175,15 +235,35 @@ class ReaderAudioBar extends StatelessWidget {
                           ? Icons.pause_rounded
                           : Icons.play_arrow_rounded,
                       color: Theme.of(context).colorScheme.primary,
-                      size: 22,
+                      size: 24,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 IconButton(
-                  icon: const Icon(Icons.forward_10_rounded,
-                      color: Colors.white, size: 22),
-                  onPressed: () => onSkip(10),
+                  tooltip: '+15с',
+                  icon: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Transform.scale(
+                        scaleX: -1,
+                        child: const Icon(Icons.replay_rounded,
+                            color: Colors.white, size: 28),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '15',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white.withValues(alpha: 0.95),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  onPressed: () => onSkip(15),
                 ),
               ],
             ),

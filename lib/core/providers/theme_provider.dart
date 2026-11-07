@@ -17,6 +17,7 @@ class ThemeProvider extends ChangeNotifier {
   static const String _keyIsPaginated = 'readpack_is_paginated';
   static const String _keyLineHeight = 'readpack_line_height';
   static const String _keyHorizontalMargin = 'readpack_horizontal_margin';
+  static const String _keyIsBionicReading = 'readpack_is_bionic_reading';
 
   ThemeMode _themeMode = ThemeMode.system;
   AppReaderTheme _readerTheme = AppReaderTheme.light;
@@ -26,6 +27,7 @@ class ThemeProvider extends ChangeNotifier {
   bool _isPaginated = true;
   double _lineHeight = 1.7; // 1.4 to 2.2
   double _horizontalMargin = 20.0; // 12.0 to 32.0
+  bool _isBionicReading = false;
 
   ThemeMode get themeMode => _themeMode;
   AppReaderTheme get readerTheme => _readerTheme;
@@ -35,6 +37,7 @@ class ThemeProvider extends ChangeNotifier {
   bool get isPaginated => _isPaginated;
   double get lineHeight => _lineHeight;
   double get horizontalMargin => _horizontalMargin;
+  bool get isBionicReading => _isBionicReading;
 
   bool get isDarkMode {
     if (_themeMode == ThemeMode.dark) return true;
@@ -90,6 +93,11 @@ class ThemeProvider extends ChangeNotifier {
       final hm = prefs.getDouble(_keyHorizontalMargin);
       if (hm != null) {
         _horizontalMargin = hm.clamp(10.0, 36.0);
+      }
+
+      final bionic = prefs.getBool(_keyIsBionicReading);
+      if (bionic != null) {
+        _isBionicReading = bionic;
       }
       notifyListeners();
     } catch (_) {
@@ -168,6 +176,15 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
     SharedPreferences.getInstance().then((prefs) {
       prefs.setDouble(_keyHorizontalMargin, _horizontalMargin);
+    });
+  }
+
+  void setBionicReading(bool enabled) {
+    if (_isBionicReading == enabled) return;
+    _isBionicReading = enabled;
+    notifyListeners();
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool(_keyIsBionicReading, enabled);
     });
   }
 }

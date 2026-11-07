@@ -82,6 +82,50 @@ class BookStateMutator {
     }
   }
 
+  static void updateReview(
+      List<Book> books, String bookId, BookReview updatedReview) {
+    final index = books.indexWhere((b) => b.id == bookId);
+    if (index != -1) {
+      final currentBook = books[index];
+      final revIndex =
+          currentBook.reviews.indexWhere((r) => r.id == updatedReview.id);
+      if (revIndex != -1) {
+        final updatedReviews = List<BookReview>.from(currentBook.reviews);
+        updatedReviews[revIndex] = updatedReview;
+        final totalStars =
+            updatedReviews.fold<double>(0.0, (sum, r) => sum + r.rating);
+        final newRating = double.parse(
+            (totalStars / updatedReviews.length).toStringAsFixed(1));
+        books[index] = currentBook.copyWith(
+          reviews: updatedReviews,
+          rating: newRating,
+        );
+      }
+    }
+  }
+
+  static void deleteReview(
+      List<Book> books, String bookId, String reviewId) {
+    final index = books.indexWhere((b) => b.id == bookId);
+    if (index != -1) {
+      final currentBook = books[index];
+      final updatedReviews =
+          currentBook.reviews.where((r) => r.id != reviewId).toList();
+      final newCount = updatedReviews.length;
+      final newRating = newCount > 0
+          ? double.parse((updatedReviews.fold<double>(
+                      0.0, (s, r) => s + r.rating) /
+                  newCount)
+              .toStringAsFixed(1))
+          : 0.0;
+      books[index] = currentBook.copyWith(
+        reviews: updatedReviews,
+        reviewsCount: newCount,
+        rating: newRating,
+      );
+    }
+  }
+
   static bool toggleReviewHelpful(
       List<Book> books, String bookId, String reviewId) {
     final bookIndex = books.indexWhere((b) => b.id == bookId);

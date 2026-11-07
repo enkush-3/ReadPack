@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
@@ -98,7 +99,7 @@ class _ReaderScrollViewState extends State<ReaderScrollView> {
             const SliverToBoxAdapter(child: SizedBox(height: 72)),
             SliverPadding(
               padding: EdgeInsets.symmetric(
-                horizontal: widget.themeProvider.horizontalMargin,
+                horizontal: math.max(22.0, widget.themeProvider.horizontalMargin),
               ),
               sliver: SliverToBoxAdapter(
                 child: Column(
@@ -197,10 +198,19 @@ class _ReaderScrollViewState extends State<ReaderScrollView> {
                                     ),
                                   ),
                                 )
-                              : Text(
-                                  paragraph,
-                                  style: baseStyle,
-                                ),
+                              : (widget.themeProvider.isBionicReading
+                                  ? Text.rich(
+                                      TextSpan(
+                                        children: ReaderThemeHelpers.buildBionicSpans(
+                                          paragraph,
+                                          baseStyle,
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      paragraph,
+                                      style: baseStyle,
+                                    )),
                         ),
                       );
                     }),

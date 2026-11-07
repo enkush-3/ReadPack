@@ -79,7 +79,9 @@ class LibraryReadingCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '$progressPct% ${l10n?.t('library.read_percent') ?? 'уншсан'}',
+                      l10n?.t('library.read_percent',
+                              {'percent': '$progressPct'}) ??
+                          '$progressPct% уншсан',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

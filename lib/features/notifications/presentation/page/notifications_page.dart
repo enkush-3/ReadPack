@@ -126,7 +126,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               child: bookProvider.isLoading
                   ? _buildLoadingSkeleton()
                   : filtered.isEmpty
-                      ? _buildEmptyState()
+                      ? _buildEmptyState(bookProvider)
                       : ListView.separated(
                           physics: const BouncingScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
@@ -185,7 +185,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BookProvider bookProvider) {
     final l10n = AppLocalizations.of(context);
     final emptyUnreadTitle =
         l10n?.t('notifications.empty_unread_title') ?? 'Уншаагүй мэдэгдэл алга';
@@ -195,14 +195,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
         'Таны бүх мэдэгдлүүд уншигдсан байна.';
     final viewAllText =
         l10n?.t('notifications.view_all') ?? 'Бүх мэдэгдлийг харах';
+    final hasAnyNotifications = bookProvider.notifications.isNotEmpty;
 
     return Center(
       child: EmptyStateView(
         icon: Icons.notifications_off_rounded,
         title: _activeTab == 'unread' ? emptyUnreadTitle : emptyTitle,
         message: emptyDesc,
-        actionLabel: _activeTab != 'all' ? viewAllText : null,
-        onAction: _activeTab != 'all'
+        actionLabel: (_activeTab != 'all' && hasAnyNotifications) ? viewAllText : null,
+        onAction: (_activeTab != 'all' && hasAnyNotifications)
             ? () => setState(() => _activeTab = 'all')
             : null,
       ),

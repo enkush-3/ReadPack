@@ -4,6 +4,7 @@ import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/features/details/presentation/page/book_detail.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
+import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class BookDetailSimilarTab extends StatelessWidget {
   final Book currentBook;
@@ -72,24 +73,14 @@ class BookDetailSimilarTab extends StatelessWidget {
                     ),
                   );
                 },
-                leading: Container(
+                leading: BookCoverImage(
+                  image: b.image,
+                  colorHex: b.colorHex,
+                  title: b.title,
+                  author: b.author,
                   width: 44,
                   height: 56,
-                  decoration: BoxDecoration(
-                    color: Color(b.colorHex),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Center(
-                    child: Text(
-                      b.title.isNotEmpty ? b.title[0] : '',
-                      style: const TextStyle(
-                        fontFamily: 'Serif',
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
+                  borderRadius: 8,
                 ),
                 title: Text(
                   b.title,

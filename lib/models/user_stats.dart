@@ -73,6 +73,7 @@ class UserProfile {
   final List<String> favoriteGenres;
   final int yearlyGoalBooks;
   final bool onboardingCompleted;
+  final String lastStreakDate;
 
   const UserProfile({
     this.name = 'Enkush',
@@ -93,6 +94,7 @@ class UserProfile {
     this.favoriteGenres = const ['Бизнес', 'Хувь хүний хөгжил', 'Сэтгэл зүй'],
     this.yearlyGoalBooks = 24,
     this.onboardingCompleted = true,
+    this.lastStreakDate = '',
     this.achievements = const [
       ReadingAchievement(
         id: 'streak_7',
@@ -127,6 +129,12 @@ class UserProfile {
   });
 
   int get bestStreakDays => streakDays > 14 ? streakDays : 14;
+
+  bool get isStreakClaimedToday {
+    if (lastStreakDate.isEmpty) return false;
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    return lastStreakDate == today;
+  }
 
   int get userLevel {
     if (xp < 500) return 1;
@@ -186,6 +194,7 @@ class UserProfile {
     List<String>? favoriteGenres,
     int? yearlyGoalBooks,
     bool? onboardingCompleted,
+    String? lastStreakDate,
   }) {
     return UserProfile(
       name: name ?? this.name,
@@ -210,6 +219,7 @@ class UserProfile {
       favoriteGenres: favoriteGenres ?? this.favoriteGenres,
       yearlyGoalBooks: yearlyGoalBooks ?? this.yearlyGoalBooks,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
+      lastStreakDate: lastStreakDate ?? this.lastStreakDate,
     );
   }
 
@@ -233,6 +243,7 @@ class UserProfile {
     'favoriteGenres': favoriteGenres,
     'yearlyGoalBooks': yearlyGoalBooks,
     'onboardingCompleted': onboardingCompleted,
+    'lastStreakDate': lastStreakDate,
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
@@ -261,5 +272,6 @@ class UserProfile {
         const ['Бизнес', 'Хувь хүний хөгжил', 'Сэтгэл зүй'],
     yearlyGoalBooks: json['yearlyGoalBooks'] as int? ?? 24,
     onboardingCompleted: json['onboardingCompleted'] as bool? ?? true,
+    lastStreakDate: json['lastStreakDate'] as String? ?? '',
   );
 }

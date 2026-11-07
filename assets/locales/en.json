@@ -533,5 +533,38 @@
     "add_books": "+ Add books to collection",
     "empty": "No books in this collection yet.",
     "select_books_to_add": "Select books to add to collection"
+  },
+  "reader_ext": {
+    "bionic_reading": "Bionic Reading Mode",
+    "bionic_desc": "Bold first letters for faster eye tracking",
+    "in_book_search": "In-Book Search",
+    "search_hint": "Search keywords, quotes, terms...",
+    "matches_found": "{count} matches found",
+    "no_matches": "No matches found"
+  },
+  "audio_ext": {
+    "sleep_timer": "Sleep Timer",
+    "sleep_off": "Off",
+    "sleep_15": "15 minutes",
+    "sleep_30": "30 minutes",
+    "sleep_45": "45 minutes",
+    "sleep_end_chapter": "End of chapter"
+  },
+  "badges": {
+    "title": "Badges & Milestones",
+    "morning": "Early Bird Reader",
+    "morning_desc": "Read between 6am-9am on 3 days",
+    "business": "Business Expert",
+    "business_desc": "Read 3 business and leadership books",
+    "streak_master": "7-Day Streak Master",
+    "streak_master_desc": "Completed 7 days streak without break",
+    "bookworm": "Avid Bookworm",
+    "bookworm_desc": "Finished reading 10 or more books"
+  },
+  "flashcards": {
+    "title": "Daily Flashcard (Retention)",
+    "subtitle": "From your saved quotes",
+    "flip_hint": "Tap to see book details",
+    "next": "Next Quote"
   }
 }

@@ -272,6 +272,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
                       },
                       l10n: l10n,
                     ),
+                    const SizedBox(height: 20),
                   ],
                   _buildTabBar(colorScheme, l10n),
                   if (_selectedTabIndex == 0)

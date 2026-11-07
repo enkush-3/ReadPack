@@ -259,58 +259,97 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: colorScheme.primaryContainer.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: colorScheme.primary.withValues(alpha: 0.15),
+                color: colorScheme.primary.withValues(alpha: 0.2),
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.lightbulb_rounded,
-                      color: colorScheme.primary,
-                      size: 20,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_rounded,
+                          color: colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          takeawaysText,
+                          style: TextStyle(
+                            fontFamily: 'Serif',
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      takeawaysText,
-                      style: TextStyle(
-                        fontFamily: 'Serif',
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '⏱️ 5-7 мин',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                ...currentBook.keyTakeaways.map((takeaway) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                const SizedBox(height: 14),
+                ...List.generate(currentBook.keyTakeaways.length, (idx) {
+                  final takeaway = currentBook.keyTakeaways[idx];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color:
+                            colorScheme.outlineVariant.withValues(alpha: 0.3),
+                      ),
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6, right: 8),
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary,
-                              shape: BoxShape.circle,
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${idx + 1}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onPrimary,
+                              ),
                             ),
                           ),
                         ),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             takeaway,
                             style: TextStyle(
                               fontSize: 13,
                               color:
-                                  colorScheme.onSurface.withValues(alpha: 0.8),
+                                  colorScheme.onSurface.withValues(alpha: 0.85),
                               height: 1.45,
                             ),
                           ),

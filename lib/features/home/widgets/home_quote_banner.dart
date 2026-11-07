@@ -7,23 +7,44 @@ import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/bookmark.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 
-class HomeQuoteBanner extends StatelessWidget {
+class HomeQuoteBanner extends StatefulWidget {
   const HomeQuoteBanner({super.key});
+
+  @override
+  State<HomeQuoteBanner> createState() => _HomeQuoteBannerState();
+}
+
+class _HomeQuoteBannerState extends State<HomeQuoteBanner> {
+  int _flashcardIndex = -1;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final bookProvider = context.watch<BookProvider>();
     final l10n = AppLocalizations.of(context);
-    final dailyQuoteTitle =
-        l10n?.t('home.daily_quote_title') ?? 'Өдрийн эшлэл';
-    final dailyQuote = l10n?.t('home.daily_quote') ??
-        'Ном уншдаг хүн үхэхээсээ өмнө мянган амьдралаар амьдардаг.';
-    final dailyQuoteAuthor =
-        l10n?.t('home.daily_quote_author') ?? 'Жорж Р.Р. Мартин';
+    final hasFlashcards = bookProvider.bookmarks.isNotEmpty;
+
+    final String quoteTitle;
+    final String displayQuote;
+    final String quoteAuthor;
+    final bool isFlashcardMode = _flashcardIndex >= 0 && hasFlashcards;
+
+    if (isFlashcardMode) {
+      final safeIdx = _flashcardIndex % bookProvider.bookmarks.length;
+      final bm = bookProvider.bookmarks[safeIdx];
+      quoteTitle =
+          '${l10n?.t('flashcards.daily_card') ?? 'Өдрийн сануулга'} (${safeIdx + 1}/${bookProvider.bookmarks.length})';
+      displayQuote = bm.quote;
+      quoteAuthor = '${bm.bookTitle} • ${bm.chapterTitle}';
+    } else {
+      quoteTitle = l10n?.t('home.daily_quote_title') ?? 'Өдрийн эшлэл';
+      displayQuote = l10n?.t('home.daily_quote') ??
+          'Ном уншдаг хүн үхэхээсээ өмнө мянган амьдралаар амьдардаг.';
+      quoteAuthor = l10n?.t('home.daily_quote_author') ?? 'Жорж Р.Р. Мартин';
+    }
 
     final isAlreadySaved =
-        bookProvider.bookmarks.any((b) => b.quote == dailyQuote);
+        bookProvider.bookmarks.any((b) => b.quote == displayQuote);
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -51,7 +72,7 @@ class HomeQuoteBanner extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.format_quote_rounded,
+              isFlashcardMode ? Icons.style_rounded : Icons.format_quote_rounded,
               size: 20,
               color: colorScheme.primary,
             ),
@@ -66,7 +87,7 @@ class HomeQuoteBanner extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        dailyQuoteTitle,
+                        quoteTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -81,6 +102,60 @@ class HomeQuoteBanner extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (hasFlashcards) ...[
+                          AnimatedPressable(
+                            onTap: () {
+                              setState(() {
+                                if (_flashcardIndex == -1) {
+                                  _flashcardIndex = 0;
+                                } else if (_flashcardIndex <
+                                    bookProvider.bookmarks.length - 1) {
+                                  _flashcardIndex++;
+                                } else {
+                                  _flashcardIndex = -1;
+                                }
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isFlashcardMode
+                                    ? Colors.amber.withValues(alpha: 0.25)
+                                    : colorScheme.primary
+                                        .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.replay_rounded,
+                                    size: 12,
+                                    color: isFlashcardMode
+                                        ? Colors.amber[800]
+                                        : colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    l10n?.t('flashcards.review_action') ??
+                                        'Давтах',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: isFlashcardMode
+                                          ? Colors.amber[900]
+                                          : colorScheme.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
                         // Save Quote Button
                         AnimatedPressable(
                           onTap: () {
@@ -89,10 +164,10 @@ class HomeQuoteBanner extends StatelessWidget {
                                 Bookmark(
                                   id: 'daily_${DateTime.now().millisecondsSinceEpoch}',
                                   bookId: 'daily_quote_source',
-                                  bookTitle: 'Өдрийн эшлэл',
-                                  chapterTitle: dailyQuoteAuthor,
+                                  bookTitle: quoteTitle,
+                                  chapterTitle: quoteAuthor,
                                   pageNumber: 1,
-                                  quote: dailyQuote,
+                                  quote: displayQuote,
                                   note: 'Өдрийн онцлох эшлэл',
                                   createdAt: DateTime.now(),
                                   colorHex: 0xFFFFD54F,
@@ -103,7 +178,7 @@ class HomeQuoteBanner extends StatelessWidget {
                                 SnackBar(
                                   content: Text(
                                     l10n?.t('home.quote_saved_success') ??
-                                        'Өдрийн эшлэл амжилттай хадгалагдлаа! 📌',
+                                        'Эшлэл амжилттай хадгалагдлаа! 📌',
                                   ),
                                   duration: const Duration(seconds: 2),
                                 ),
@@ -184,9 +259,11 @@ class HomeQuoteBanner extends StatelessWidget {
                           onTap: () {
                             QuoteShareModal.show(
                               context,
-                              quote: dailyQuote,
-                              author: dailyQuoteAuthor,
-                              bookTitle: 'ReadPack Daily',
+                              quote: displayQuote,
+                              author: quoteAuthor,
+                              bookTitle: isFlashcardMode
+                                  ? 'ReadPack Flashcard'
+                                  : 'ReadPack Daily',
                             );
                           },
                           child: Container(
@@ -209,7 +286,7 @@ class HomeQuoteBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '"$dailyQuote"',
+                  '"$displayQuote"',
                   style: TextStyle(
                     fontFamily: 'Serif',
                     fontSize: 13,
@@ -220,7 +297,7 @@ class HomeQuoteBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '— $dailyQuoteAuthor',
+                  '— $quoteAuthor',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,

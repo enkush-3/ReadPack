@@ -237,9 +237,14 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     BookProviderPersistence.syncProfilePreferences(_apiService, _userProfile);
   }
 
-  void incrementStreak() {
+  bool incrementStreak() {
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    if (_userProfile.lastStreakDate == today) {
+      return false;
+    }
     _userProfile = _userProfile.copyWith(
       streakDays: _userProfile.streakDays + 1,
+      lastStreakDate: today,
       minutesReadToday: _userProfile.minutesReadToday < _userProfile.dailyGoalMinutes
           ? _userProfile.dailyGoalMinutes
           : _userProfile.minutesReadToday,
@@ -247,6 +252,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     );
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
+    return true;
   }
 
   void updateYearlyGoalBooks(int goal) {
@@ -287,6 +293,16 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   void addReview(String bookId, BookReview review) {
     BookStateMutator.addReview(_books, bookId, review);
+    notifyListeners();
+  }
+
+  void updateReview(String bookId, BookReview updatedReview) {
+    BookStateMutator.updateReview(_books, bookId, updatedReview);
+    notifyListeners();
+  }
+
+  void deleteReview(String bookId, String reviewId) {
+    BookStateMutator.deleteReview(_books, bookId, reviewId);
     notifyListeners();
   }
 

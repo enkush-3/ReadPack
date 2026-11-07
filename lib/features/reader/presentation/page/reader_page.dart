@@ -9,6 +9,7 @@ import 'package:readpack/features/reader/widgets/reader_bookmark_modal.dart';
 import 'package:readpack/features/reader/widgets/reader_hud_bars.dart';
 import 'package:readpack/features/reader/widgets/reader_page_view.dart';
 import 'package:readpack/features/reader/widgets/reader_scroll_view.dart';
+import 'package:readpack/features/reader/widgets/reader_search_sheet.dart';
 import 'package:readpack/features/reader/widgets/reader_session_tracker.dart';
 import 'package:readpack/features/reader/widgets/reader_theme_helpers.dart';
 import 'package:readpack/features/reader/widgets/reader_toc_sheet.dart';
@@ -48,6 +49,8 @@ class _ReaderPageState extends State<ReaderPage>
   double _audioTotalSeconds = 300.0;
   double _audioSpeed = 1.0;
   Timer? _audioPlaybackTimer;
+  int? _sleepTimerMinutes;
+  Timer? _sleepCountdownTimer;
 
   bool get _isTesting => WidgetsBinding.instance.runtimeType
       .toString()
@@ -59,7 +62,12 @@ class _ReaderPageState extends State<ReaderPage>
     final chaptersCount = widget.book.chapters.length;
     _currentChapterIndex = chaptersCount == 0
         ? 0
-        : widget.initialChapterIndex.clamp(0, chaptersCount - 1);
+        : (widget.initialChapterIndex > 0
+            ? widget.initialChapterIndex
+            : widget.book.currentChapterIndex).clamp(0, chaptersCount - 1);
+
+    _scrollProgress = widget.book.progress;
+    _lastReportedProgress = widget.book.progress;
 
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
@@ -81,6 +89,7 @@ class _ReaderPageState extends State<ReaderPage>
     _scrollController.dispose();
     _pageController.dispose();
     _audioPlaybackTimer?.cancel();
+    _sleepCountdownTimer?.cancel();
     _sessionTracker.dispose();
     super.dispose();
   }
@@ -128,10 +137,176 @@ class _ReaderPageState extends State<ReaderPage>
     setState(() => _isAudioPlaying = false);
   }
 
+  void _syncAudioWithText() {
+    if (widget.book.chapters.isEmpty) return;
+    final currentChapter = widget.book.chapters[_currentChapterIndex];
+    final paragraphs = currentChapter.content.split('\n\n');
+    final paragraphSentences = paragraphs
+        .map((p) {
+          final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(p);
+          final list = matches
+              .map((m) => m.group(0) ?? '')
+              .where((s) => s.trim().isNotEmpty)
+              .toList();
+          return list.isEmpty ? [p] : list;
+        })
+        .toList();
+    final totalSentences = paragraphSentences.fold<int>(
+      0,
+      (sum, list) => sum + list.length,
+    );
+    final globalSentenceIndex = (_audioTotalSeconds > 0 && totalSentences > 0)
+        ? ((_audioCurrentSeconds / _audioTotalSeconds) * totalSentences)
+            .floor()
+            .clamp(0, totalSentences - 1)
+        : 0;
+
+    int activeAudioParagraph = 0;
+    int runningCount = 0;
+    for (int i = 0; i < paragraphSentences.length; i++) {
+      final count = paragraphSentences[i].length;
+      if (globalSentenceIndex < runningCount + count) {
+        activeAudioParagraph = i;
+        break;
+      }
+      runningCount += count;
+    }
+
+    final themeProvider = context.read<ThemeProvider>();
+    if (themeProvider.isPaginated && _pageController.hasClients) {
+      final pages = ReaderThemeHelpers.paginateChapter(currentChapter.content);
+      if (activeAudioParagraph < paragraphs.length) {
+        final targetPage = ReaderThemeHelpers.getPageIndexForParagraph(
+          pages,
+          paragraphs[activeAudioParagraph],
+        );
+        if (_currentPageInChapter != targetPage) {
+          _currentPageInChapter = targetPage;
+          _pageController.jumpToPage(targetPage);
+        }
+      }
+    }
+  }
+
   void _seekAudio(double seconds) {
     setState(() {
       _audioCurrentSeconds = seconds.clamp(0.0, _audioTotalSeconds);
     });
+    _syncAudioWithText();
+  }
+
+  void _setSleepTimer(int? minutes) {
+    _sleepCountdownTimer?.cancel();
+    setState(() {
+      _sleepTimerMinutes = minutes;
+    });
+    if (minutes == null || minutes <= 0) return;
+    _sleepCountdownTimer = Timer(Duration(minutes: minutes), () {
+      if (!mounted) return;
+      _pauseAudio();
+      setState(() {
+        _sleepTimerMinutes = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Унтах цаг боллоо. Аудио автоматаар зогслоо 🌙'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+    });
+  }
+
+  void _showSleepTimerSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final options = [
+          {'title': 'Унтраах (Off)', 'val': null},
+          {'title': '15 минут', 'val': 15},
+          {'title': '30 минут', 'val': 30},
+          {'title': '45 минут', 'val': 45},
+          {'title': '60 минут', 'val': 60},
+        ];
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(Icons.bedtime_rounded,
+                          size: 20, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Унтах таймер (Sleep Timer)',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...options.map((opt) {
+                    final val = opt['val'] as int?;
+                    final isSelected = _sleepTimerMinutes == val;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        opt['title'] as String,
+                        style: TextStyle(
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? Icon(Icons.check_rounded,
+                              color: Theme.of(context).colorScheme.primary)
+                          : null,
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        _setSleepTimer(val);
+                      },
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSearchSheet() {
+    ReaderSearchSheet.show(
+      context: context,
+      book: widget.book,
+      onSelectChapter: (cIdx) => _goToChapter(cIdx),
+    );
   }
 
   void _skipAudio(double deltaSeconds) {
@@ -187,30 +362,40 @@ class _ReaderPageState extends State<ReaderPage>
         .toInt()
         .clamp(1, widget.book.pages);
 
-    context.read<BookProvider>().updateReadingPosition(
-          widget.book.id,
-          currentPage: estimatedPage,
-          progress: overallProgress,
-          currentChapterIndex: _currentChapterIndex,
-        );
+    setState(() {
+      _scrollProgress = overallProgress;
+    });
+
+    if ((overallProgress - _lastReportedProgress).abs() > 0.02) {
+      _lastReportedProgress = overallProgress;
+      context.read<BookProvider>().updateReadingPosition(
+            widget.book.id,
+            currentPage: estimatedPage,
+            progress: overallProgress,
+            currentChapterIndex: _currentChapterIndex,
+          );
+    }
   }
 
   void _goToChapter(int index, {int initialPage = 0}) {
     if (widget.book.chapters.isEmpty) return;
+    final wasPlaying = _isAudioPlaying;
+    _audioPlaybackTimer?.cancel();
     setState(() {
       _currentChapterIndex = index.clamp(0, widget.book.chapters.length - 1);
       _currentPageInChapter = initialPage;
-      _scrollProgress = 0.0;
-      _lastReportedProgress = 0.0;
     });
     _initChapterAudio();
+    if (wasPlaying) {
+      _startAudio();
+    }
     if (_scrollController.hasClients) {
       _scrollController.jumpTo(0);
     }
     if (_pageController.hasClients) {
       _pageController.jumpToPage(initialPage);
     }
-    _reportPaginatedProgress();
+    _reportPaginatedProgress(initialPage);
   }
 
   void _toggleControls() {
@@ -353,6 +538,7 @@ class _ReaderPageState extends State<ReaderPage>
               book: widget.book,
               isAudioPlaying: _isAudioPlaying,
               onBack: () => Navigator.of(context).pop(),
+              onOpenSearch: _showSearchSheet,
               onOpenToc: _showTableOfContents,
               onOpenAppearance: _showAppearanceSheet,
               onToggleAudio: () {
@@ -419,6 +605,8 @@ class _ReaderPageState extends State<ReaderPage>
                     }
                   });
                 },
+                sleepTimerMinutes: _sleepTimerMinutes,
+                onOpenSleepTimer: _showSleepTimerSheet,
                 onClose: () {
                   _pauseAudio();
                   setState(() => _audioCurrentSeconds = 0);

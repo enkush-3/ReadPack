@@ -337,68 +337,141 @@ class LibraryCollectionDialogs {
   ) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (pickerCtx) {
-        final colorScheme = Theme.of(context).colorScheme;
-        final l10n = AppLocalizations.of(context);
-        final availableBooks = provider.books
-            .where((b) => !collection.bookIds.contains(b.id))
-            .toList();
+        return StatefulBuilder(
+          builder: (context, setPickerState) {
+            final colorScheme = Theme.of(context).colorScheme;
+            final l10n = AppLocalizations.of(context);
+            final currentColl = provider.collections.firstWhere(
+              (c) => c.id == collection.id,
+              orElse: () => collection,
+            );
+            final allBooks = provider.books;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n?.t('collection.select_books_to_add') ??
-                    'Цуглуулгад нэмэх номоо сонгоно уу',
-                style: const TextStyle(
-                    fontFamily: 'Serif', fontWeight: FontWeight.bold),
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.72,
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: availableBooks.length,
-                  itemBuilder: (context, i) {
-                    final b = availableBooks[i];
-                    return ListTile(
-                      leading: BookCoverImage(
-                        image: b.image,
-                        colorHex: b.colorHex,
-                        title: b.title,
-                        author: b.author,
-                        width: 32,
-                        height: 44,
-                        borderRadius: 6,
-                      ),
-                      title: Text(
-                        b.title,
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        l10n?.t('collection.select_books_to_add') ??
+                            'Цуглуулгад ном сонгох',
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontFamily: 'Serif',
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      subtitle:
-                          Text(b.author, style: const TextStyle(fontSize: 11)),
-                      trailing: const Icon(Icons.add_circle_outline_rounded),
-                      onTap: () {
-                        provider.addBookToCollection(collection.id, b.id);
-                        Navigator.pop(pickerCtx);
-                        Navigator.pop(context);
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(pickerCtx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: allBooks.length,
+                      itemBuilder: (context, i) {
+                        final b = allBooks[i];
+                        final isIncluded = currentColl.bookIds.contains(b.id);
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 2),
+                          leading: BookCoverImage(
+                            image: b.image,
+                            colorHex: b.colorHex,
+                            title: b.title,
+                            author: b.author,
+                            width: 34,
+                            height: 48,
+                            borderRadius: 6,
+                          ),
+                          title: Text(
+                            b.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            b.author,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          trailing: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: isIncluded
+                                  ? colorScheme.primary
+                                  : colorScheme.surfaceContainerHighest
+                                      .withValues(alpha: 0.4),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isIncluded
+                                  ? Icons.check_rounded
+                                  : Icons.add_rounded,
+                              size: 16,
+                              color: isIncluded
+                                  ? colorScheme.onPrimary
+                                  : colorScheme.onSurface,
+                            ),
+                          ),
+                          onTap: () {
+                            if (isIncluded) {
+                              provider.removeBookFromCollection(
+                                  collection.id, b.id);
+                            } else {
+                              provider.addBookToCollection(
+                                  collection.id, b.id);
+                            }
+                            setPickerState(() {});
+                          },
+                        );
                       },
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(pickerCtx),
+                      child: Text(
+                        l10n?.t('common.done') ?? 'Болсон',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

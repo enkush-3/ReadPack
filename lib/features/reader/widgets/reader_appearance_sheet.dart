@@ -277,6 +277,63 @@ class ReaderAppearanceSheet {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Text('⚡',
+                                      style: TextStyle(fontSize: 16)),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    l10n?.t('reader_ext.bionic_reading') ??
+                                        'Bionic Reading горим',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: onSheetColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                l10n?.t('reader_ext.bionic_desc') ??
+                                    'Үгийн эхний үсгийг тодотгож хурдан унших',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: onSheetColor.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch.adaptive(
+                          value: themeProvider.isBionicReading,
+                          activeTrackColor:
+                              Theme.of(context).colorScheme.primary,
+                          onChanged: (val) {
+                            themeProvider.setBionicReading(val);
+                            setSheetState(() {});
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),

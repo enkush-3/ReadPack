@@ -32,8 +32,20 @@ class _StreakDetailPageState extends State<StreakDetailPage>
   }
 
   void _triggerStreakCelebration(BookProvider bookProvider) {
-    bookProvider.incrementStreak();
-    _celebrationController.forward(from: 0.0);
+    final success = bookProvider.incrementStreak();
+    if (success) {
+      _celebrationController.forward(from: 0.0);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)?.t('streak.already_claimed') ??
+                'Та өнөөдрийн цувралаа аль хэдийн авсан байна! 🔥',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -317,7 +329,9 @@ class _StreakDetailPageState extends State<StreakDetailPage>
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.22),
+                            color: profile.isStreakClaimedToday
+                                ? Colors.black.withValues(alpha: 0.25)
+                                : Colors.white.withValues(alpha: 0.22),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.4),
@@ -326,11 +340,15 @@ class _StreakDetailPageState extends State<StreakDetailPage>
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('🔥', style: TextStyle(fontSize: 14)),
+                              Text(profile.isStreakClaimedToday ? '✓' : '🔥',
+                                  style: const TextStyle(fontSize: 14)),
                               const SizedBox(width: 6),
                               Text(
-                                l10n?.t('streak.boost_btn') ??
-                                    'Өнөөдрийн цуврал +1',
+                                profile.isStreakClaimedToday
+                                    ? (l10n?.t('streak.already_claimed_badge') ??
+                                        'Өнөөдөр авсан ✓')
+                                    : (l10n?.t('streak.boost_btn') ??
+                                        'Өнөөдрийн цуврал +1'),
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,

@@ -68,12 +68,24 @@ class _StreakModalContentState extends State<_StreakModalContent>
   }
 
   void _triggerDuolingoStreakIncrement(BookProvider bookProvider) {
-    bookProvider.incrementStreak();
-    setState(() {
-      _displayedStreak = bookProvider.userProfile.streakDays;
-      _celebratedToday = true;
-    });
-    _celebrationController.forward(from: 0.0);
+    final success = bookProvider.incrementStreak();
+    if (success) {
+      setState(() {
+        _displayedStreak = bookProvider.userProfile.streakDays;
+        _celebratedToday = true;
+      });
+      _celebrationController.forward(from: 0.0);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.l10n?.t('streak.already_claimed') ??
+                'Та өнөөдрийн цувралаа аль хэдийн авсан байна! 🔥',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -283,20 +295,27 @@ class _StreakModalContentState extends State<_StreakModalContent>
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF6D00), Color(0xFFFF9800)],
+                      gradient: LinearGradient(
+                        colors: profile.isStreakClaimedToday
+                            ? [Colors.grey.shade600, Colors.grey.shade500]
+                            : const [Color(0xFFFF6D00), Color(0xFFFF9800)],
                       ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('🔥', style: TextStyle(fontSize: 12)),
+                        Text(
+                          profile.isStreakClaimedToday ? '✓' : '🔥',
+                          style: const TextStyle(fontSize: 12, color: Colors.white),
+                        ),
                         const SizedBox(width: 4),
                         Text(
-                          _celebratedToday
-                              ? '+1 🔥'
-                              : (l10n?.t('streak.boost_btn') ?? 'Цуврал +1'),
+                          profile.isStreakClaimedToday
+                              ? (l10n?.t('streak.already_claimed_badge') ?? 'Өнөөдөр авсан ✓')
+                              : _celebratedToday
+                                  ? '+1 🔥'
+                                  : (l10n?.t('streak.boost_btn') ?? 'Цуврал +1'),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

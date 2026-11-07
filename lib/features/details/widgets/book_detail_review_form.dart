@@ -23,6 +23,7 @@ class BookDetailReviewForm extends StatefulWidget {
 class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
   double _userRating = 5.0;
   late TextEditingController _commentController;
+  bool _isEditing = false;
 
   @override
   void initState() {
@@ -36,7 +37,7 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
     super.dispose();
   }
 
-  void _submitInlineReview() {
+  void _submitInlineReview(BookReview? existingReview) {
     final comment = _commentController.text.trim();
     if (comment.isEmpty) return;
 
@@ -46,17 +47,40 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
       return;
     }
 
-    final newReview = BookReview(
-      id: 'rev_${DateTime.now().millisecondsSinceEpoch}',
-      userName: userProfile.name,
-      rating: _userRating,
-      comment: comment,
-      createdAt: DateTime.now(),
-    );
+    if (existingReview != null && _isEditing) {
+      final updated = existingReview.copyWith(
+        rating: _userRating,
+        comment: comment,
+      );
+      context.read<BookProvider>().updateReview(widget.currentBook.id, updated);
+      setState(() {
+        _isEditing = false;
+        _commentController.clear();
+      });
+    } else {
+      final newReview = BookReview(
+        id: 'rev_${DateTime.now().millisecondsSinceEpoch}',
+        userName: userProfile.name,
+        rating: _userRating,
+        comment: comment,
+        createdAt: DateTime.now(),
+      );
+      context.read<BookProvider>().addReview(widget.currentBook.id, newReview);
+      _commentController.clear();
+      setState(() {});
+    }
+  }
 
-    context.read<BookProvider>().addReview(widget.currentBook.id, newReview);
-    _commentController.clear();
-    setState(() {});
+  void _deleteUserReview(String reviewId) {
+    context.read<BookProvider>().deleteReview(widget.currentBook.id, reviewId);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          widget.l10n?.t('reviews.deleted_success') ?? 'Сэтгэгдэл устгагдлаа.',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Widget _buildGuestPrompt(
@@ -171,6 +195,98 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
       return _buildGuestPrompt(colorScheme, l10n);
     }
 
+    // Check if user already submitted a review
+    final existingReview = widget.currentBook.reviews
+        .where((r) => r.userName == userProfile.name)
+        .firstOrNull;
+
+    // Display existing review card with Edit & Delete actions
+    if (existingReview != null && !_isEditing) {
+      return Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: colorScheme.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: colorScheme.primary.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        l10n?.t('reviews.your_review') ?? 'Таны сэтгэгдэл',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Row(
+                      children: List.generate(5, (index) {
+                        return Icon(
+                          index < existingReview.rating.floor()
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: Colors.amber,
+                          size: 16,
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      color: colorScheme.primary,
+                      tooltip: l10n?.t('reviews.edit') ?? 'Засах',
+                      onPressed: () {
+                        setState(() {
+                          _isEditing = true;
+                          _commentController.text = existingReview.comment;
+                          _userRating = existingReview.rating;
+                        });
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      color: colorScheme.error,
+                      tooltip: l10n?.t('reviews.delete') ?? 'Устгах',
+                      onPressed: () => _deleteUserReview(existingReview.id),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              existingReview.comment,
+              style: TextStyle(
+                fontSize: 13,
+                color: colorScheme.onSurface.withValues(alpha: 0.85),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -278,42 +394,66 @@ class _BookDetailReviewFormState extends State<BookDetailReviewForm> {
             ),
           ),
           const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: AnimatedPressable(
-              onTap: _submitInlineReview,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.primary.withValues(alpha: 0.25),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (_isEditing) ...[
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _isEditing = false;
+                      _commentController.clear();
+                    });
+                  },
+                  child: Text(
+                    l10n?.t('common.cancel') ?? 'Болих',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
-                  ],
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.send_rounded,
-                        size: 14, color: colorScheme.onPrimary),
-                    const SizedBox(width: 6),
-                    Text(
-                      l10n?.t('reviews.submit') ?? 'Сэтгэгдэл илгээх',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                const SizedBox(width: 8),
+              ],
+              AnimatedPressable(
+                onTap: () => _submitInlineReview(existingReview),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withValues(alpha: 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isEditing ? Icons.check_rounded : Icons.send_rounded,
+                        size: 14,
                         color: colorScheme.onPrimary,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Text(
+                        _isEditing
+                            ? (l10n?.t('reviews.update') ?? 'Шинэчлэх')
+                            : (l10n?.t('reviews.submit') ?? 'Сэтгэгдэл илгээх'),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),

@@ -102,4 +102,50 @@ class ReaderThemeHelpers {
     }
     return pages.isEmpty ? [content] : pages;
   }
+
+  static int getPageIndexForParagraph(List<String> pages, String paragraph) {
+    if (pages.isEmpty || paragraph.trim().isEmpty) return 0;
+    final snippet = paragraph.length > 25
+        ? paragraph.substring(0, 25).trim()
+        : paragraph.trim();
+    for (int i = 0; i < pages.length; i++) {
+      if (pages[i].contains(snippet)) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
+  static List<InlineSpan> buildBionicSpans(String text, TextStyle baseStyle) {
+    final words = text.split(RegExp(r'(\s+)'));
+    final List<InlineSpan> spans = [];
+
+    for (final word in words) {
+      if (word.trim().isEmpty) {
+        spans.add(TextSpan(text: word, style: baseStyle));
+        continue;
+      }
+      final cleanWord = word;
+      final int len = cleanWord.length;
+      final int boldLen = len <= 3 ? 1 : (len <= 6 ? 2 : (len * 0.45).ceil());
+
+      final boldPart = cleanWord.substring(0, boldLen);
+      final normalPart = cleanWord.substring(boldLen);
+
+      spans.add(TextSpan(
+        text: boldPart,
+        style: baseStyle.copyWith(
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.1,
+        ),
+      ));
+      spans.add(TextSpan(
+        text: normalPart,
+        style: baseStyle.copyWith(
+          fontWeight: FontWeight.normal,
+        ),
+      ));
+    }
+    return spans;
+  }
 }

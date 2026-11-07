@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
@@ -74,7 +75,7 @@ class _ReaderPageViewState extends State<ReaderPageView> {
     return PageView.builder(
       controller: widget.pageController,
       itemCount: totalPageCount,
-      physics: const BouncingScrollPhysics(),
+      physics: const PageScrollPhysics(parent: BouncingScrollPhysics()),
       onPageChanged: widget.onPageChanged,
       itemBuilder: (context, pIndex) {
         if (pIndex >= pageCount) {
@@ -169,7 +170,7 @@ class _ReaderPageViewState extends State<ReaderPageView> {
           },
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: widget.themeProvider.horizontalMargin,
+              horizontal: math.max(22.0, widget.themeProvider.horizontalMargin),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,10 +308,16 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                                   : Colors.amber;
 
                               final sentences = _splitIntoSentences(p);
+                              final allChapterParas = widget.currentChapter.content.split('\n\n');
+                              final playingParaSnippet = (widget.activeAudioParagraph < allChapterParas.length)
+                                  ? allChapterParas[widget.activeAudioParagraph].trim()
+                                  : '';
+                              final snippetCheck = playingParaSnippet.length > 25
+                                  ? playingParaSnippet.substring(0, 25)
+                                  : playingParaSnippet;
                               final isActivePara = widget.isAudioPlaying &&
-                                  idx ==
-                                      (widget.activeAudioParagraph %
-                                          paragraphsToRender.length);
+                                  snippetCheck.isNotEmpty &&
+                                  p.contains(snippetCheck);
                               final activeSentIdx = widget.activeAudioSentence
                                   .clamp(0, sentences.length - 1);
 
@@ -354,10 +361,19 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                                             ),
                                           ),
                                         )
-                                      : Text(
-                                          p,
-                                          style: baseStyle,
-                                        ),
+                                      : (widget.themeProvider.isBionicReading
+                                          ? Text.rich(
+                                              TextSpan(
+                                                children: ReaderThemeHelpers.buildBionicSpans(
+                                                  p,
+                                                  baseStyle,
+                                                ),
+                                              ),
+                                            )
+                                          : Text(
+                                              p,
+                                              style: baseStyle,
+                                            )),
                                 ),
                               );
                             },
