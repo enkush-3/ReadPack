@@ -337,9 +337,9 @@ class ProfileAchievementsCard extends StatelessWidget {
               Icon(icon, color: colorScheme.primary, size: 22),
               if (onTap != null)
                 Icon(
-                  Icons.touch_app_rounded,
-                  size: 14,
-                  color: colorScheme.primary.withValues(alpha: 0.6),
+                  Icons.chevron_right_rounded,
+                  size: 16,
+                  color: colorScheme.primary.withValues(alpha: 0.7),
                 ),
             ],
           ),

@@ -96,23 +96,22 @@ class ProfileHeaderCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (!profile.isGuest)
-              AnimatedPressable(
-                onTap: () => Navigator.of(context).pushNamed(Routes.settings),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.35),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.edit_outlined,
-                    size: 20,
-                    color: colorScheme.primary,
-                  ),
+            AnimatedPressable(
+              onTap: () => Navigator.of(context).pushNamed(Routes.settings),
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.35),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.settings_outlined,
+                  size: 20,
+                  color: colorScheme.primary,
                 ),
               ),
+            ),
           ],
         ),
       ],

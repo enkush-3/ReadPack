@@ -151,21 +151,22 @@ class UserProfile {
     return total > 0 ? total : 285;
   }
 
-  int get morningPercentage =>
-      (((timeOfDayMinutes['morning'] ?? 40) / _totalTimeOfDayMinutes) * 100)
-          .round();
+  double get morningPercentage =>
+      ((timeOfDayMinutes['morning'] ?? 40) / _totalTimeOfDayMinutes)
+          .clamp(0.0, 1.0);
 
-  int get afternoonPercentage =>
-      (((timeOfDayMinutes['afternoon'] ?? 75) / _totalTimeOfDayMinutes) * 100)
-          .round();
+  double get afternoonPercentage =>
+      ((timeOfDayMinutes['afternoon'] ?? 75) / _totalTimeOfDayMinutes)
+          .clamp(0.0, 1.0);
 
-  int get eveningPercentage =>
-      (((timeOfDayMinutes['evening'] ?? 150) / _totalTimeOfDayMinutes) * 100)
-          .round();
+  double get eveningPercentage =>
+      ((timeOfDayMinutes['evening'] ?? 150) / _totalTimeOfDayMinutes)
+          .clamp(0.0, 1.0);
 
-  int get nightPercentage {
-    final rem = 100 - morningPercentage - afternoonPercentage - eveningPercentage;
-    return rem.clamp(0, 100);
+  double get nightPercentage {
+    final rem =
+        1.0 - morningPercentage - afternoonPercentage - eveningPercentage;
+    return rem.clamp(0.0, 1.0);
   }
 
   bool get isStreakClaimedToday {

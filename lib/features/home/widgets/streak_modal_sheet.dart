@@ -47,7 +47,6 @@ class _StreakModalContentState extends State<_StreakModalContent>
     with SingleTickerProviderStateMixin {
   late AnimationController _celebrationController;
   late int _displayedStreak;
-  bool _celebratedToday = false;
 
   @override
   void initState() {
@@ -138,7 +137,7 @@ class _StreakModalContentState extends State<_StreakModalContent>
             const SizedBox(height: 20),
             // Duolingo-style Animated Flame + Spark Particles
             GestureDetector(
-              onTap: () => _triggerDuolingoStreakIncrement(bookProvider),
+              onTap: () => _celebrationController.forward(from: 0.0),
               child: AnimatedBuilder(
                 animation: _celebrationController,
                 builder: (context, child) {

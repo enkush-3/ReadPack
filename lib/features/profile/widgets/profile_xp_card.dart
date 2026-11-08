@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
@@ -18,7 +19,10 @@ class ProfileXpCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
     final xp = bookProvider.userProfile.xp;
-    final levelTitle = bookProvider.userLevelTitle;
+    final levelTitle = BookGamificationManager.computeLocalizedLevelTitle(
+      xp,
+      (k) => l10n?.t(k),
+    );
 
     int currentLevelBase = 0;
     int nextLevelTarget = 500;
@@ -155,7 +159,12 @@ class ProfileXpCard extends StatelessWidget {
                 ),
               ),
               Text(
-                'Дараагийн цолд ${(nextLevelTarget - xp).clamp(0, 10000)} XP дутуу',
+                (l10n?.t('profile.xp_needed_next') ??
+                        'Дараагийн цолд {xp} XP дутуу')
+                    .replaceAll(
+                  '{xp}',
+                  '${(nextLevelTarget - xp).clamp(0, 10000)}',
+                ),
                 style: TextStyle(
                   fontSize: 11,
                   color: colorScheme.primary,

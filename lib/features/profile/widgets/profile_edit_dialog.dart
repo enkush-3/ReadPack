@@ -17,7 +17,6 @@ class ProfileEditDialog {
           : '',
     );
     String selectedAvatar = bookProvider.userProfile.avatarUrl;
-    int selectedGoal = bookProvider.userProfile.dailyGoalMinutes;
     final l10n = AppLocalizations.of(context);
 
     showModalBottomSheet(
@@ -192,57 +191,6 @@ class ProfileEditDialog {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    Text(
-                      l10n?.t('profile.daily_goal') ?? 'Өдрийн зорилго (минут)',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [15, 30, 45, 60].map((mins) {
-                        final isSelected = selectedGoal == mins;
-                        return GestureDetector(
-                          onTap: () {
-                            setModalState(() => selectedGoal = mins);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? colorScheme.primary
-                                  : colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected
-                                    ? colorScheme.primary
-                                    : colorScheme.outlineVariant
-                                        .withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Text(
-                              '$mins ${l10n?.t('book.minutes_short') ?? 'мин'}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: isSelected
-                                    ? colorScheme.onPrimary
-                                    : colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
                     const SizedBox(height: 24),
                     Row(
                       children: [
@@ -261,7 +209,6 @@ class ProfileEditDialog {
                                 bookProvider.updateUserProfile(
                                   name: newName,
                                   avatarUrl: selectedAvatar,
-                                  dailyGoalMinutes: selectedGoal,
                                 );
                                 Navigator.pop(ctx);
                                 ScaffoldMessenger.of(context).showSnackBar(

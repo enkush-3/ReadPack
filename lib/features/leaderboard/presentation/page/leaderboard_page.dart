@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
 import 'package:readpack/features/shared/common/refresh.dart';
 import 'package:readpack/helper/translation.dart';
 
@@ -13,7 +14,6 @@ class LeaderboardPage extends StatefulWidget {
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
   bool _isRefreshing = false;
-  int _refreshSeed = 0;
 
   int _daysRemainingInMonth() {
     final now = DateTime.now();
@@ -29,7 +29,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     if (mounted) {
       setState(() {
         _isRefreshing = false;
-        _refreshSeed++;
       });
     }
   }
@@ -43,87 +42,13 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     final now = DateTime.now();
     final daysLeft = _daysRemainingInMonth();
 
-    final bonus = (_refreshSeed % 3) * 5;
-    final competitors = [
-      {
-        'rank': 1,
-        'name': 'Номин-Эрдэнэ',
-        'xp': 4820 + bonus,
-        'badge': '🥇',
-        'isUser': false
-      },
-      {
-        'rank': 2,
-        'name': 'Тэмүүлэн Б.',
-        'xp': 4150 + bonus,
-        'badge': '🥈',
-        'isUser': false
-      },
-      {
-        'rank': 3,
-        'name': 'Билгүүн Т.',
-        'xp': 3890 + bonus,
-        'badge': '🥉',
-        'isUser': false
-      },
-      {
-        'rank': 4,
-        'name': userProfile.name,
-        'xp': userProfile.xp,
-        'badge': '4',
-        'isUser': true,
-      },
-      {
-        'rank': 5,
-        'name': 'Анударь С.',
-        'xp': 3120 + bonus,
-        'badge': '5',
-        'isUser': false
-      },
-      {
-        'rank': 6,
-        'name': 'Энхжин М.',
-        'xp': 2890 + bonus,
-        'badge': '6',
-        'isUser': false
-      },
-      {
-        'rank': 7,
-        'name': 'Бат-Эрдэнэ О.',
-        'xp': 2450 + bonus,
-        'badge': '7',
-        'isUser': false
-      },
-      {
-        'rank': 8,
-        'name': 'Сарнай Х.',
-        'xp': 2100 + bonus,
-        'badge': '8',
-        'isUser': false
-      },
-    ];
-
-    // Sort by XP descending and re-assign ranks
-    competitors.sort((a, b) => (b['xp'] as int).compareTo(a['xp'] as int));
-    for (int i = 0; i < competitors.length; i++) {
-      competitors[i]['rank'] = i + 1;
-      if (i == 0) {
-        competitors[i]['badge'] = '🥇';
-      } else if (i == 1) {
-        competitors[i]['badge'] = '🥈';
-      } else if (i == 2) {
-        competitors[i]['badge'] = '🥉';
-      } else {
-        competitors[i]['badge'] = '${i + 1}';
-      }
-    }
+    final competitors =
+        BookGamificationManager.getLeaderboardEntries(userProfile);
 
     final leagueName = l10n?.t('profile.diamond_league') ?? 'Алмазан Лиг';
-    final daysRemainingLabel = l10n?.t(
-          'leaderboard.days_remaining_month',
-          {'days': '$daysLeft'},
-        ) ??
-        '$daysLeft өдөр үлдсэн';
+    final daysRemainingLabel = (l10n?.t('gamification.days_remaining_month') ??
+            '$daysLeft өдөр үлдсэн')
+        .replaceAll('{days}', '$daysLeft');
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -159,26 +84,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            // Swipe-down pill handle
-            Center(
-              child: GestureDetector(
-                onVerticalDragEnd: (details) {
-                  if ((details.primaryVelocity ?? 0) > 250) {
-                    Navigator.of(context).maybePop();
-                  }
-                },
-                child: Container(
-                  width: 42,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-            ),
-
             // League Header Banner (Monthly)
             _buildLeagueHeader(
               leagueName: leagueName,
@@ -201,11 +106,9 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  l10n?.t(
-                        'leaderboard.monthly_rankings',
-                        {'month': '${now.month}'},
-                      ) ??
-                      '${now.month}-р сарын чансаа',
+                  (l10n?.t('gamification.monthly_rankings') ??
+                          '{month}-р сарын чансаа')
+                      .replaceAll('{month}', '${now.month}'),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -214,7 +117,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                   ),
                 ),
                 Text(
-                  l10n?.t('leaderboard.pull_to_refresh_hint') ??
+                  l10n?.t('gamification.pull_to_refresh_hint') ??
                       'Доош татаж шинэчлэх',
                   style: TextStyle(
                     fontSize: 11,
@@ -298,8 +201,8 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  l10n?.t('leaderboard.monthly_reset_info') ??
-                      'Сар бүрийн сүүлийн өдөр 23:59 цагт шинэчлэгдэнэ',
+                  l10n?.t('gamification.reset_info') ??
+                      'Ням гарагийн 00:00 цагт шинэчлэгдэнэ',
                   style: TextStyle(
                     fontSize: 12,
                     color: colorScheme.onSurface.withValues(alpha: 0.65),
@@ -330,7 +233,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 
   Widget _buildPodium({
-    required List<Map<String, dynamic>> topThree,
+    required List<LeaderboardCompetitor> topThree,
     required ColorScheme colorScheme,
   }) {
     final first = topThree[0];
@@ -359,7 +262,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 
   Widget _buildPodiumColumn(
-    Map<String, dynamic> item,
+    LeaderboardCompetitor item,
     double height,
     Color medalColor,
     ColorScheme colorScheme,
@@ -368,14 +271,14 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          item['badge'] as String,
+          item.badge,
           style: const TextStyle(fontSize: 24),
         ),
         const SizedBox(height: 4),
         SizedBox(
           width: 80,
           child: Text(
-            item['name'] as String,
+            item.name,
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -383,7 +286,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           ),
         ),
         Text(
-          '${item['xp']} XP',
+          '${item.xp} XP',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -402,7 +305,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           ),
           child: Center(
             child: Text(
-              '#${item['rank']}',
+              '#${item.rank}',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: medalColor,
@@ -416,11 +319,11 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 
   Widget _buildCompetitorTile({
-    required Map<String, dynamic> competitor,
+    required LeaderboardCompetitor competitor,
     required ColorScheme colorScheme,
     required AppLocalizations? l10n,
   }) {
-    final isUser = competitor['isUser'] as bool;
+    final isUser = competitor.isUser;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -441,7 +344,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           SizedBox(
             width: 28,
             child: Text(
-              competitor['badge'] as String,
+              competitor.badge,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -454,7 +357,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '${competitor['name']}${isUser ? ' (${l10n?.t('profile.you') ?? 'Та'})' : ''}',
+              '${competitor.name}${isUser ? ' (${l10n?.t('profile.you') ?? 'Та'})' : ''}',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: isUser ? FontWeight.bold : FontWeight.w500,
@@ -463,7 +366,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             ),
           ),
           Text(
-            '${competitor['xp']} XP',
+            '${competitor.xp} XP',
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,

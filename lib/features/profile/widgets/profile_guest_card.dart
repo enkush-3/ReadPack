@@ -21,26 +21,33 @@ class ProfileGuestCard extends StatelessWidget {
       {
         'icon': Icons.emoji_events_rounded,
         'color': Colors.amber,
-        'title': l10n?.t('profile.leaderboard') ?? 'Лидерборд & Долоо хоногийн лиг',
-        'desc': 'Бусад шилдэг уншигчидтай өрсөлдөж дэвших',
+        'title': l10n?.t('profile.leaderboard') ??
+            'Лидерборд & Долоо хоногийн лиг',
+        'desc': l10n?.t('profile.guest_benefit_leaderboard_desc') ??
+            'Бусад шилдэг уншигчидтай өрсөлдөж дэвших',
       },
       {
         'icon': Icons.bolt_rounded,
         'color': Colors.orangeAccent,
         'title': l10n?.t('profile.level_title') ?? 'XP түвшин ба цол',
-        'desc': 'Уншсан минут, ном бүрээрээ шагнал цуглуулах',
+        'desc': l10n?.t('profile.guest_benefit_xp_desc') ??
+            'Уншсан минут, ном бүрээрээ шагнал цуглуулах',
       },
       {
         'icon': Icons.local_fire_department_rounded,
         'color': Colors.deepOrangeAccent,
-        'title': 'Өдөр тутмын уншлагын цуврал (Streak)',
-        'desc': 'Дадал зуршлаа таслалгүй хадгалах',
+        'title': l10n?.t('profile.guest_benefit_streak') ??
+            'Өдөр тутмын уншлагын цуврал (Streak)',
+        'desc': l10n?.t('profile.guest_benefit_streak_desc') ??
+            'Дадал зуршлаа таслалгүй хадгалах',
       },
       {
         'icon': Icons.cloud_done_rounded,
         'color': Colors.blueAccent,
-        'title': 'Төхөөрөмж хоорондын синк',
-        'desc': 'Хадгалсан ном, тэмдэглэл, эшлэлүүдээ хадгалах',
+        'title': l10n?.t('profile.guest_benefit_sync') ??
+            'Төхөөрөмж хоорондын синк',
+        'desc': l10n?.t('profile.guest_benefit_sync_desc') ??
+            'Хадгалсан ном, тэмдэглэл, эшлэлүүдээ хадгалах',
       },
     ];
 

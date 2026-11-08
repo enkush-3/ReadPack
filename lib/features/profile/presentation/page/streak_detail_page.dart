@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 
@@ -31,20 +32,12 @@ class _StreakDetailPageState extends State<StreakDetailPage>
     super.dispose();
   }
 
-  void _triggerStreakCelebration(BookProvider bookProvider) {
-    final success = bookProvider.incrementStreak();
-    if (success) {
-      _celebrationController.forward(from: 0.0);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)?.t('streak.already_claimed') ??
-                'Та өнөөдрийн цувралаа аль хэдийн авсан байна! 🔥',
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+  void _openContinueReading(BookProvider bookProvider) {
+    _celebrationController.forward(from: 0.0);
+    final activeBook = bookProvider.currentlyReadingBook ??
+        (bookProvider.books.isNotEmpty ? bookProvider.books.first : null);
+    if (activeBook != null) {
+      Navigator.of(context).pushNamed(Routes.reader, arguments: activeBook);
     }
   }
 
@@ -114,7 +107,7 @@ class _StreakDetailPageState extends State<StreakDetailPage>
         backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 28),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           color: colorScheme.onSurface,
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -129,240 +122,210 @@ class _StreakDetailPageState extends State<StreakDetailPage>
         ),
         centerTitle: true,
       ),
-      body: NotificationListener<OverscrollNotification>(
-        onNotification: (overscroll) {
-          if (overscroll.overscroll < -45) {
-            Navigator.of(context).pop();
-            return true;
-          }
-          return false;
-        },
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Swipe-down indicator pill
-              GestureDetector(
-                onVerticalDragEnd: (details) {
-                  if ((details.primaryVelocity ?? 0) > 200) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: Center(
-                  child: Container(
-                    width: 42,
-                    height: 5,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-              ),
-
-              // 1. Duolingo-Style Hero Streak Flame Banner
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFFF6F00),
-                      Color(0xFFFF8F00),
-                      Color(0xFFFFA000),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFF6F00).withValues(alpha: 0.25),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Duolingo-Style Hero Streak Flame Banner
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFFFF6F00),
+                    Color(0xFFFF8F00),
+                    Color(0xFFFFA000),
                   ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => _triggerStreakCelebration(bookProvider),
-                          child: AnimatedBuilder(
-                            animation: _celebrationController,
-                            builder: (context, _) {
-                              final t = _celebrationController.value;
-                              final scale =
-                                  1.0 + math.sin(t * math.pi) * 0.22;
-                              return SizedBox(
-                                width: 84,
-                                height: 84,
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    ...List.generate(6, (i) {
-                                      final angle =
-                                          (i * math.pi / 3) + (t * 0.5);
-                                      final dist = 26.0 + (t * 18.0);
-                                      return Transform.translate(
-                                        offset: Offset(
-                                          math.cos(angle) * dist,
-                                          math.sin(angle) * dist,
-                                        ),
-                                        child: Opacity(
-                                          opacity:
-                                              (1.0 - t).clamp(0.0, 1.0),
-                                          child: Container(
-                                            width: 6,
-                                            height: 6,
-                                            decoration: const BoxDecoration(
-                                              color: Colors.white,
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                                    Transform.scale(
-                                      scale: scale,
-                                      child: Container(
-                                        width: 72,
-                                        height: 72,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.25),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Center(
-                                          child: Icon(
-                                            Icons.local_fire_department_rounded,
-                                            size: 44,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF6F00).withValues(alpha: 0.25),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => _celebrationController.forward(from: 0.0),
+                        child: AnimatedBuilder(
+                          animation: _celebrationController,
+                          builder: (context, _) {
+                            final t = _celebrationController.value;
+                            final scale =
+                                1.0 + math.sin(t * math.pi) * 0.22;
+                            return SizedBox(
+                              width: 84,
+                              height: 84,
+                              child: Stack(
+                                alignment: Alignment.center,
                                 children: [
-                                  AnimatedSwitcher(
-                                    duration:
-                                        const Duration(milliseconds: 420),
-                                    transitionBuilder: (child, animation) {
-                                      final slide = Tween<Offset>(
-                                        begin: const Offset(0, 0.65),
-                                        end: Offset.zero,
-                                      ).animate(CurvedAnimation(
-                                        parent: animation,
-                                        curve: Curves.elasticOut,
-                                      ));
-                                      return SlideTransition(
-                                        position: slide,
-                                        child: FadeTransition(
-                                          opacity: animation,
-                                          child: child,
-                                        ),
-                                      );
-                                    },
-                                    child: Text(
-                                      '$currentStreak',
-                                      key: ValueKey<int>(currentStreak),
-                                      style: const TextStyle(
-                                        fontFamily: 'Serif',
-                                        fontSize: 30,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
+                                  ...List.generate(6, (i) {
+                                    final angle =
+                                        (i * math.pi / 3) + (t * 0.5);
+                                    final dist = 26.0 + (t * 18.0);
+                                    return Transform.translate(
+                                      offset: Offset(
+                                        math.cos(angle) * dist,
+                                        math.sin(angle) * dist,
                                       ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    l10n?.t('streak.days_upper') ?? 'ӨДӨР',
-                                    style: const TextStyle(
-                                      fontFamily: 'Serif',
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      letterSpacing: 0.5,
+                                      child: Opacity(
+                                        opacity:
+                                            (1.0 - t).clamp(0.0, 1.0),
+                                        child: Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                  Transform.scale(
+                                    scale: scale,
+                                    child: Container(
+                                      width: 72,
+                                      height: 72,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.25),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.local_fire_department_rounded,
+                                          size: 44,
+                                          color: Colors.white,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                l10n?.t('streak.hero_subtitle') ??
-                                    'Цуврал гал асах бүрд таны дадал улам батжиж байна!',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: Colors.white.withValues(alpha: 0.92),
-                                  height: 1.35,
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                AnimatedSwitcher(
+                                  duration:
+                                      const Duration(milliseconds: 420),
+                                  transitionBuilder: (child, animation) {
+                                    final slide = Tween<Offset>(
+                                      begin: const Offset(0, 0.65),
+                                      end: Offset.zero,
+                                    ).animate(CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.elasticOut,
+                                    ));
+                                    return SlideTransition(
+                                      position: slide,
+                                      child: FadeTransition(
+                                        opacity: animation,
+                                        child: child,
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    '$currentStreak',
+                                    key: ValueKey<int>(currentStreak),
+                                    style: const TextStyle(
+                                      fontFamily: 'Serif',
+                                      fontSize: 30,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  l10n?.t('streak.days_upper') ?? 'ӨДӨР',
+                                  style: const TextStyle(
+                                    fontFamily: 'Serif',
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              l10n?.t('streak.hero_subtitle') ??
+                                  'Цуврал гал асах бүрд таны дадал улам батжиж байна!',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: Colors.white.withValues(alpha: 0.92),
+                                height: 1.35,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: AnimatedPressable(
+                      onTap: () => _openContinueReading(bookProvider),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.4),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: AnimatedPressable(
-                        onTap: () => _triggerStreakCelebration(bookProvider),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: profile.isStreakClaimedToday
-                                ? Colors.black.withValues(alpha: 0.25)
-                                : Colors.white.withValues(alpha: 0.22),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.menu_book_rounded,
+                              size: 15,
+                              color: Colors.white,
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(profile.isStreakClaimedToday ? '✓' : '🔥',
-                                  style: const TextStyle(fontSize: 14)),
-                              const SizedBox(width: 6),
-                              Text(
-                                profile.isStreakClaimedToday
-                                    ? (l10n?.t('streak.already_claimed_badge') ??
-                                        'Өнөөдөр авсан ✓')
-                                    : (l10n?.t('streak.boost_btn') ??
-                                        'Өнөөдрийн цуврал +1'),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                            const SizedBox(width: 6),
+                            Text(
+                              l10n?.t('streak.continue_reading_cta') ??
+                                  'Ном уншаад цувралаа хадгалаарай',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
+            ),
 
               const SizedBox(height: 18),
 
@@ -538,9 +501,11 @@ class _StreakDetailPageState extends State<StreakDetailPage>
                       spacing: 6,
                       runSpacing: 8,
                       children: List.generate(28, (index) {
-                        final dayNum = index + 1;
-                        final isCompleted = dayNum <= currentStreak;
-                        final isToday = dayNum == currentStreak;
+                        final daysAgo = 27 - index;
+                        final date =
+                            DateTime.now().subtract(Duration(days: daysAgo));
+                        final isCompleted = daysAgo < currentStreak;
+                        final isToday = daysAgo == 0;
 
                         return AnimatedContainer(
                           duration: const Duration(milliseconds: 280),
@@ -553,7 +518,12 @@ class _StreakDetailPageState extends State<StreakDetailPage>
                                     .withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(10),
                             border: isToday
-                                ? Border.all(color: Colors.white, width: 2)
+                                ? Border.all(
+                                    color: isCompleted
+                                        ? Colors.white
+                                        : colorScheme.primary,
+                                    width: 2,
+                                  )
                                 : null,
                           ),
                           child: Center(
@@ -564,11 +534,16 @@ class _StreakDetailPageState extends State<StreakDetailPage>
                                     color: Colors.white,
                                   )
                                 : Text(
-                                    '$dayNum',
+                                    '${date.day}',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: colorScheme.onSurface
-                                          .withValues(alpha: 0.5),
+                                      fontWeight: isToday
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: isToday
+                                          ? colorScheme.primary
+                                          : colorScheme.onSurface
+                                              .withValues(alpha: 0.5),
                                     ),
                                   ),
                           ),
@@ -693,7 +668,6 @@ class _StreakDetailPageState extends State<StreakDetailPage>
             ],
           ),
         ),
-      ),
     );
   }
 }

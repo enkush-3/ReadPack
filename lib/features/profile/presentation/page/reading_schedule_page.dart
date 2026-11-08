@@ -12,18 +12,28 @@ class ReadingSchedulePage extends StatefulWidget {
 }
 
 class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
-  int _selectedHour = 20; // 20:00 default
-  bool _remindersEnabled = true;
-
-  List<Map<String, dynamic>> _getWeekDays(AppLocalizations? l10n) => [
-    {'day': l10n?.t('home.days.mon') ?? 'Да', 'minutes': 35, 'isToday': false},
-    {'day': l10n?.t('home.days.tue') ?? 'Мя', 'minutes': 45, 'isToday': false},
-    {'day': l10n?.t('home.days.wed') ?? 'Лх', 'minutes': 25, 'isToday': false},
-    {'day': l10n?.t('home.days.thu') ?? 'Пү', 'minutes': 40, 'isToday': false},
-    {'day': l10n?.t('home.days.fri') ?? 'Ба', 'minutes': 50, 'isToday': false},
-    {'day': l10n?.t('home.days.sat') ?? 'Бя', 'minutes': 60, 'isToday': false},
-    {'day': l10n?.t('home.days.sun') ?? 'Ня', 'minutes': 30, 'isToday': true},
-  ];
+  List<Map<String, dynamic>> _getWeekDays(
+    AppLocalizations? l10n,
+    List<int> weeklyMinutes,
+  ) {
+    final labels = [
+      l10n?.t('home.days.mon') ?? 'Да',
+      l10n?.t('home.days.tue') ?? 'Мя',
+      l10n?.t('home.days.wed') ?? 'Лх',
+      l10n?.t('home.days.thu') ?? 'Пү',
+      l10n?.t('home.days.fri') ?? 'Ба',
+      l10n?.t('home.days.sat') ?? 'Бя',
+      l10n?.t('home.days.sun') ?? 'Ня',
+    ];
+    final todayIndex = (DateTime.now().weekday - 1).clamp(0, 6);
+    return List.generate(7, (idx) {
+      return {
+        'day': labels[idx],
+        'minutes': idx < weeklyMinutes.length ? weeklyMinutes[idx] : 30,
+        'isToday': idx == todayIndex,
+      };
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +44,12 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
 
     final title = l10n?.t('profile.habits_title') ?? 'Уншлагын хуваарь';
     final dailyGoal = profile.dailyGoalMinutes;
+    final selectedHour = profile.reminderHour;
+    final remindersEnabled = profile.remindersEnabled;
+    final totalWeekly = profile.totalWeeklyMinutes;
+    final weeklyTarget = (dailyGoal * 7).clamp(1, 10000);
+    final goalPct = ((totalWeekly / weeklyTarget) * 100).round().clamp(0, 100);
+    final minShort = l10n?.t('common.minutes_short') ?? 'мин';
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -41,7 +57,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
         backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 28),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           color: colorScheme.onSurface,
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -56,41 +72,15 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
         ),
         centerTitle: true,
       ),
-      body: NotificationListener<OverscrollNotification>(
-        onNotification: (overscroll) {
-          if (overscroll.overscroll < -45) {
-            Navigator.of(context).pop();
-            return true;
-          }
-          return false;
-        },
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onVerticalDragEnd: (details) {
-                  if ((details.primaryVelocity ?? 0) > 200) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: Center(
-                  child: Container(
-                    width: 42,
-                    height: 5,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-              ),
-              // 1. Current Schedule Overview Card
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Current Schedule Overview Card
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -139,7 +129,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                         ),
                       ),
                       Text(
-                        '$_selectedHour:00 - ${_selectedHour + 1}:00',
+                        '$selectedHour:00 - ${selectedHour + 1}:00',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -161,8 +151,9 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    l10n?.t('schedule.routine_desc', {'mins': '$dailyGoal'}) ??
-                        'Өдөрт $dailyGoal минут унших зорилготой байна. Судалгаагаар өдөр бүр ижил цагт унших нь тархинд унших дадлыг 3 дахин хурдан суулгадаг.',
+                    (l10n?.t('schedule.routine_desc') ??
+                            'Өдөрт {mins} минут унших зорилготой байна. Судалгаагаар өдөр бүр ижил цагт унших нь тархинд унших дадлыг 3 дахин хурдан суулгадаг.')
+                        .replaceAll('{mins}', '$dailyGoal'),
                     style: TextStyle(
                       fontSize: 13,
                       height: 1.45,
@@ -188,7 +179,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
               decoration: BoxDecoration(
                 color:
                     colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
@@ -202,7 +193,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: _getWeekDays(l10n).map((w) {
+                    children: _getWeekDays(l10n, profile.weeklyMinutes).map((w) {
                       final minutes = w['minutes'] as int;
                       final isToday = w['isToday'] as bool;
                       final heightFraction = (minutes / 70).clamp(0.15, 1.0);
@@ -211,7 +202,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            '$minutes${l10n?.t('book.minutes_short') ?? 'м'}',
+                            '$minutes$minShort',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -224,7 +215,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                           const SizedBox(height: 6),
                           Container(
                             width: 26,
-                            height: 100 * heightFraction,
+                            height: 92 * heightFraction,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: isToday
@@ -272,16 +263,18 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        l10n?.t('schedule.total_read', {'mins': '285'}) ??
-                            'Нийт уншсан: 285 минут',
+                        (l10n?.t('schedule.total_read') ??
+                                'Нийт уншсан: {mins} минут')
+                            .replaceAll('{mins}', '$totalWeekly'),
                         style: TextStyle(
                           fontSize: 12,
                           color: colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                       Text(
-                        l10n?.t('schedule.goal_completion', {'pct': '92'}) ??
-                            'Зорилго биелэлт: 92%',
+                        (l10n?.t('schedule.goal_completion') ??
+                                'Зорилго биелэлт: {pct}%')
+                            .replaceAll('{pct}', '$goalPct'),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -313,7 +306,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   'Орой (18:00 - 23:00)',
               subtitle: l10n?.t('schedule.slot_evening_desc') ??
                   'Таны хамгийн идэвхтэй цаг 🔥',
-              percentage: 0.52,
+              percentage: profile.eveningPercentage,
               icon: Icons.nightlight_round,
               isBest: true,
               colorScheme: colorScheme,
@@ -324,7 +317,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   'Өдөр (12:00 - 18:00)',
               subtitle: l10n?.t('schedule.slot_afternoon_desc') ??
                   'Ажлын завсарлагаанаар',
-              percentage: 0.26,
+              percentage: profile.afternoonPercentage,
               icon: Icons.wb_sunny_rounded,
               isBest: false,
               colorScheme: colorScheme,
@@ -335,7 +328,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   'Өглөө (06:00 - 12:00)',
               subtitle: l10n?.t('schedule.slot_morning_desc') ??
                   'Эртэч уншлага',
-              percentage: 0.14,
+              percentage: profile.morningPercentage,
               icon: Icons.coffee_rounded,
               isBest: false,
               colorScheme: colorScheme,
@@ -346,7 +339,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   'Шөнө (23:00 - 06:00)',
               subtitle: l10n?.t('schedule.slot_night_desc') ??
                   'Орондоо унших',
-              percentage: 0.08,
+              percentage: profile.nightPercentage,
               icon: Icons.bedtime_rounded,
               isBest: false,
               colorScheme: colorScheme,
@@ -399,16 +392,16 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                         ],
                       ),
                       Switch(
-                        value: _remindersEnabled,
+                        value: remindersEnabled,
                         onChanged: (v) {
-                          setState(() => _remindersEnabled = v);
-                          bookProvider.updateUserProfile(
-                              notificationsEnabled: v);
+                          bookProvider.updateReadingReminder(
+                            remindersEnabled: v,
+                          );
                         },
                       ),
                     ],
                   ),
-                  if (_remindersEnabled) ...[
+                  if (remindersEnabled) ...[
                     const SizedBox(height: 12),
                     Text(
                       l10n?.t('schedule.select_reminder_time') ??
@@ -422,9 +415,11 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [18, 19, 20, 21, 22].map((hour) {
-                        final isSel = _selectedHour == hour;
+                        final isSel = selectedHour == hour;
                         return AnimatedPressable(
-                          onTap: () => setState(() => _selectedHour = hour),
+                          onTap: () => bookProvider.updateReadingReminder(
+                            reminderHour: hour,
+                          ),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 8),
@@ -456,7 +451,6 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
             ),
           ],
         ),
-      ),
       ),
     );
   }

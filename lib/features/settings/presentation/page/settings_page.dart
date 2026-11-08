@@ -265,90 +265,6 @@ class SettingsPage extends StatelessWidget {
                 color: colorScheme.outlineVariant.withValues(alpha: 0.25),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${l10n?.t('profile.daily_goal') ?? 'Өдрийн зорилго'}:',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          '${profile.dailyGoalMinutes} ${l10n?.t('settings.mins_per_day') ?? 'минут/өдөр'}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [15, 30, 45, 60].map((mins) {
-                        final isSel = profile.dailyGoalMinutes == mins;
-                        return Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              bookProvider.updateUserProfile(
-                                dailyGoalMinutes: mins,
-                              );
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 160),
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isSel
-                                    ? (isDark
-                                        ? colorScheme.primary
-                                        : colorScheme.primary
-                                            .withValues(alpha: 0.14))
-                                    : colorScheme.surfaceContainerHighest
-                                        .withValues(alpha: 0.35),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: isSel
-                                      ? colorScheme.primary
-                                          .withValues(alpha: 0.6)
-                                      : Colors.transparent,
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  '$mins ${l10n?.t('book.minutes_short') ?? 'мин'}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: isSel
-                                        ? FontWeight.bold
-                                        : FontWeight.w500,
-                                    color: isSel
-                                        ? (isDark
-                                            ? colorScheme.onPrimary
-                                            : colorScheme.primary)
-                                        : colorScheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(
-                height: 1,
-                color: colorScheme.outlineVariant.withValues(alpha: 0.25),
-              ),
-              Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,22 +282,47 @@ class SettingsPage extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 6,
                       children: [
-                        'Бизнес',
-                        'Хувь хүний хөгжил',
-                        'Сэтгэл зүй',
-                        'Уран зохиол',
-                        'Түүх',
-                        'Шинжлэх ухаан',
-                      ].map((genre) {
-                        final isFav = profile.favoriteGenres.contains(genre);
+                        {
+                          'key': 'Бизнес',
+                          'label':
+                              l10n?.t('settings.genre_business') ?? 'Бизнес',
+                        },
+                        {
+                          'key': 'Хувь хүний хөгжил',
+                          'label': l10n?.t('settings.genre_self_help') ??
+                              'Хувь хүний хөгжил',
+                        },
+                        {
+                          'key': 'Сэтгэл зүй',
+                          'label': l10n?.t('settings.genre_psychology') ??
+                              'Сэтгэл зүй',
+                        },
+                        {
+                          'key': 'Уран зохиол',
+                          'label': l10n?.t('settings.genre_fiction') ??
+                              'Уран зохиол',
+                        },
+                        {
+                          'key': 'Түүх',
+                          'label': l10n?.t('settings.genre_history') ?? 'Түүх',
+                        },
+                        {
+                          'key': 'Шинжлэх ухаан',
+                          'label': l10n?.t('settings.genre_science') ??
+                              'Шинжлэх ухаан',
+                        },
+                      ].map((genreMap) {
+                        final genreKey = genreMap['key']!;
+                        final genreLabel = genreMap['label']!;
+                        final isFav = profile.favoriteGenres.contains(genreKey);
                         return GestureDetector(
                           onTap: () {
                             final current =
                                 List<String>.from(profile.favoriteGenres);
                             if (isFav) {
-                              if (current.length > 1) current.remove(genre);
+                              if (current.length > 1) current.remove(genreKey);
                             } else {
-                              current.add(genre);
+                              current.add(genreKey);
                             }
                             bookProvider.updateUserProfile(
                               favoriteGenres: current,
@@ -412,7 +353,7 @@ class SettingsPage extends StatelessWidget {
                                   const SizedBox(width: 4),
                                 ],
                                 Text(
-                                  genre,
+                                  genreLabel,
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: isFav
@@ -628,6 +569,52 @@ class SettingsPage extends StatelessWidget {
                 ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                 onTap: () => PhoneWidgetSheet.show(context),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Section 6: Санах ой & Кэш (Storage & Cache)
+          _buildSectionHeader(
+            l10n?.t('settings.storage') ?? 'Санах ой & Кэш',
+            colorScheme,
+          ),
+          const SizedBox(height: 8),
+          _buildCard(
+            colorScheme: colorScheme,
+            isDark: isDark,
+            children: [
+              ListTile(
+                leading: Icon(
+                  Icons.cleaning_services_outlined,
+                  color: colorScheme.primary,
+                ),
+                title: Text(
+                  l10n?.t('profile.clear_cache') ?? 'Кэш цэвэрлэх',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+                subtitle: Text(
+                  '${bookProvider.downloadedBookIds.length} ном офлайнаар хадгалагдсан (${bookProvider.cacheSizeMb})',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                trailing: TextButton(
+                  onPressed: bookProvider.downloadedBookIds.isEmpty
+                      ? null
+                      : () {
+                          bookProvider.clearCache();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                l10n?.t('profile.cache_cleared') ??
+                                    'Кэш амжилттай цэвэрлэгдлээ',
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                  child: Text(l10n?.t('common.clear') ?? 'Арилгах'),
+                ),
               ),
             ],
           ),

@@ -66,6 +66,11 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   List<Book> get featuredBooks => _books.take(4).toList();
   List<Book> get continueReadingBooks =>
       _books.where((b) => b.progress > 0.0 && b.progress < 1.0).toList();
+  Book? get currentlyReadingBook => continueReadingBooks.isNotEmpty
+      ? continueReadingBooks.first
+      : (_books.isNotEmpty ? _books.first : null);
+  String get cacheSizeMb =>
+      '${(downloadedBookIds.length * 1.4).toStringAsFixed(1)} MB';
   List<Book> get savedBooks => _books.where((b) => b.isSaved).toList();
   List<Book> get sortedSavedBooks =>
       BookFilterHelper.sortSavedBooks(_books, _librarySortBy);
@@ -244,10 +249,15 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     BookProviderPersistence.syncProfilePreferences(_apiService, _userProfile);
   }
 
-  void updateReadingReminder({int? hour, bool? enabled}) {
+  void updateReadingReminder({
+    int? hour,
+    int? reminderHour,
+    bool? enabled,
+    bool? remindersEnabled,
+  }) {
     updateUserProfile(
-      reminderHour: hour,
-      remindersEnabled: enabled,
+      reminderHour: reminderHour ?? hour,
+      remindersEnabled: remindersEnabled ?? enabled,
     );
   }
 
@@ -257,7 +267,9 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   void clearCache() {
     _recentSearches.clear();
+    downloadedBookIds.clear();
     BookProviderPersistence.persistRecentSearches(_recentSearches);
+    BookProviderPersistence.persistDownloadedBooks(downloadedBookIds);
     notifyListeners();
   }
 

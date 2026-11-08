@@ -99,10 +99,10 @@ void main() {
       expect(find.text('Уншлагын цагийн хуваарь'), findsOneWidget);
       expect(find.textContaining('20:00 - 22:30'), findsOneWidget);
 
-      // Check Edit Profile button navigates to Settings
-      final editBtn = find.byIcon(Icons.edit_outlined);
-      expect(editBtn, findsOneWidget);
-      await tester.tap(editBtn);
+      // Check Settings button navigates to Settings
+      final settingsBtn = find.byIcon(Icons.settings_outlined);
+      expect(settingsBtn, findsOneWidget);
+      await tester.tap(settingsBtn);
       await tester.pumpAndSettle();
 
       // Navigated to settings

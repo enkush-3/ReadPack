@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
 import 'package:readpack/helper/translation.dart';
 
 class UserLevelDetailPage extends StatelessWidget {
@@ -14,7 +15,10 @@ class UserLevelDetailPage extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
 
     final currentLevel = profile.userLevel;
-    final currentTitle = profile.userLevelTitle;
+    final currentTitle = BookGamificationManager.computeLocalizedLevelTitle(
+      profile.xp,
+      (k) => l10n?.t(k),
+    );
     final currentXp = profile.xp;
     final xpInLevel = profile.xpInCurrentLevel;
     final xpNeeded = profile.xpNeededForNextLevel;
@@ -39,7 +43,7 @@ class UserLevelDetailPage extends StatelessWidget {
         backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 28),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           color: colorScheme.onSurface,
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -54,41 +58,15 @@ class UserLevelDetailPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: NotificationListener<OverscrollNotification>(
-        onNotification: (overscroll) {
-          if (overscroll.overscroll < -45) {
-            Navigator.of(context).pop();
-            return true;
-          }
-          return false;
-        },
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onVerticalDragEnd: (details) {
-                  if ((details.primaryVelocity ?? 0) > 200) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: Center(
-                  child: Container(
-                    width: 42,
-                    height: 5,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                ),
-              ),
-              // 1. Current Level Hero Card
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Current Level Hero Card
             Container(
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
@@ -371,7 +349,6 @@ class UserLevelDetailPage extends StatelessWidget {
             }),
           ],
         ),
-      ),
       ),
     );
   }

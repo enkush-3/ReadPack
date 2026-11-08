@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 
@@ -27,51 +28,12 @@ class ProfileLeagueCard extends StatelessWidget {
         ? profile.weeklyLeague
         : (l10n?.t('profile.diamond_league') ?? 'Алмазан Лиг');
     final daysLeft = _daysRemainingInMonth();
-    final daysRemainingLabel = l10n?.t(
-          'leaderboard.days_remaining_month',
-          {'days': '$daysLeft'},
-        ) ??
-        '$daysLeft өдөр үлдсэн';
+    final daysRemainingLabel = (l10n?.t('gamification.days_remaining_month') ??
+            '$daysLeft өдөр үлдсэн')
+        .replaceAll('{days}', '$daysLeft');
 
-    final competitors = [
-      {
-        'rank': '1',
-        'name': 'Төмөрөө',
-        'xp': 1820,
-        'badge': '🥇',
-        'isUser': false
-      },
-      {
-        'rank': '2',
-        'name': 'Ану-Үжин',
-        'xp': 1610,
-        'badge': '🥈',
-        'isUser': false
-      },
-      {
-        'rank': '3',
-        'name': profile.isGuest
-            ? (l10n?.t('profile.guest_user') ?? profile.name)
-            : profile.name,
-        'xp': profile.xp,
-        'badge': '🥉',
-        'isUser': true,
-      },
-      {
-        'rank': '4',
-        'name': 'Бат-Эрдэнэ',
-        'xp': 1290,
-        'badge': '4',
-        'isUser': false
-      },
-      {
-        'rank': '5',
-        'name': 'Хулан',
-        'xp': 1150,
-        'badge': '5',
-        'isUser': false
-      },
-    ];
+    final competitors =
+        BookGamificationManager.getLeaderboardEntries(profile).take(5).toList();
 
     return InkWell(
       borderRadius: BorderRadius.circular(20),
@@ -148,7 +110,10 @@ class ProfileLeagueCard extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             ...competitors.map((c) {
-              final isUser = c['isUser'] as bool;
+              final isUser = c.isUser;
+              final displayName = isUser && profile.isGuest
+                  ? (l10n?.t('profile.guest_user') ?? c.name)
+                  : c.name;
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),
                 padding:
@@ -169,7 +134,7 @@ class ProfileLeagueCard extends StatelessWidget {
                     SizedBox(
                       width: 24,
                       child: Text(
-                        c['badge'] as String,
+                        c.badge,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -182,7 +147,7 @@ class ProfileLeagueCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '${c['name']}${isUser ? ' (${l10n?.t('profile.you') ?? 'Та'})' : ''}',
+                        '$displayName${isUser ? ' (${l10n?.t('profile.you') ?? 'Та'})' : ''}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight:
@@ -194,7 +159,7 @@ class ProfileLeagueCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${c['xp']} XP',
+                      '${c.xp} XP',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,

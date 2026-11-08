@@ -18,6 +18,15 @@ class LeaderboardCompetitor {
     required this.avatarEmoji,
     this.isCurrentUser = false,
   });
+
+  bool get isUser => isCurrentUser;
+
+  String get badge {
+    if (rank == 1) return '🥇';
+    if (rank == 2) return '🥈';
+    if (rank == 3) return '🥉';
+    return '$rank';
+  }
 }
 
 class BookGamificationManager {
