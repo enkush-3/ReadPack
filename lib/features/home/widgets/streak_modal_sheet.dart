@@ -67,23 +67,18 @@ class _StreakModalContentState extends State<_StreakModalContent>
     super.dispose();
   }
 
-  void _triggerDuolingoStreakIncrement(BookProvider bookProvider) {
-    final success = bookProvider.incrementStreak();
-    if (success) {
-      setState(() {
-        _displayedStreak = bookProvider.userProfile.streakDays;
-        _celebratedToday = true;
-      });
-      _celebrationController.forward(from: 0.0);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.l10n?.t('streak.already_claimed') ??
-                'Та өнөөдрийн цувралаа аль хэдийн авсан байна! 🔥',
-          ),
-          duration: const Duration(seconds: 2),
-        ),
+  void _navigateToContinueReading(BookProvider bookProvider) {
+    Navigator.of(context).pop();
+    final targetBook = bookProvider.continueReadingBooks.isNotEmpty
+        ? bookProvider.continueReadingBooks.first
+        : (bookProvider.books.isNotEmpty ? bookProvider.books.first : null);
+    if (targetBook != null) {
+      Navigator.of(context).pushNamed(
+        Routes.reader,
+        arguments: {
+          'book': targetBook,
+          'initialChapterIndex': targetBook.currentChapterIndex,
+        },
       );
     }
   }
@@ -290,14 +285,14 @@ class _StreakModalContentState extends State<_StreakModalContent>
                 ),
                 const SizedBox(width: 8),
                 AnimatedPressable(
-                  onTap: () => _triggerDuolingoStreakIncrement(bookProvider),
+                  onTap: () => _navigateToContinueReading(bookProvider),
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: profile.isStreakClaimedToday
-                            ? [Colors.grey.shade600, Colors.grey.shade500]
+                            ? [const Color(0xFF10B981), const Color(0xFF059669)]
                             : const [Color(0xFFFF6D00), Color(0xFFFF9800)],
                       ),
                       borderRadius: BorderRadius.circular(20),
@@ -306,16 +301,15 @@ class _StreakModalContentState extends State<_StreakModalContent>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          profile.isStreakClaimedToday ? '✓' : '🔥',
+                          profile.isStreakClaimedToday ? '✓' : '📖',
                           style: const TextStyle(fontSize: 12, color: Colors.white),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           profile.isStreakClaimedToday
-                              ? (l10n?.t('streak.already_claimed_badge') ?? 'Өнөөдөр авсан ✓')
-                              : _celebratedToday
-                                  ? '+1 🔥'
-                                  : (l10n?.t('streak.boost_btn') ?? 'Цуврал +1'),
+                              ? (l10n?.t('streak.already_claimed_badge') ??
+                                  'Өнөөдөр биелсэн ✓')
+                              : (l10n?.t('book.read') ?? 'Ном унших'),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

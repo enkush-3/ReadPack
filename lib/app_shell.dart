@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:readpack/core/providers/book_provider.dart';
-import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/home/presentation/page/home.dart';
-import 'package:readpack/features/home/widgets/continue_reading_card.dart';
 import 'package:readpack/features/library/presentation/page/saved_page.dart';
 import 'package:readpack/features/profile/presentation/page/profile_page.dart';
 import 'package:readpack/features/search/presentation/page/search.dart';
@@ -25,7 +21,6 @@ class _AppShellState extends State<AppShell>
     with SingleTickerProviderStateMixin {
   late int _selectedIndex;
   int _previousIndex = 0;
-  bool _showContinueReadingModal = true;
   late AnimationController _tabAnimController;
 
   @override
@@ -58,9 +53,6 @@ class _AppShellState extends State<AppShell>
 
   @override
   Widget build(BuildContext context) {
-    final bookProvider = context.watch<BookProvider>();
-    final continueBooks = bookProvider.continueReadingBooks;
-
     final pages = [
       HomePage(onNavigateTab: _onNavTap),
       SearchPage(onNavigateTab: _onNavTap),
@@ -97,33 +89,9 @@ class _AppShellState extends State<AppShell>
             children: pages,
           ),
         ),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_showContinueReadingModal &&
-                _selectedIndex == 0 &&
-                continueBooks.isNotEmpty)
-              ContinueReadingCard(
-                book: continueBooks.first,
-                onTap: () {
-                  final book = continueBooks.first;
-                  Navigator.of(context).pushNamed(
-                    Routes.reader,
-                    arguments: {
-                      'book': book,
-                      'initialChapterIndex': book.currentChapterIndex,
-                    },
-                  );
-                },
-                onClose: () {
-                  setState(() => _showContinueReadingModal = false);
-                },
-              ),
-            BottomNavBar(
-              selectedIndex: _selectedIndex,
-              onTap: _onNavTap,
-            ),
-          ],
+        bottomNavigationBar: BottomNavBar(
+          selectedIndex: _selectedIndex,
+          onTap: _onNavTap,
         ),
       ),
     );

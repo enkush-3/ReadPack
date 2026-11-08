@@ -17,6 +17,8 @@ class ContinueReadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final progressPct = (book.progress * 100).toInt();
     final l10n = AppLocalizations.of(context);
     final continueText =
@@ -24,21 +26,19 @@ class ContinueReadingCard extends StatelessWidget {
     final pagesText = l10n?.t('book.pages') ?? 'хуудас';
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(book.colorHex),
-            Color(book.colorHex).withValues(alpha: 0.88),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: isDark
+            ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.45)
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.25),
+          width: 1.2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Color(book.colorHex).withValues(alpha: 0.35),
-            blurRadius: 14,
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -49,12 +49,12 @@ class ContinueReadingCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             child: Row(
               children: [
                 SizedBox(
                   width: 44,
-                  height: 60,
+                  height: 62,
                   child: BookCoverImage(
                     image: book.image,
                     colorHex: book.colorHex,
@@ -74,27 +74,27 @@ class ContinueReadingCard extends StatelessWidget {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
+                                horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.22),
+                              color: colorScheme.primary.withValues(alpha: 0.14),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               continueText,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: colorScheme.primary,
                               ),
                             ),
                           ),
                           const SizedBox(width: 6),
                           Text(
                             '$progressPct%',
-                            style: const TextStyle(
-                              fontSize: 10,
+                            style: TextStyle(
+                              fontSize: 10.5,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: colorScheme.primary,
                             ),
                           ),
                         ],
@@ -104,11 +104,11 @@ class ContinueReadingCard extends StatelessWidget {
                         book.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Serif',
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -116,55 +116,56 @@ class ContinueReadingCard extends StatelessWidget {
                         '${book.currentPage} / ${book.pages} $pagesText',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: colorScheme.onSurface.withValues(alpha: 0.65),
                         ),
                       ),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 6),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(3),
                         child: LinearProgressIndicator(
                           value: book.progress,
-                          backgroundColor: Colors.white24,
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                          backgroundColor:
+                              colorScheme.outlineVariant.withValues(alpha: 0.35),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.primary,
                           ),
-                          minHeight: 3,
+                          minHeight: 3.5,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.play_arrow_rounded,
-                        color: Color(book.colorHex),
+                        color: colorScheme.onPrimary,
                         size: 20,
                       ),
                     ),
                     if (onClose != null) ...[
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       GestureDetector(
                         onTap: onClose,
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.15),
+                            color: colorScheme.onSurface.withValues(alpha: 0.08),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.close_rounded,
-                            size: 16,
-                            color: Colors.white,
+                            size: 15,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ),
