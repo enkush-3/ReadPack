@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/home/presentation/page/home.dart';
+import 'package:readpack/features/home/widgets/continue_reading_card.dart';
 import 'package:readpack/features/library/presentation/page/saved_page.dart';
 import 'package:readpack/features/profile/presentation/page/profile_page.dart';
 import 'package:readpack/features/search/presentation/page/search.dart';
@@ -89,9 +93,39 @@ class _AppShellState extends State<AppShell>
             children: pages,
           ),
         ),
-        bottomNavigationBar: BottomNavBar(
-          selectedIndex: _selectedIndex,
-          onTap: _onNavTap,
+        bottomNavigationBar: Consumer<BookProvider>(
+          builder: (context, bookProvider, _) {
+            final isGuest = bookProvider.userProfile.isGuest;
+            final continueBooks = bookProvider.continueReadingBooks;
+            final showContinue = !isGuest && continueBooks.isNotEmpty;
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showContinue)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: ContinueReadingCard(
+                      book: continueBooks.first,
+                      onTap: () {
+                        final book = continueBooks.first;
+                        Navigator.of(context).pushNamed(
+                          Routes.reader,
+                          arguments: {
+                            'book': book,
+                            'initialChapterIndex': book.currentChapterIndex,
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                BottomNavBar(
+                  selectedIndex: _selectedIndex,
+                  onTap: _onNavTap,
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

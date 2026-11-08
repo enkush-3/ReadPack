@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/features/library/widgets/library_collection_dialogs.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
@@ -89,23 +90,28 @@ class LibraryReadingCard extends StatelessWidget {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        provider.toggleDownloadBook(book.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              provider.isBookDownloaded(book.id)
-                                  ? (l10n?.t('library.downloaded_success', {
-                                        'size':
-                                            '${provider.getDownloadedSizeMb(book.id)}'
-                                      }) ??
-                                      'Ном оффлайн уншихаар татагдлаа (${provider.getDownloadedSizeMb(book.id)} MB)')
-                                  : (l10n?.t('library.removed_download') ??
-                                      'Ном оффлайн сангаас хасагдлаа'),
-                            ),
-                            duration: const Duration(seconds: 1),
-                          ),
-                        );
+                      onTap: () async {
+                        final isDownloaded = provider.isBookDownloaded(book.id);
+                        if (isDownloaded) {
+                          await LibraryCollectionDialogs.confirmAndDeleteDownload(
+                            context,
+                            provider,
+                            book,
+                          );
+                        } else {
+                          provider.toggleDownloadBook(book.id);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  l10n?.t('library.download_success') ??
+                                      'Ном офлайнаар амжилттай татагдлаа (${provider.getDownloadedSizeMb(book.id)} MB)',
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        }
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(

@@ -203,9 +203,32 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     BookProviderPersistence.persistUserProfile(_userProfile);
   }
 
-  void loginWithEmail(String email, String name) {
-    _userProfile =
-        BookGamificationManager.loginWithEmail(_userProfile, email, name);
+  void loginWithEmail(String email, String name,
+      {String? username, String? phoneNumber}) {
+    _userProfile = BookGamificationManager.loginWithEmail(
+      _userProfile,
+      email,
+      name,
+      username: username,
+      phoneNumber: phoneNumber,
+    );
+    notifyListeners();
+    BookProviderPersistence.persistUserProfile(_userProfile);
+    BookProviderPersistence.syncAuthTree(_apiService, _userProfile);
+  }
+
+  void registerNewUser({
+    required String name,
+    required String email,
+    String? username,
+    String? phoneNumber,
+  }) {
+    _userProfile = BookGamificationManager.registerNewUser(
+      name: name,
+      email: email,
+      username: username,
+      phoneNumber: phoneNumber,
+    );
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
     BookProviderPersistence.syncAuthTree(_apiService, _userProfile);
@@ -220,6 +243,8 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   void updateUserProfile(
       {String? name,
       String? email,
+      String? username,
+      String? phoneNumber,
       String? avatarUrl,
       int? streakDays,
       int? dailyGoalMinutes,
@@ -233,6 +258,8 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     _userProfile = _userProfile.copyWith(
       name: name,
       email: email,
+      username: username,
+      phoneNumber: phoneNumber,
       avatarUrl: avatarUrl,
       streakDays: streakDays,
       dailyGoalMinutes: dailyGoalMinutes,

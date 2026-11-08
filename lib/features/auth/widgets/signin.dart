@@ -97,14 +97,13 @@ class _SignInPageState extends State<SignInPage> {
                   return;
                 }
                 Navigator.of(dialogCtx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      l10n?.t('success.password_reset_sent') ??
-                          'Нууц үг сэргээх холбоос илгээгдлээ',
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                  ),
+                Navigator.of(context).pushNamed(
+                  Routes.verify,
+                  arguments: {
+                    'purpose': 'forgot_password',
+                    'target': mail,
+                    'isPhone': !mail.contains('@'),
+                  },
                 );
               },
               child: Text(
@@ -295,25 +294,11 @@ class _SignInPageState extends State<SignInPage> {
             Expanded(child: Divider(color: colorScheme.outlineVariant)),
           ],
         ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: SocialAuthButton(
-                logolink: 'assets/public/logos/google.png',
-                label: 'Google',
-                action: () => _loginWithSocial('Google'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: SocialAuthButton(
-                logolink: 'assets/public/logos/facebook.png',
-                label: 'Facebook',
-                action: () => _loginWithSocial('Facebook'),
-              ),
-            ),
-          ],
+        const SizedBox(height: 18),
+        SocialAuthButton(
+          logolink: 'assets/public/logos/google.png',
+          label: 'Google',
+          action: () => _loginWithSocial('Google'),
         ),
         const SizedBox(height: 24),
         LinkText(

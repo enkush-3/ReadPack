@@ -91,6 +91,7 @@ class _SearchPageState extends State<SearchPage> {
                           hint: AppLocalizations.of(context)?.t('hint.search') ??
                               'Ном, зохиолч хайх...',
                           icon: Icons.search_rounded,
+                          borderRadius: 26,
                           textInputAction: TextInputAction.search,
                           onChanged: (val) {
                             setState(() {});

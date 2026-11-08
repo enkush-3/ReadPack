@@ -40,9 +40,9 @@ class BookColors {
   static const Color darkTextSecondary = Color(0xFFCDD8EE);
   static const Color darkTextMuted = Color(0xFF8896B8);
   static const Color darkTextHint = Color(0xFF4A5A7A);
-  static const Color darkInputBg = Color(0xFF1A2645);
-  static const Color darkInputBorder = Color(0xFF2A3A60);
-  static const Color darkDivider = Color(0xFF253050);
+  static const Color darkInputBg = Color(0xFF162244);
+  static const Color darkInputBorder = Color(0xFF334878);
+  static const Color darkDivider = Color(0xFF283862);
 
 
   static const Color sepiaBg = Color(0xFFF5E6C8);

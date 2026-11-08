@@ -38,75 +38,155 @@ class BookDetailSimilarTab extends StatelessWidget {
       return (bAuthorMatch + bCatMatch).compareTo(aAuthorMatch + aCatMatch);
     });
 
+    final displaySimilar = similar.take(10).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        Text(
-          l10n?.t('book.tabs.similar') ?? 'Ижил төстэй номууд',
-          style: TextStyle(
-            fontFamily: 'Serif',
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              l10n?.t('book.tabs.similar') ?? 'Ижил төстэй номууд',
+              style: TextStyle(
+                fontFamily: 'Serif',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            Text(
+              '${displaySimilar.length} / 10',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.primary,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 14),
-        ...similar.map((b) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color:
-                  colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+        if (displaySimilar.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Text(
+                l10n?.t('book.similar_empty') ?? 'Ижил төстэй ном олдсонгүй',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
               ),
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: ListTile(
-                onTap: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => BookDetailPage(book: b),
+          )
+        else
+          SizedBox(
+            height: 236,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: displaySimilar.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 14),
+              itemBuilder: (context, index) {
+                final b = displaySimilar[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => BookDetailPage(book: b),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 128,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+                      ),
                     ),
-                  );
-                },
-                leading: BookCoverImage(
-                  image: b.image,
-                  colorHex: b.colorHex,
-                  title: b.title,
-                  author: b.author,
-                  width: 44,
-                  height: 56,
-                  borderRadius: 8,
-                ),
-                title: Text(
-                  b.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Stack(
+                            children: [
+                              BookCoverImage(
+                                image: b.image,
+                                colorHex: b.colorHex,
+                                title: b.title,
+                                author: b.author,
+                                width: 112,
+                                height: 152,
+                                borderRadius: 10,
+                              ),
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.75),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.star_rounded,
+                                        size: 11,
+                                        color: Colors.amber,
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        '${b.rating}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          b.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          b.author,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                subtitle: Text(
-                  '${b.author} • ⭐ ${b.rating}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: colorScheme.primary,
-                ),
-              ),
+                );
+              },
             ),
-          );
-        }),
+          ),
       ],
     );
   }

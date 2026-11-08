@@ -10,6 +10,7 @@ class InputField extends StatefulWidget {
   final String? errorText;
   final TextInputAction? textInputAction;
   final TextInputType? keyboardType;
+  final double borderRadius;
 
   const InputField({
     super.key,
@@ -22,6 +23,7 @@ class InputField extends StatefulWidget {
     this.errorText,
     this.textInputAction,
     this.keyboardType,
+    this.borderRadius = 16,
   });
 
   @override
@@ -42,11 +44,11 @@ class _InputFieldState extends State<InputField> {
         Container(
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(widget.borderRadius),
             border: Border.all(
               color: widget.errorText != null
                   ? colorScheme.error
-                  : colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  : colorScheme.outlineVariant.withValues(alpha: 0.35),
               width: 1,
             ),
           ),

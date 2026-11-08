@@ -108,23 +108,16 @@ class _QuoteShareModalState extends State<QuoteShareModal> {
             const SizedBox(height: 14),
 
             // Header Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  modalTitle,
-                  style: TextStyle(
-                    fontFamily: 'Serif',
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
+            Center(
+              child: Text(
+                modalTitle,
+                style: TextStyle(
+                  fontFamily: 'Serif',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 12),
 
@@ -363,11 +356,15 @@ class _QuoteShareModalState extends State<QuoteShareModal> {
                       elevation: 0,
                     ),
                     onPressed: () {
+                      final storyText =
+                          '“${widget.quote}”\n— ${widget.author} (${widget.bookTitle})\n#ReadPack #BookQuote';
+                      Clipboard.setData(ClipboardData(text: storyText));
+                      HapticFeedback.mediumImpact();
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(sharedSuccess),
-                          duration: const Duration(seconds: 2),
+                          duration: const Duration(seconds: 3),
                         ),
                       );
                     },

@@ -11,6 +11,10 @@ class ProfileEditDialog {
     if (bookProvider.userProfile.isGuest) return;
     final nameCtrl =
         TextEditingController(text: bookProvider.userProfile.name);
+    final usernameCtrl =
+        TextEditingController(text: bookProvider.userProfile.username);
+    final phoneCtrl =
+        TextEditingController(text: bookProvider.userProfile.phoneNumber);
     final customAvatarCtrl = TextEditingController(
       text: bookProvider.userProfile.avatarUrl.startsWith('http')
           ? bookProvider.userProfile.avatarUrl
@@ -69,23 +73,16 @@ class ProfileEditDialog {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          l10n?.t('profile.edit_profile') ?? 'Профайл засах',
-                          style: TextStyle(
-                            fontFamily: 'Serif',
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                          ),
+                    Center(
+                      child: Text(
+                        l10n?.t('profile.edit_profile') ?? 'Профайл засах',
+                        style: TextStyle(
+                          fontFamily: 'Serif',
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 20),
-                          onPressed: () => Navigator.pop(ctx),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 12),
                     // Avatar Preview & Selector
@@ -183,9 +180,36 @@ class ProfileEditDialog {
                       controller: nameCtrl,
                       onChanged: (_) => setModalState(() {}),
                       decoration: InputDecoration(
-                        labelText: l10n?.t('auth.full_name_label') ?? 'Нэр',
+                        labelText: l10n?.t('auth.full_name_label') ?? 'Бүтэн нэр (Full Name)',
                         prefixIcon:
                             const Icon(Icons.person_outline_rounded, size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: usernameCtrl,
+                      onChanged: (_) => setModalState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n?.t('auth.username_label') ?? 'Хэрэглэгчийн нэр (Username)',
+                        prefixIcon:
+                            const Icon(Icons.alternate_email_rounded, size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      onChanged: (_) => setModalState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n?.t('auth.phone_label') ?? 'Утасны дугаар (Phone Number)',
+                        prefixIcon:
+                            const Icon(Icons.phone_outlined, size: 18),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -205,9 +229,13 @@ class ProfileEditDialog {
                           child: ElevatedButton(
                             onPressed: () {
                               final newName = nameCtrl.text.trim();
+                              final newUsername = usernameCtrl.text.trim();
+                              final newPhone = phoneCtrl.text.trim();
                               if (newName.isNotEmpty) {
                                 bookProvider.updateUserProfile(
                                   name: newName,
+                                  username: newUsername,
+                                  phoneNumber: newPhone,
                                   avatarUrl: selectedAvatar,
                                 );
                                 Navigator.pop(ctx);

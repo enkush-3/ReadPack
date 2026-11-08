@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/app_shell.dart';
 import 'package:readpack/features/auth/presentation/page/auth.dart';
+import 'package:readpack/features/auth/presentation/page/verification_page.dart';
 import 'package:readpack/features/details/presentation/page/book_detail.dart';
 import 'package:readpack/features/leaderboard/presentation/page/leaderboard_page.dart';
 import 'package:readpack/features/notifications/presentation/page/notifications_page.dart';
@@ -34,6 +35,14 @@ class Routes {
         return _buildAnimatedRoute(
           settings: settings,
           builder: (_) => const AuthPage(),
+        );
+
+      case verify:
+        return _buildAnimatedRoute(
+          settings: settings,
+          builder: (_) => VerificationPage(
+            arguments: settings.arguments as Map<String, dynamic>?,
+          ),
         );
 
       case onboarding:

@@ -75,15 +75,15 @@ class BookTheme {
         fillColor: BookColors.lightInputBg,
         hintStyle: const TextStyle(color: BookColors.lightTextHint),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: BookColors.lightInputBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: BookColors.lightInputBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: BookColors.deepBlue, width: 1.5),
         ),
       ),
@@ -94,7 +94,7 @@ class BookTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
             fontWeight: FontWeight.w600,
@@ -108,7 +108,7 @@ class BookTheme {
           side: const BorderSide(color: BookColors.deepBlue),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
         ),
       ),
@@ -220,15 +220,15 @@ class BookTheme {
         fillColor: BookColors.darkInputBg,
         hintStyle: const TextStyle(color: BookColors.darkTextHint),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: BookColors.darkInputBorder),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: BookColors.darkInputBorder),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: BookColors.powderBlue, width: 1.5),
         ),
       ),
@@ -239,7 +239,7 @@ class BookTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
             fontWeight: FontWeight.w700,

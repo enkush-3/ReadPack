@@ -43,7 +43,9 @@ class SearchResult extends StatelessWidget {
 
     if (hasAnyChapterMatches) {
       return ListView.builder(
-        physics: const BouncingScrollPhysics(),
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         itemCount: books.length,
         itemBuilder: (context, index) {
@@ -235,7 +237,9 @@ class SearchResult extends StatelessWidget {
     }
 
     return GridView.builder(
-      physics: const BouncingScrollPhysics(),
+      physics: const BouncingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,

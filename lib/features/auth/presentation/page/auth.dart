@@ -189,12 +189,26 @@ class _AuthPageState extends State<AuthPage>
               ),
             ],
           ),
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 32),
-            child: _showLogin
-                ? SignInPage(onSwitchToSignUp: _switchMode)
-                : SignUpPage(onSwitchToLogin: _switchMode),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: constraints.maxHeight - 52,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 460),
+                      child: _showLogin
+                          ? SignInPage(onSwitchToSignUp: _switchMode)
+                          : SignUpPage(onSwitchToLogin: _switchMode),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

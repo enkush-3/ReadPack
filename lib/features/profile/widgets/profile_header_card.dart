@@ -87,10 +87,10 @@ class ProfileHeaderCard extends StatelessWidget {
                     profile.isGuest
                         ? (l10n?.t('app.tagline') ??
                             'Таны ухаалаг цахим номын сан')
-                        : profile.email,
+                        : '${profile.username.isNotEmpty ? "${profile.username} • " : ""}${profile.email}',
                     style: TextStyle(
-                      fontSize: 13,
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 12.5,
+                      color: colorScheme.onSurface.withValues(alpha: 0.65),
                     ),
                   ),
                 ],

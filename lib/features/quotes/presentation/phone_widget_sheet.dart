@@ -201,37 +201,28 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.widgets_rounded,
-                        size: 20,
-                        color: colorScheme.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      l10n?.t('widget.title') ?? 'Утасны виджет',
-                      style: TextStyle(
-                        fontFamily: 'Serif',
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.widgets_rounded,
+                    size: 20,
+                    color: colorScheme.primary,
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                  onPressed: () => Navigator.of(context).pop(),
+                const SizedBox(width: 10),
+                Text(
+                  l10n?.t('widget.title') ?? 'Утасны виджет',
+                  style: TextStyle(
+                    fontFamily: 'Serif',
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
@@ -575,7 +566,7 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 9.5,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.bold,
                             color: widgetAccent,
                           ),
@@ -587,10 +578,10 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: 'Serif',
-                            fontSize: 12,
+                            fontSize: 14.5,
                             fontStyle: FontStyle.italic,
                             color: widgetText,
-                            height: 1.35,
+                            height: 1.4,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -599,7 +590,7 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 10.5,
+                            fontSize: 12.0,
                             fontWeight: FontWeight.bold,
                             color: widgetSubText,
                           ),
@@ -670,7 +661,7 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                       Text(
                         badgeText,
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: _selectedSize == 2 ? 13.0 : 12.0,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                           color: widgetAccent,
@@ -679,9 +670,9 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                       Text(
                         'ReadPack',
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: _selectedSize == 2 ? 12.0 : 11.0,
                           fontWeight: FontWeight.w600,
-                          color: widgetSubText.withValues(alpha: 0.75),
+                          color: widgetSubText.withValues(alpha: 0.85),
                         ),
                       ),
                     ],
@@ -693,7 +684,7 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'Serif',
-                      fontSize: _selectedSize == 2 ? 15.5 : 13.5,
+                      fontSize: _selectedSize == 2 ? 18.0 : 15.5,
                       fontStyle: FontStyle.italic,
                       color: widgetText,
                       height: 1.45,
@@ -705,7 +696,7 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: _selectedSize == 2 ? 13.5 : 12.5,
                       fontWeight: FontWeight.bold,
                       color: widgetSubText,
                     ),

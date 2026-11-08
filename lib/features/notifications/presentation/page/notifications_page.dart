@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/features/notifications/widgets/notification_card.dart';
+import 'package:readpack/features/shared/common/refresh.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/backbutton.dart';
@@ -123,21 +124,26 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
             ),
             Expanded(
-              child: bookProvider.isLoading
-                  ? _buildLoadingSkeleton()
-                  : filtered.isEmpty
-                      ? _buildEmptyState(bookProvider)
-                      : ListView.separated(
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                          itemCount: filtered.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) => NotificationCard(
-                            notif: filtered[index],
-                            provider: bookProvider,
+              child: RefreshWrapper(
+                onRefresh: () => bookProvider.refresh(),
+                child: bookProvider.isLoading
+                    ? _buildLoadingSkeleton()
+                    : filtered.isEmpty
+                        ? _buildEmptyState(bookProvider)
+                        : ListView.separated(
+                            physics: const BouncingScrollPhysics(
+                              parent: AlwaysScrollableScrollPhysics(),
+                            ),
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) => NotificationCard(
+                              notif: filtered[index],
+                              provider: bookProvider,
+                            ),
                           ),
-                        ),
+              ),
             ),
           ],
         ),

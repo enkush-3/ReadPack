@@ -23,7 +23,9 @@ class ProfilePage extends StatelessWidget {
       backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

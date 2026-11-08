@@ -127,24 +127,29 @@ class _BlurFilterDialogState extends State<_BlurFilterDialog> {
                     ),
                   ],
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 12),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: colorScheme.onSurface.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(2),
+                child: GestureDetector(
+                  onVerticalDragUpdate: (details) {
+                    if (details.primaryDelta != null && details.primaryDelta! > 8) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  behavior: HitTestBehavior.translucent,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 12),
+                        width: 48,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: colorScheme.onSurface.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 20, 16, 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
+                        child: Center(
+                          child: Text(
                             filterTitle,
                             style: TextStyle(
                               fontFamily: 'Serif',
@@ -153,26 +158,9 @@ class _BlurFilterDialogState extends State<_BlurFilterDialog> {
                               color: colorScheme.onSurface,
                             ),
                           ),
-                          GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.3),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: colorScheme.onSurface,
-                                size: 20,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                    Flexible(
+                      Flexible(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: Column(
@@ -291,8 +279,9 @@ class _BlurFilterDialogState extends State<_BlurFilterDialog> {
               ),
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
   }
 }

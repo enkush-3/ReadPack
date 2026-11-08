@@ -56,6 +56,8 @@ class ReadingAchievement {
 class UserProfile {
   final String name;
   final String email;
+  final String username;
+  final String phoneNumber;
   final String avatarUrl;
   final int streakDays;
   final int dailyGoalMinutes;
@@ -82,6 +84,8 @@ class UserProfile {
   const UserProfile({
     this.name = 'Enkush',
     this.email = 'enkush@readpack.app',
+    this.username = '@enkush',
+    this.phoneNumber = '+976 99112233',
     this.avatarUrl = '',
     this.streakDays = 7,
     this.dailyGoalMinutes = 30,
@@ -140,6 +144,83 @@ class UserProfile {
       ),
     ],
   });
+
+  factory UserProfile.freshUser({
+    required String name,
+    required String email,
+    String? username,
+    String? phoneNumber,
+  }) {
+    final cleanUsername = (username != null && username.isNotEmpty)
+        ? (username.startsWith('@') ? username : '@$username')
+        : '@${email.split('@').first.toLowerCase()}';
+    return UserProfile(
+      name: name.trim().isNotEmpty ? name.trim() : 'Шинэ уншигч',
+      email: email.trim(),
+      username: cleanUsername,
+      phoneNumber: phoneNumber ?? '',
+      avatarUrl: '',
+      streakDays: 0,
+      dailyGoalMinutes: 30,
+      minutesReadToday: 0,
+      totalBooksRead: 0,
+      totalHoursRead: 0,
+      readingSpeedWpm: 200,
+      isGuest: false,
+      streakFreezeAvailable: true,
+      notificationsEnabled: true,
+      recommendationsEnabled: true,
+      xp: 0,
+      weeklyLeague: 'Bronze League',
+      favoriteGenres: const ['Бизнес', 'Хувь хүний хөгжил'],
+      yearlyGoalBooks: 12,
+      onboardingCompleted: true,
+      lastStreakDate: '',
+      weeklyMinutes: const [0, 0, 0, 0, 0, 0, 0],
+      timeOfDayMinutes: const {
+        'morning': 0,
+        'afternoon': 0,
+        'evening': 0,
+        'night': 0,
+      },
+      reminderHour: 20,
+      remindersEnabled: true,
+      achievements: const [
+        ReadingAchievement(
+          id: 'streak_7',
+          title: '🔥 7 Day Streak',
+          description: 'Read every day for one full week',
+          icon: '🔥',
+          isUnlocked: false,
+          progress: 0.0,
+        ),
+        ReadingAchievement(
+          id: 'bookworm',
+          title: '🐛 Avid Bookworm',
+          description: 'Finish reading 10 or more books',
+          icon: '📚',
+          isUnlocked: false,
+          progress: 0.0,
+        ),
+        ReadingAchievement(
+          id: 'night_owl',
+          title: '🦉 Night Owl',
+          description: 'Read past midnight for 30 minutes',
+          icon: '🌙',
+          isUnlocked: false,
+          progress: 0.0,
+        ),
+        ReadingAchievement(
+          id: 'speed_reader',
+          title: '⚡ Speed Reader',
+          description: 'Read at over 240 words per minute',
+          icon: '⚡',
+          isUnlocked: false,
+          progress: 0.0,
+        ),
+      ],
+    );
+  }
 
   int get bestStreakDays => streakDays > 14 ? streakDays : 14;
 
@@ -217,6 +298,8 @@ class UserProfile {
   UserProfile copyWith({
     String? name,
     String? email,
+    String? username,
+    String? phoneNumber,
     String? avatarUrl,
     int? streakDays,
     int? dailyGoalMinutes,
@@ -243,6 +326,8 @@ class UserProfile {
     return UserProfile(
       name: name ?? this.name,
       email: email ?? this.email,
+      username: username ?? this.username,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       streakDays: streakDays ?? this.streakDays,
       dailyGoalMinutes: dailyGoalMinutes ?? this.dailyGoalMinutes,
@@ -274,6 +359,8 @@ class UserProfile {
   Map<String, dynamic> toJson() => {
     'name': name,
     'email': email,
+    'username': username,
+    'phoneNumber': phoneNumber,
     'avatarUrl': avatarUrl,
     'streakDays': streakDays,
     'dailyGoalMinutes': dailyGoalMinutes,
@@ -301,6 +388,8 @@ class UserProfile {
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
     name: json['name'] as String? ?? 'Enkush',
     email: json['email'] as String? ?? 'enkush@readpack.app',
+    username: json['username'] as String? ?? '@enkush',
+    phoneNumber: json['phoneNumber'] as String? ?? '+976 99112233',
     avatarUrl: json['avatarUrl'] as String? ?? '',
     streakDays: json['streakDays'] as int? ?? 7,
     dailyGoalMinutes: json['dailyGoalMinutes'] as int? ?? 30,

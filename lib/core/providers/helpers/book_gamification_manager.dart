@@ -227,11 +227,33 @@ class BookGamificationManager {
   }
 
   static UserProfile loginWithEmail(
-      UserProfile profile, String email, String name) {
+      UserProfile profile, String email, String name,
+      {String? username, String? phoneNumber}) {
+    final cleanUsername = (username != null && username.isNotEmpty)
+        ? (username.startsWith('@') ? username : '@$username')
+        : (profile.username.isNotEmpty
+            ? profile.username
+            : '@${email.split('@').first.toLowerCase()}');
     return profile.copyWith(
       name: name.isNotEmpty ? name : 'Уншигч',
       email: email,
+      username: cleanUsername,
+      phoneNumber: phoneNumber ?? profile.phoneNumber,
       isGuest: false,
+    );
+  }
+
+  static UserProfile registerNewUser({
+    required String name,
+    required String email,
+    String? username,
+    String? phoneNumber,
+  }) {
+    return UserProfile.freshUser(
+      name: name,
+      email: email,
+      username: username,
+      phoneNumber: phoneNumber,
     );
   }
 

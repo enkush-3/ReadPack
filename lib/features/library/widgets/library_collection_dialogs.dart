@@ -2,11 +2,69 @@ import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/models/book.dart';
 import 'package:readpack/models/collection.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/book_cover_image.dart';
 
 class LibraryCollectionDialogs {
+  static Future<bool> confirmAndDeleteDownload(
+    BuildContext context,
+    BookProvider provider,
+    Book book,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          l10n?.t('library.delete_download_title') ?? 'Татсан номыг устгах уу?',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          l10n?.t('library.delete_download_desc', {'title': book.title}) ??
+              'Та "${book.title}" номыг төхөөрөмжөөсөө устгахдаа итгэлтэй байна уу? Офлайн уншихын тулд дахин татаж авах шаардлагатай.',
+          style: const TextStyle(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n?.t('common.cancel') ?? 'Болих'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n?.t('common.delete') ?? 'Устгах'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      provider.toggleDownloadBook(book.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              l10n?.t('library.download_removed') ??
+                  'Татсан ном төхөөрөмжөөс амжилттай устгагдлаа.',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      return true;
+    }
+    return false;
+  }
+
   static IconData getCollectionIcon(String iconKey) {
     switch (iconKey) {
       case 'emoji_events':
@@ -305,17 +363,30 @@ class LibraryCollectionDialogs {
                               ),
                               trailing: IconButton(
                                 icon: const Icon(
-                                  Icons.remove_circle_outline,
-                                  size: 18,
+                                  Icons.delete_outline_rounded,
+                                  size: 20,
                                 ),
                                 color: colorScheme.error
-                                    .withValues(alpha: 0.7),
-                                onPressed: () {
-                                  provider.removeBookFromCollection(
-                                    collection.id,
-                                    b.id,
-                                  );
-                                  Navigator.pop(ctx);
+                                    .withValues(alpha: 0.8),
+                                onPressed: () async {
+                                  if (collection.id == 'c_downloaded') {
+                                    final removed = await confirmAndDeleteDownload(
+                                      context,
+                                      provider,
+                                      b,
+                                    );
+                                    if (removed && ctx.mounted) {
+                                      Navigator.pop(ctx);
+                                    }
+                                  } else {
+                                    provider.removeBookFromCollection(
+                                      collection.id,
+                                      b.id,
+                                    );
+                                    if (ctx.mounted) {
+                                      Navigator.pop(ctx);
+                                    }
+                                  }
                                 },
                               ),
                             ),

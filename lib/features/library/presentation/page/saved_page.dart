@@ -62,7 +62,6 @@ class _SavedPageState extends State<SavedPage> {
     final savedSegment = l10n?.t('library.saved') ?? 'Хадгалсан';
     final shelvesSegment = l10n?.t('library.shelves') ?? 'Цуглуулгууд';
     final quotesSegment = l10n?.t('library.quotes') ?? 'Ишлэлүүд';
-    final booksCountText = l10n?.t('home.books_count') ?? 'ном';
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -70,7 +69,9 @@ class _SavedPageState extends State<SavedPage> {
         child: RefreshWrapper(
           onRefresh: () => bookProvider.refresh(),
           child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
             slivers: [
               SliverToBoxAdapter(
                 child: Padding(
@@ -78,37 +79,14 @@ class _SavedPageState extends State<SavedPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            libraryTitle,
-                            style: TextStyle(
-                              fontFamily: 'Serif',
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.primary,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${bookProvider.savedBooks.length} $booksCountText',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        libraryTitle,
+                        style: TextStyle(
+                          fontFamily: 'Serif',
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       // 4-Segment Switcher with Sliding Pill Animation
