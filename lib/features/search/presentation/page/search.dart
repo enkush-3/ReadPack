@@ -25,6 +25,7 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   late TextEditingController _searchController;
+  bool _isSearchFocused = false;
 
   @override
   void initState() {
@@ -79,18 +80,26 @@ class _SearchPageState extends State<SearchPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: InputField(
-                        controller: _searchController,
-                        hint: AppLocalizations.of(context)?.t('hint.search') ??
-                            'Ном, зохиолч хайх...',
-                        icon: Icons.search_rounded,
-                        textInputAction: TextInputAction.search,
-                        onChanged: (val) {
-                          bookProvider.setSearchQuery(val, isTyping: true);
+                      child: Focus(
+                        onFocusChange: (focused) {
+                          if (_isSearchFocused != focused) {
+                            setState(() => _isSearchFocused = focused);
+                          }
                         },
-                        onSubmitted: (val) {
-                          bookProvider.setSearchQuery(val, isTyping: false);
-                        },
+                        child: InputField(
+                          controller: _searchController,
+                          hint: AppLocalizations.of(context)?.t('hint.search') ??
+                              'Ном, зохиолч хайх...',
+                          icon: Icons.search_rounded,
+                          textInputAction: TextInputAction.search,
+                          onChanged: (val) {
+                            setState(() {});
+                            bookProvider.setSearchQuery(val, isTyping: true);
+                          },
+                          onSubmitted: (val) {
+                            bookProvider.setSearchQuery(val, isTyping: false);
+                          },
+                        ),
                       ),
                     ),
                     if (_searchController.text.isNotEmpty) ...[
@@ -222,13 +231,15 @@ class _SearchPageState extends State<SearchPage> {
                 ),
               ),
               const SizedBox(height: 8),
-              // Search History (shown when search box is empty)
-              if (_searchController.text.isEmpty &&
+              // Search History (shown only when search input is focused and empty)
+              if (_isSearchFocused &&
+                  _searchController.text.isEmpty &&
                   bookProvider.recentSearches.isNotEmpty)
                 SearchHistory(
                   recentSearches: bookProvider.recentSearches,
                   onSelect: (query) {
                     _searchController.text = query;
+                    FocusScope.of(context).unfocus();
                     bookProvider.setSearchQuery(query);
                     bookProvider.commitSearchQuery(query);
                   },

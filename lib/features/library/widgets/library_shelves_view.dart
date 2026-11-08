@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/features/library/widgets/library_collection_dialogs.dart';
+import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/collection.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 
@@ -15,11 +16,13 @@ class LibraryShelvesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     final downloadedCollection = BookCollection(
       id: 'c_downloaded',
-      name: 'Татсан',
-      description: 'Офлайн уншихаар татаж авсан номууд',
+      name: l10n?.t('collection.downloaded_title') ?? 'Татсан',
+      description: l10n?.t('collection.downloaded_desc') ??
+          'Офлайн уншихаар татаж авсан номууд',
       icon: 'download',
       bookIds: provider.downloadedBookIds.toList(),
       createdAt: DateTime(2026, 1, 1),
@@ -61,18 +64,19 @@ class LibraryShelvesView extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.add_circle_outline_rounded,
                     color: Colors.white,
                     size: 20,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
-                    '+ Шинэ цуглуулга үүсгэх',
-                    style: TextStyle(
+                    l10n?.t('collection.create_new_btn') ??
+                        '+ Шинэ цуглуулга үүсгэх',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -149,7 +153,7 @@ class LibraryShelvesView extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            'Офлайн',
+                            l10n?.t('collection.offline_badge') ?? 'Офлайн',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -179,8 +183,11 @@ class LibraryShelvesView extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         isDownloaded
-                            ? '${coll.bookIds.length} ном татсан (${provider.totalDownloadedStorageMb.toStringAsFixed(1)} MB)'
-                            : '${coll.bookIds.length} ном агуулсан',
+                            ? '${(l10n?.t('collection.books_downloaded_count') ?? '{count} ном татсан').replaceAll('{count}', '${coll.bookIds.length}')} (${provider.totalDownloadedStorageMb.toStringAsFixed(1)} MB)'
+                            : (l10n?.t('collection.books_contained_count') ??
+                                    '{count} ном агуулсан')
+                                .replaceAll(
+                                    '{count}', '${coll.bookIds.length}'),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -209,9 +216,12 @@ class LibraryShelvesView extends StatelessWidget {
                           onPressed: () {
                             provider.deleteCollection(coll.id);
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Цуглуулга устгагдлаа'),
-                                duration: Duration(seconds: 1),
+                              SnackBar(
+                                content: Text(
+                                  l10n?.t('collection.deleted_toast') ??
+                                      'Цуглуулга устгагдлаа',
+                                ),
+                                duration: const Duration(seconds: 1),
                               ),
                             );
                           },

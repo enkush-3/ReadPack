@@ -148,7 +148,8 @@ class LibraryQuoteCard extends StatelessWidget {
                           height: 1.5,
                         ),
                       ),
-                      if (bm.note.isNotEmpty) ...[
+                      if (bm.note.isNotEmpty &&
+                          bm.note != 'Хувийн тэмдэглэл (заавал биш)') ...[
                         const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -186,43 +187,6 @@ class LibraryQuoteCard extends StatelessWidget {
                         runSpacing: 8,
                         alignment: WrapAlignment.end,
                         children: [
-                          // Set as Phone Widget Button
-                          AnimatedPressable(
-                            onTap: () {
-                              PhoneWidgetSheet.show(
-                                context,
-                                initialBookmark: bm,
-                              );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color:
-                                    colorScheme.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.widgets_rounded,
-                                    size: 12,
-                                    color: colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    l10n?.t('library.phone_widget') ?? 'Виджет',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
                           // Story Card Share Button
                           AnimatedPressable(
                             onTap: () {
@@ -272,6 +236,28 @@ class LibraryQuoteCard extends StatelessWidget {
                           ),
                           AnimatedPressable(
                             onTap: () {
+                              PhoneWidgetSheet.show(
+                                context,
+                                initialBookmark: bm,
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 6),
+                              decoration: BoxDecoration(
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.widgets_rounded,
+                                size: 14,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                          AnimatedPressable(
+                            onTap: () {
                               Clipboard.setData(ClipboardData(text: bm.quote));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -285,30 +271,16 @@ class LibraryQuoteCard extends StatelessWidget {
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
+                                  horizontal: 8, vertical: 6),
                               decoration: BoxDecoration(
                                 color:
                                     colorScheme.primary.withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.copy_rounded,
-                                    size: 13,
-                                    color: colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    l10n?.t('library.copy') ?? 'Хуулах',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: colorScheme.primary,
-                                    ),
-                                  ),
-                                ],
+                              child: Icon(
+                                Icons.copy_rounded,
+                                size: 14,
+                                color: colorScheme.primary,
                               ),
                             ),
                           ),

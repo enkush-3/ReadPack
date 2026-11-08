@@ -428,7 +428,7 @@ class _ReaderPageViewState extends State<ReaderPageView> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 60),
+                SizedBox(height: widget.isAudioPlaying ? 180 : 60),
               ],
             ),
           ),

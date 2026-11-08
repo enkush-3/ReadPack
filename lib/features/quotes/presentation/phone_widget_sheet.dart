@@ -543,77 +543,191 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
             ],
           ),
           const SizedBox(height: 14),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: widgetBg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: widgetBorder, width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: useDark ? 0.35 : 0.10),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
+          if (_selectedSize == 0)
+            Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      badgeText,
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                        color: widgetAccent,
-                      ),
+                Expanded(
+                  flex: 6,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    constraints: const BoxConstraints(minHeight: 150),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: widgetBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: widgetBorder, width: 1.5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(alpha: useDark ? 0.35 : 0.10),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'ReadPack',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: widgetSubText.withValues(alpha: 0.75),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          badgeText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: widgetAccent,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '“$quote”',
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Serif',
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                            color: widgetText,
+                            height: 1.35,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          author,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: widgetSubText,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '“$quote”',
-                  maxLines:
-                      _selectedSize == 0 ? 2 : (_selectedSize == 1 ? 3 : 5),
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: 'Serif',
-                    fontSize: _selectedSize == 0 ? 12.5 : 14,
-                    fontStyle: FontStyle.italic,
-                    color: widgetText,
-                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  footerText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                    color: widgetSubText,
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildMockAppIcon(Icons.auto_stories_rounded,
+                              const Color(0xFFE07A5F), useDark),
+                          _buildMockAppIcon(Icons.calendar_month_rounded,
+                              const Color(0xFF3B82F6), useDark),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildMockAppIcon(Icons.headphones_rounded,
+                              const Color(0xFF10B981), useDark),
+                          _buildMockAppIcon(Icons.bookmark_rounded,
+                              const Color(0xFF8B5CF6), useDark),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
+            )
+          else
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              width: double.infinity,
+              constraints: BoxConstraints(
+                minHeight: _selectedSize == 2 ? 210 : 120,
+              ),
+              padding: EdgeInsets.all(_selectedSize == 2 ? 20 : 16),
+              decoration: BoxDecoration(
+                color: widgetBg,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: widgetBorder, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color:
+                        Colors.black.withValues(alpha: useDark ? 0.35 : 0.10),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: _selectedSize == 2
+                    ? MainAxisAlignment.spaceBetween
+                    : MainAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        badgeText,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          color: widgetAccent,
+                        ),
+                      ),
+                      Text(
+                        'ReadPack',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: widgetSubText.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '“$quote”',
+                    maxLines: _selectedSize == 1 ? 3 : 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Serif',
+                      fontSize: _selectedSize == 2 ? 15.5 : 13.5,
+                      fontStyle: FontStyle.italic,
+                      color: widgetText,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    footerText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: widgetSubText,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMockAppIcon(IconData icon, Color color, bool useDark) {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: useDark ? 0.25 : 0.18),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Icon(icon, size: 20, color: color),
     );
   }
 

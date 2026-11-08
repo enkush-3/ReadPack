@@ -55,14 +55,14 @@ class ReaderAppearanceSheet {
                       color: onSheetColor,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
                   ReaderFontSizeControl(
                     themeProvider: themeProvider,
                     onSheetColor: onSheetColor,
                     setSheetState: setSheetState,
                     l10n: l10n,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   // Themes Row
                   Text(
                     l10n?.t('reader.screen_theme') ?? 'Дэлгэцийн өнгө',
@@ -72,7 +72,7 @@ class ReaderAppearanceSheet {
                       color: onSheetColor,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       ReaderAppearanceChips.buildThemeChip(
@@ -128,7 +128,7 @@ class ReaderAppearanceSheet {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   // Reading Mode Toggle
                   Text(
                     l10n?.t('reader.reading_mode') ?? 'Унших горим',
@@ -138,14 +138,14 @@ class ReaderAppearanceSheet {
                       color: onSheetColor,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   ReaderReadingModeControl(
                     themeProvider: themeProvider,
                     onSheetColor: onSheetColor,
                     setSheetState: setSheetState,
                     l10n: l10n,
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   // Font Family Row
                   Text(
                     l10n?.t('reader.font_family') ?? 'Фонтын хэв маяг',
@@ -155,7 +155,7 @@ class ReaderAppearanceSheet {
                       color: onSheetColor,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       ReaderAppearanceChips.buildFontChip(
@@ -195,7 +195,7 @@ class ReaderAppearanceSheet {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   // Line Height Controls
                   Text(
                     l10n?.t('reader.line_height') ?? 'Мөр хоорондын зай',
@@ -205,7 +205,7 @@ class ReaderAppearanceSheet {
                       color: onSheetColor,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       ReaderAppearanceChips.buildValueChip(
@@ -233,7 +233,7 @@ class ReaderAppearanceSheet {
                       }),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   // Margin Controls
                   Text(
                     l10n?.t('reader.margins') ?? 'Захаас авах зай',
@@ -243,7 +243,7 @@ class ReaderAppearanceSheet {
                       color: onSheetColor,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       ReaderAppearanceChips.buildValueChip(
@@ -277,7 +277,7 @@ class ReaderAppearanceSheet {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 10),

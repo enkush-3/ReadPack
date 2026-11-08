@@ -283,7 +283,7 @@ class _ReaderScrollViewState extends State<ReaderScrollView> {
                             ),
                         ],
                       ),
-                    const SizedBox(height: 120),
+                    SizedBox(height: widget.isAudioPlaying ? 240 : 120),
                   ],
                 ),
               ),

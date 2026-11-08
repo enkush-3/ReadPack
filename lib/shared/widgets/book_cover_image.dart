@@ -23,7 +23,60 @@ class BookCoverImage extends StatelessWidget {
     this.borderRadius = 0,
   });
 
+  static const Map<String, String> _knownAssetsByTitle = {
+    'atomic habits': 'assets/public/books/atomic_habits.png',
+    'deep work': 'assets/public/books/deep_work.png',
+    'thinking, fast and slow': 'assets/public/books/thinking_fast_and_slow.png',
+    'the art of war': 'assets/public/books/the_art_of_war.png',
+    '1984': 'assets/public/books/1984.png',
+    'steve jobs': 'assets/public/books/steve_jobs.png',
+    'meditations': 'assets/public/books/meditations.png',
+    'guns, germs, and steel': 'assets/public/books/guns_germs_and_steel.png',
+    'sapiens': 'assets/public/books/sapiens.png',
+    'a brief history of time':
+        'assets/public/books/a_brief_history_of_time.png',
+    'cosmos': 'assets/public/books/cosmos.png',
+    'frankenstein': 'assets/public/books/frankenstein.png',
+    'the hobbit': 'assets/public/books/the_hobbit.png',
+    'the alchemist': 'assets/public/books/the_alchemist.png',
+    'treasure island': 'assets/public/books/treasure_island.png',
+    'around the world in eighty days':
+        'assets/public/books/around_the_world_in_eighty_days.png',
+    'pride and prejudice': 'assets/public/books/pride_and_prejudice.png',
+    'the great gatsby': 'assets/public/books/the_great_gatsby.png',
+    'jane eyre': 'assets/public/books/jane_eyre.png',
+    'wuthering heights': 'assets/public/books/wuthering_heights.png',
+    'clear thinking': 'assets/public/books/clear_thinking.png',
+  };
+
+  String? _resolveLocalAssetFallback() {
+    final normalized = title.trim().toLowerCase();
+    if (_knownAssetsByTitle.containsKey(normalized)) {
+      return _knownAssetsByTitle[normalized];
+    }
+    for (final entry in _knownAssetsByTitle.entries) {
+      if (normalized.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
   Widget _buildArtworkPlaceholder() {
+    final localAsset = _resolveLocalAssetFallback();
+    if (localAsset != null) {
+      return Image.asset(
+        localAsset,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (_, __, ___) => _buildStyledTypographyCover(),
+      );
+    }
+    return _buildStyledTypographyCover();
+  }
+
+  Widget _buildStyledTypographyCover() {
     Color primaryColor;
     if (colorHex != 0xFF182350 && colorHex != 0xFF1E293B) {
       primaryColor = Color(colorHex);
@@ -41,6 +94,9 @@ class BookCoverImage extends StatelessWidget {
       primaryColor = palette[hash % palette.length];
     }
 
+    final isCompact = (height != null && height! < 90) ||
+        (width != null && width! < 70);
+
     return Container(
       width: width,
       height: height,
@@ -57,12 +113,11 @@ class BookCoverImage extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Simulated book spine groove
           Positioned(
             left: 0,
             top: 0,
             bottom: 0,
-            width: 4,
+            width: isCompact ? 2.5 : 4,
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -76,57 +131,86 @@ class BookCoverImage extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+            padding: EdgeInsets.symmetric(
+              horizontal: isCompact ? 4 : 8,
+              vertical: isCompact ? 4 : 10,
+            ),
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.15),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        width: 0.8,
-                      ),
+              child: isCompact
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.menu_book_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Serif',
+                            fontSize: 7.5,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.1,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.15),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.auto_stories_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Serif',
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            height: 1.2,
+                          ),
+                        ),
+                        if (author != null && author!.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            author!,
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    child: const Icon(
-                      Icons.auto_stories_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: 'Serif',
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
-                  ),
-                  if (author != null && author!.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      author!,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: Colors.white.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
             ),
           ),
         ],

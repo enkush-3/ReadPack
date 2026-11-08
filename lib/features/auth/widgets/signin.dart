@@ -22,8 +22,8 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
-  final _emailController = TextEditingController(text: 'enkush@readpack.app');
-  final _passwordController = TextEditingController(text: 'readpack123');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _emailError;
   String? _passwordError;
@@ -33,6 +33,88 @@ class _SignInPageState extends State<SignInPage> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _showForgotPasswordDialog() {
+    final l10n = AppLocalizations.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final resetEmailController =
+        TextEditingController(text: _emailController.text.trim());
+    String? errorMsg;
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            l10n?.t('auth.reset_password_title') ?? 'Нууц үг сэргээх',
+            style: TextStyle(
+              fontFamily: 'Serif',
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n?.t('auth.reset_password_desc') ??
+                    'Имэйл хаягаа оруулна уу. Бид нууц үг сэргээх холбоос илгээх болно.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 16),
+              InputField(
+                controller: resetEmailController,
+                hint: l10n?.t('auth.email_hint') ?? 'Имэйл хаягаа оруулна уу',
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                errorText: errorMsg,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: Text(l10n?.t('common.cancel') ?? 'Цуцлах'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final mail = resetEmailController.text.trim();
+                if (mail.isEmpty || !mail.contains('@')) {
+                  setDialogState(() {
+                    errorMsg = l10n?.t('validation.email_invalid') ??
+                        'Имэйл хаягаа зөв оруулна уу';
+                  });
+                  return;
+                }
+                Navigator.of(dialogCtx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      l10n?.t('success.password_reset_sent') ??
+                          'Нууц үг сэргээх холбоос илгээгдлээ',
+                    ),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: Text(
+                l10n?.t('auth.send_reset_link') ?? 'Холбоос илгээх',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _validateAndSubmit() async {
@@ -153,7 +235,25 @@ class _SignInPageState extends State<SignInPage> {
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _validateAndSubmit(),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 10),
+        Align(
+          alignment: Alignment.centerRight,
+          child: GestureDetector(
+            onTap: _showForgotPasswordDialog,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                l10n?.t('auth.forgot_password') ?? 'Нууц үгээ мартсан уу?',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
         SubmitButton(
           label: signinText,
           isLoading: _isLoading,

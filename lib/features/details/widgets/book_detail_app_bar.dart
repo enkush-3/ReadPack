@@ -99,55 +99,79 @@ class BookDetailAppBar extends StatelessWidget {
           ),
         ),
       ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(currentBook.colorHex),
-                    Color(currentBook.colorHex).withValues(alpha: 0.8),
-                    colorScheme.surface,
-                  ],
+      flexibleSpace: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCollapsed = constraints.biggest.height <=
+              kToolbarHeight + MediaQuery.of(context).padding.top + 28;
+          return FlexibleSpaceBar(
+            centerTitle: true,
+            titlePadding:
+                const EdgeInsets.only(left: 64, right: 112, bottom: 14),
+            title: AnimatedOpacity(
+              duration: const Duration(milliseconds: 180),
+              opacity: isCollapsed ? 1.0 : 0.0,
+              child: Text(
+                currentBook.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Serif',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
             ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 40),
-                child: Hero(
-                  tag: 'book_cover_${currentBook.id}',
-                  child: Container(
-                    width: 150,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(currentBook.colorHex),
+                        Color(currentBook.colorHex).withValues(alpha: 0.8),
+                        colorScheme.surface,
                       ],
-                    ),
-                    child: BookCoverImage(
-                      image: currentBook.image,
-                      colorHex: currentBook.colorHex,
-                      title: currentBook.title,
-                      author: currentBook.author,
-                      borderRadius: 16,
-                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
-              ),
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: Hero(
+                      tag: 'book_cover_${currentBook.id}',
+                      child: Container(
+                        width: 150,
+                        height: 220,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: BookCoverImage(
+                          image: currentBook.image,
+                          colorHex: currentBook.colorHex,
+                          title: currentBook.title,
+                          author: currentBook.author,
+                          borderRadius: 16,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -100,7 +100,7 @@ class _SavedPageState extends State<SavedPage> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '${bookProvider.savedBooks.length + bookProvider.continueReadingBooks.length} $booksCountText',
+                              '${bookProvider.savedBooks.length} $booksCountText',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -385,33 +385,24 @@ class _SavedPageState extends State<SavedPage> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                AnimatedPressable(
-                  onTap: () => PhoneWidgetSheet.show(context),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: colorScheme.primary.withValues(alpha: 0.25),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.widgets_rounded,
-                            size: 14, color: colorScheme.primary),
-                        const SizedBox(width: 4),
-                        Text(
-                          l10n?.t('widget.title') ?? 'Утасны виджет',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
+                Tooltip(
+                  message: l10n?.t('widget.title') ?? 'Утасны дэлгэцийн виджет',
+                  child: AnimatedPressable(
+                    onTap: () => PhoneWidgetSheet.show(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: colorScheme.primary.withValues(alpha: 0.25),
                         ),
-                      ],
+                      ),
+                      child: Icon(
+                        Icons.widgets_rounded,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
                     ),
                   ),
                 ),

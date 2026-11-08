@@ -1,9 +1,8 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/details/widgets/book_detail_app_bar.dart';
-import 'package:readpack/features/details/widgets/book_detail_audio_player.dart';
 import 'package:readpack/features/details/widgets/book_detail_chapters_tab.dart';
 import 'package:readpack/features/details/widgets/book_detail_overview_tab.dart';
 import 'package:readpack/features/details/widgets/book_detail_reviews_tab.dart';
@@ -26,61 +25,6 @@ class BookDetailPage extends StatefulWidget {
 
 class _BookDetailPageState extends State<BookDetailPage> {
   int _selectedTabIndex = 0;
-
-  // Embedded Audio Preview player state
-  bool _showAudioPlayer = false;
-  bool _isAudioPlaying = false;
-  double _audioCurrentSeconds = 0.0;
-  double _audioTotalSeconds = 300.0;
-  double _audioSpeed = 1.0;
-  Timer? _audioTimer;
-
-  bool get _isTesting => WidgetsBinding.instance.runtimeType
-      .toString()
-      .contains('TestWidgetsFlutterBinding');
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.book.chapters.isNotEmpty) {
-      _audioTotalSeconds =
-          (widget.book.chapters.first.estimatedMinutes * 60).toDouble();
-      if (_audioTotalSeconds <= 0) _audioTotalSeconds = 240.0;
-    }
-  }
-
-  @override
-  void dispose() {
-    _audioTimer?.cancel();
-    super.dispose();
-  }
-
-  void _toggleAudioPlay() {
-    if (_isAudioPlaying) {
-      _audioTimer?.cancel();
-      setState(() => _isAudioPlaying = false);
-    } else {
-      setState(() => _isAudioPlaying = true);
-      if (_isTesting) return;
-
-      _audioTimer?.cancel();
-      _audioTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-        if (!mounted) return;
-        if (!_isAudioPlaying) {
-          timer.cancel();
-          return;
-        }
-        setState(() {
-          _audioCurrentSeconds += 0.5 * _audioSpeed;
-          if (_audioCurrentSeconds >= _audioTotalSeconds) {
-            _audioCurrentSeconds = _audioTotalSeconds;
-            _isAudioPlaying = false;
-            timer.cancel();
-          }
-        });
-      });
-    }
-  }
 
   Widget _buildTabBar(ColorScheme colorScheme, AppLocalizations? l10n) {
     final tabs = [
@@ -226,54 +170,20 @@ class _BookDetailPageState extends State<BookDetailPage> {
                   const SizedBox(height: 20),
                   BookDetailActionButtons(
                     book: currentBook,
-                    showAudioPlayer: _showAudioPlayer,
+                    showAudioPlayer: false,
                     onToggleAudio: () {
                       if (!currentBook.hasAudio) return;
-                      setState(() {
-                        _showAudioPlayer = !_showAudioPlayer;
-                        if (_showAudioPlayer) {
-                          _toggleAudioPlay();
-                        }
-                      });
+                      Navigator.of(context).pushNamed(
+                        Routes.reader,
+                        arguments: {
+                          'book': currentBook,
+                          'initialChapterIndex': currentBook.currentChapterIndex,
+                          'openAudioInitially': true,
+                        },
+                      );
                     },
                     l10n: l10n,
                   ),
-                  if (currentBook.hasAudio && _showAudioPlayer) ...[
-                    const SizedBox(height: 20),
-                    BookDetailAudioPlayer(
-                      currentBook: currentBook,
-                      isPlaying: _isAudioPlaying,
-                      currentSeconds: _audioCurrentSeconds,
-                      totalSeconds: _audioTotalSeconds,
-                      speed: _audioSpeed,
-                      onTogglePlay: _toggleAudioPlay,
-                      onSeek: (val) {
-                        setState(() => _audioCurrentSeconds = val);
-                      },
-                      onChangeSpeed: () {
-                        setState(() {
-                          if (_audioSpeed == 1.0) {
-                            _audioSpeed = 1.25;
-                          } else if (_audioSpeed == 1.25) {
-                            _audioSpeed = 1.5;
-                          } else if (_audioSpeed == 1.5) {
-                            _audioSpeed = 2.0;
-                          } else {
-                            _audioSpeed = 1.0;
-                          }
-                        });
-                      },
-                      onClose: () {
-                        _audioTimer?.cancel();
-                        setState(() {
-                          _isAudioPlaying = false;
-                          _showAudioPlayer = false;
-                        });
-                      },
-                      l10n: l10n,
-                    ),
-                    const SizedBox(height: 20),
-                  ],
                   _buildTabBar(colorScheme, l10n),
                   if (_selectedTabIndex == 0)
                     BookDetailOverviewTab(

@@ -60,15 +60,15 @@ class BookCard extends StatelessWidget {
                   children: [
                     Container(color: Color(colorHex)),
                     _buildCoverImage(),
-                    // Subtle rating tag
+                    // Subtle rating tag at bottom-right so top cover titles (e.g. THE HOBBIT) are never occluded
                     Positioned(
-                      top: 8,
+                      bottom: 8,
                       right: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.65),
+                          color: Colors.black.withValues(alpha: 0.72),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(

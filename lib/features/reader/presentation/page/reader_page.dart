@@ -207,26 +207,34 @@ class _ReaderPageState extends State<ReaderPage>
       setState(() {
         _sleepTimerMinutes = null;
       });
+      final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Унтах цаг боллоо. Аудио автоматаар зогслоо 🌙'),
-          duration: Duration(seconds: 3),
+        SnackBar(
+          content: Text(
+            l10n?.t('audio_ext.sleep_ended_toast') ??
+                'Унтах цаг боллоо. Аудио автоматаар зогслоо 🌙',
+          ),
+          duration: const Duration(seconds: 3),
         ),
       );
     });
   }
 
   void _showSleepTimerSheet() {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final options = [
-          {'title': 'Унтраах (Off)', 'val': null},
-          {'title': '15 минут', 'val': 15},
-          {'title': '30 минут', 'val': 30},
-          {'title': '45 минут', 'val': 45},
-          {'title': '60 минут', 'val': 60},
+          {
+            'title': l10n?.t('audio_ext.sleep_off') ?? 'Унтраах (Off)',
+            'val': null
+          },
+          {'title': l10n?.t('audio_ext.sleep_15') ?? '15 минут', 'val': 15},
+          {'title': l10n?.t('audio_ext.sleep_30') ?? '30 минут', 'val': 30},
+          {'title': l10n?.t('audio_ext.sleep_45') ?? '45 минут', 'val': 45},
+          {'title': '60 ${l10n?.t('common.minutes_short') ?? 'минут'}', 'val': 60},
         ];
         return Container(
           decoration: BoxDecoration(
@@ -257,7 +265,8 @@ class _ReaderPageState extends State<ReaderPage>
                           size: 20, color: Theme.of(context).colorScheme.primary),
                       const SizedBox(width: 8),
                       Text(
-                        'Унтах таймер (Sleep Timer)',
+                        l10n?.t('audio_ext.sleep_timer') ??
+                            'Унтах таймер (Sleep Timer)',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

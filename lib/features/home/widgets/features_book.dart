@@ -65,7 +65,7 @@ class FeaturedBookCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. Clean Unobstructed Book Cover Artwork (No text-on-text collision)
+              // 1. Clean Unobstructed Portrait Book Cover Showcase (No horizontal crop)
               Expanded(
                 child: Stack(
                   fit: StackFit.expand,
@@ -74,7 +74,7 @@ class FeaturedBookCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            color.withValues(alpha: 0.85),
+                            color.withValues(alpha: 0.9),
                             color.withValues(alpha: 0.55),
                           ],
                           begin: Alignment.topLeft,
@@ -82,7 +82,30 @@ class FeaturedBookCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    _buildCoverImage(),
+                    // Centered 2:3 portrait book cover with realistic shadow
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Container(
+                          width: 108,
+                          height: 158,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.35),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: _buildCoverImage(),
+                          ),
+                        ),
+                      ),
+                    ),
                     // Subtle category pill in top-left
                     if (category != null && category!.isNotEmpty)
                       Positioned(
