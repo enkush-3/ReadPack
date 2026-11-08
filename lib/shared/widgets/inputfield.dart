@@ -23,7 +23,7 @@ class InputField extends StatefulWidget {
     this.errorText,
     this.textInputAction,
     this.keyboardType,
-    this.borderRadius = 22,
+    this.borderRadius = 16,
   });
 
   @override
@@ -121,8 +121,8 @@ class _InputFieldState extends State<InputField> {
               ),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 18,
-              vertical: 14,
+              horizontal: 16,
+              vertical: 16,
             ),
           ),
         ),
