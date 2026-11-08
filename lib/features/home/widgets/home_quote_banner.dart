@@ -123,7 +123,7 @@ class _HomeQuoteBannerState extends State<HomeQuoteBanner> {
                               ),
                               decoration: BoxDecoration(
                                 color: isFlashcardMode
-                                    ? Colors.amber.withValues(alpha: 0.25)
+                                    ? colorScheme.primary.withValues(alpha: 0.18)
                                     : colorScheme.primary
                                         .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
@@ -134,9 +134,7 @@ class _HomeQuoteBannerState extends State<HomeQuoteBanner> {
                                   Icon(
                                     Icons.replay_rounded,
                                     size: 12,
-                                    color: isFlashcardMode
-                                        ? Colors.amber[800]
-                                        : colorScheme.primary,
+                                    color: colorScheme.primary,
                                   ),
                                   const SizedBox(width: 3),
                                   Text(
@@ -145,9 +143,7 @@ class _HomeQuoteBannerState extends State<HomeQuoteBanner> {
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      color: isFlashcardMode
-                                          ? Colors.amber[900]
-                                          : colorScheme.primary,
+                                      color: colorScheme.primary,
                                     ),
                                   ),
                                 ],

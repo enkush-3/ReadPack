@@ -101,10 +101,10 @@ class OnboardingCelebrationStep extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.2),
+                    color: colorScheme.primary.withValues(alpha: 0.14),
                     shape: BoxShape.circle,
                   ),
-                  child: const Text('⚡', style: TextStyle(fontSize: 22)),
+                  child: Icon(Icons.bolt_rounded, size: 22, color: colorScheme.primary),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -114,10 +114,10 @@ class OnboardingCelebrationStep extends StatelessWidget {
                       Text(
                         l10n?.t('onboarding.xp_bonus') ??
                             '+100 XP Бонус нэмэгдлээ!',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: Colors.amber,
+                          color: colorScheme.primary,
                         ),
                       ),
                       const SizedBox(height: 2),

@@ -87,7 +87,7 @@ class ProfileHabitsCard extends StatelessWidget {
               l10n?.t('profile.morning') ?? 'Өглөө (06:00 - 12:00)',
               morningPct,
               colorScheme,
-              Colors.amber,
+              const Color(0xFF38BDF8),
             ),
             const SizedBox(height: 8),
             _buildTimeBar(

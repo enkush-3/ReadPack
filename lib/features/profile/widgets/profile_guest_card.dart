@@ -20,7 +20,7 @@ class ProfileGuestCard extends StatelessWidget {
     final features = [
       {
         'icon': Icons.emoji_events_rounded,
-        'color': Colors.amber,
+        'color': colorScheme.primary,
         'title': l10n?.t('profile.leaderboard') ??
             'Лидерборд & Долоо хоногийн лиг',
         'desc': l10n?.t('profile.guest_benefit_leaderboard_desc') ??
@@ -28,7 +28,7 @@ class ProfileGuestCard extends StatelessWidget {
       },
       {
         'icon': Icons.bolt_rounded,
-        'color': Colors.orangeAccent,
+        'color': const Color(0xFF38BDF8),
         'title': l10n?.t('profile.level_title') ?? 'XP түвшин ба цол',
         'desc': l10n?.t('profile.guest_benefit_xp_desc') ??
             'Уншсан минут, ном бүрээрээ шагнал цуглуулах',

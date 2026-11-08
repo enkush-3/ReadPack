@@ -158,7 +158,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.amber.withValues(alpha: 0.15),
+              color: colorScheme.primary.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
             child: const Text('🏆', style: TextStyle(fontSize: 28)),

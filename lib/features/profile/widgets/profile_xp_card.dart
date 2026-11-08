@@ -111,23 +111,27 @@ class ProfileXpCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.18),
+                  color: colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.amber.withValues(alpha: 0.35),
+                    color: colorScheme.primary.withValues(alpha: 0.28),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('⚡', style: TextStyle(fontSize: 12)),
+                    Icon(
+                      Icons.bolt_rounded,
+                      size: 14,
+                      color: colorScheme.primary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '$xp XP',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.amber,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ],

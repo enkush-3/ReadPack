@@ -113,7 +113,7 @@ class ReaderAudioBar extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: (sleepTimerMinutes != null && sleepTimerMinutes! > 0)
-                            ? Colors.amber.withValues(alpha: 0.35)
+                            ? const Color(0xFF7BBAF7).withValues(alpha: 0.35)
                             : Colors.white24,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -124,7 +124,7 @@ class ReaderAudioBar extends StatelessWidget {
                             Icons.bedtime_rounded,
                             size: 13,
                             color: (sleepTimerMinutes != null && sleepTimerMinutes! > 0)
-                                ? Colors.amber
+                                ? const Color(0xFFD0E8FD)
                                 : Colors.white,
                           ),
                           if (sleepTimerMinutes != null && sleepTimerMinutes! > 0) ...[
@@ -134,7 +134,7 @@ class ReaderAudioBar extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.amber,
+                                color: Color(0xFFD0E8FD),
                               ),
                             ),
                           ],
