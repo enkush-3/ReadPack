@@ -92,7 +92,10 @@ class SettingsPage extends StatelessWidget {
                   trailing:
                       const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                   onTap: () {
-                    Navigator.of(context).pushNamed(Routes.onboarding);
+                    Navigator.of(context).pushNamed(
+                      Routes.onboarding,
+                      arguments: {'fromSettings': true},
+                    );
                   },
                 ),
                 Divider(

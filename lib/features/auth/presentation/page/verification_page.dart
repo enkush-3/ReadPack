@@ -126,7 +126,10 @@ class _VerificationPageState extends State<VerificationPage> {
         ),
       );
 
-      Navigator.of(context).pushReplacementNamed(Routes.onboarding);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        Routes.onboarding,
+        (route) => false,
+      );
     } else {
       // Forgot password flow
       setState(() {

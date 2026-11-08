@@ -60,10 +60,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
       yearlyGoalBooks: _selectedYearlyBooks,
     );
 
-    if (Navigator.of(context).canPop()) {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    final bool isFromSettings = args is Map && args['fromSettings'] == true;
+
+    if (isFromSettings && Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     } else {
-      Navigator.of(context).pushReplacementNamed(Routes.appshell);
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        Routes.appshell,
+        (route) => false,
+        arguments: 0,
+      );
     }
   }
 

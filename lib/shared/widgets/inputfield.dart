@@ -23,7 +23,7 @@ class InputField extends StatefulWidget {
     this.errorText,
     this.textInputAction,
     this.keyboardType,
-    this.borderRadius = 16,
+    this.borderRadius = 22,
   });
 
   @override
@@ -36,74 +36,100 @@ class _InputFieldState extends State<InputField> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(widget.borderRadius);
+    final borderSide = BorderSide(
+      color: widget.errorText != null
+          ? colorScheme.error
+          : colorScheme.outlineVariant.withValues(alpha: 0.35),
+      width: 1.2,
+    );
+    final focusedBorderSide = BorderSide(
+      color: widget.errorText != null
+          ? colorScheme.error
+          : colorScheme.primary,
+      width: 1.6,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            border: Border.all(
-              color: widget.errorText != null
-                  ? colorScheme.error
-                  : colorScheme.outlineVariant.withValues(alpha: 0.35),
-              width: 1,
-            ),
+        TextField(
+          controller: widget.controller,
+          obscureText: widget.isPassword ? _obscure : false,
+          keyboardType: widget.keyboardType,
+          textInputAction: widget.textInputAction ?? TextInputAction.next,
+          onChanged: widget.onChanged,
+          onSubmitted: widget.onSubmitted,
+          style: TextStyle(
+            fontSize: 15,
+            color: colorScheme.onSurface,
           ),
-          child: TextField(
-            controller: widget.controller,
-            obscureText: widget.isPassword ? _obscure : false,
-            keyboardType: widget.keyboardType,
-            textInputAction: widget.textInputAction ?? TextInputAction.next,
-            onChanged: widget.onChanged,
-            onSubmitted: widget.onSubmitted,
-            style: TextStyle(
-              fontSize: 15,
-              color: colorScheme.onSurface,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+            hintText: widget.hint,
+            hintStyle: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
+              fontSize: 14,
             ),
-            decoration: InputDecoration(
-              hintText: widget.hint,
-              hintStyle: TextStyle(
-                color: colorScheme.onSurface.withValues(alpha: 0.4),
-                fontSize: 14,
+            prefixIcon: Icon(
+              widget.icon,
+              color: colorScheme.primary.withValues(alpha: 0.7),
+              size: 20,
+            ),
+            suffixIcon: widget.isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscure = !_obscure;
+                      });
+                    },
+                  )
+                : null,
+            border: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: borderSide,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: borderSide,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: focusedBorderSide,
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide(
+                color: colorScheme.error,
+                width: 1.2,
               ),
-              prefixIcon: Icon(
-                widget.icon,
-                color: colorScheme.primary.withValues(alpha: 0.7),
-                size: 20,
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: radius,
+              borderSide: BorderSide(
+                color: colorScheme.error,
+                width: 1.6,
               ),
-              suffixIcon: widget.isPassword
-                  ? IconButton(
-                      icon: Icon(
-                        _obscure
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        color: colorScheme.onSurface.withValues(alpha: 0.5),
-                        size: 20,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _obscure = !_obscure;
-                        });
-                      },
-                    )
-                  : null,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 14,
             ),
           ),
         ),
         if (widget.errorText != null) ...[
           const SizedBox(height: 4),
           Padding(
-            padding: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.only(left: 12),
             child: Text(
               widget.errorText!,
               style: TextStyle(
