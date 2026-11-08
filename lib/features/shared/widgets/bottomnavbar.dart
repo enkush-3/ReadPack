@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/features/shared/widgets/navbutton.dart';
@@ -35,16 +36,16 @@ class BottomNavBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: SizedBox(
-            height: 48,
+            height: 52,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final itemWidth = constraints.maxWidth / 4;
                 return Stack(
                   children: [
                     AnimatedPositioned(
-                      duration: const Duration(milliseconds: 260),
+                      duration: const Duration(milliseconds: 280),
                       curve: Curves.easeOutCubic,
                       left: selectedIndex * itemWidth + 4,
                       top: 2,
@@ -53,7 +54,11 @@ class BottomNavBar extends StatelessWidget {
                       child: Container(
                         decoration: BoxDecoration(
                           color: colorScheme.primary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: colorScheme.primary.withValues(alpha: 0.08),
+                            width: 1,
+                          ),
                         ),
                       ),
                     ),
@@ -63,26 +68,38 @@ class BottomNavBar extends StatelessWidget {
                           icon: Icons.home_rounded,
                           label: l10n?.t('app.navbar.home') ?? 'Нүүр',
                           isSelected: selectedIndex == 0,
-                          onTap: () => onTap(0),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            onTap(0);
+                          },
                         ),
                         NavigationButton(
                           icon: Icons.explore_rounded,
                           label: l10n?.t('app.navbar.search') ?? 'Хайх',
                           isSelected: selectedIndex == 1,
-                          onTap: () => onTap(1),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            onTap(1);
+                          },
                         ),
                         NavigationButton(
                           icon: Icons.bookmark_rounded,
                           label: l10n?.t('app.navbar.save') ?? 'Хадгалсан',
                           isSelected: selectedIndex == 2,
                           badgeCount: savedCount,
-                          onTap: () => onTap(2),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            onTap(2);
+                          },
                         ),
                         NavigationButton(
                           icon: Icons.person_rounded,
                           label: l10n?.t('app.navbar.profile') ?? 'Профайл',
                           isSelected: selectedIndex == 3,
-                          onTap: () => onTap(3),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            onTap(3);
+                          },
                         ),
                       ],
                     ),
