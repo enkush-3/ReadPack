@@ -1,110 +1,50 @@
-# Resolution Report: ReadPack Code Review, UI Polish & Finish-Gate Fixes
+# 🛠️ ReadPack v6.0 — MODE D: Dynamic Parallel Issue-Driven Resolution Report (`RESOLUTION_REPORT.md`)
 
-## 1. Executive Summary
-Following the comprehensive review conducted across `/agency-code-reviewer`, `/agency-ui-designer`, and `/agency-ui-finish-gate-reviewer` documented in `CRITIQUE_REPORT.md`, all identified issues have been systematically addressed and verified using `/agency-mobile-app-builder` adhering to `.antigravity/skills/dynamic-fixer.md`.
-
-No placeholders (`// TODO` or unfinished mock states) were introduced. All 87 Flutter unit/widget tests and all 8 backend integration tests pass with 0 errors and 0 warnings.
-
----
-
-## 2. Dynamic Agents & Task Execution Map
-
-### Batch 1: Cover Image & Rendering Integrity Agent (`book-cover-unifier`)
-- **Assigned Agent**: `book-cover-unifier`
-- **Scope & Target Files**:
-  - `lib/shared/widgets/book_cover_image.dart` (New canonical component)
-  - `lib/features/details/widgets/book_detail_app_bar.dart`
-  - `lib/features/home/widgets/books_card.dart`
-  - `lib/features/home/widgets/continue_reading_card.dart`
-  - `lib/features/home/widgets/features_book.dart`
-  - `lib/features/library/widgets/library_reading_card.dart`
-  - `lib/features/library/widgets/library_saved_card.dart`
-  - `lib/features/library/widgets/library_collection_dialogs.dart`
-  - `lib/features/profile/widgets/read_books_sheet.dart`
-  - `lib/features/search/widgets/searchresult.dart`
-- **Resolution**:
-  - Replaced divergent, ad-hoc image loaders that caused bundle asset crashes when receiving remote URLs or silent network failures when receiving local asset paths.
-  - Implemented `BookCoverImage` supporting HTTP/HTTPS URLs with disk/memory caching (`CachedNetworkImage`), local asset bundles (`Image.asset`), and a beautiful fallback book cover/spine styled with the book's title, author, and gradient background derived from `colorHex`.
+**Огноо:** 2026-11-08  
+**Горим:** `MODE D (Dynamic Parallel Issue-Driven Fixer)`  
+**Холбогдох шүүмж тайлан:** [`CRITIQUE_REPORT.md`](file:///home/enkush-3/Desktop/Git/ReadPack/CRITIQUE_REPORT.md)  
+**Шинжилсэн бодит дэлгэцийн агшин:** `assets/App-images/photo_1` – `photo_23` (нийт 23 зураг + код бүрэн аудит)
 
 ---
 
-### Batch 2: Reader Viewport & Precision Agent (`reader-viewport-polisher`)
-- **Assigned Agent**: `reader-viewport-polisher`
-- **Scope & Target Files**:
-  - `lib/features/reader/widgets/reader_hud_bars.dart`
-  - `lib/features/reader/presentation/page/reader_page.dart`
-  - `lib/features/reader/widgets/reader_page_view.dart`
-- **Resolution**:
-  - Replaced the fixed `160px` progress indicator width with flexible `Expanded` + `ClipRRect(LinearProgressIndicator)` to guarantee zero overflow on narrow 320–360dp mobile viewports.
-  - Replaced hardcoded HUD bookmark indexing (`paragraphs[0]`) with accurate, dynamic paragraph calculation based on `_currentPageInChapter` (in paginated mode) and `_scrollProgress` (in continuous scroll mode).
-  - Cleaned up paginated viewport density: Large chapter header and metadata display strictly on page 0; subsequent pages (page > 0) use a compact running header (`60px`), freeing over 80 vertical pixels of reading space.
+## 1. `[SPAWNED AGENTS PLAN]` — Динамик Түр Агентуудын Төлөвлөгөө ба Хуваарилалт
+
+Файлын мөргөлдөөн (Write Conflict) болон өгөгдлийн хамаарлыг (Data Dependency) тооцоолон нийт **10 специализирован динамик агент**-ыг **Parallel Batch 1** болон **Sequential Batch 2** болгон хуваарилж ажиллуулав:
+
+### ⚡ PARALLEL BATCH 1 (Зэрэг ажилласан — Файлын давхцалгүй 7 агент)
+| Агент | Үүрэг (Role) | Зассан файлууд |
+| :--- | :--- | :--- |
+| **`locale-dictionary-completeness-agent`** | `en.json` болон `mn.json` толь бичгийн дутуу түлхүүрүүдийг (`settings.*`, `widget.*`, `profile.*`, `gamification.*`, `collection.*`, `streak.*`, `audio_ext.*`) 100% гүйцээх | [`assets/locales/en.json`](file:///home/enkush-3/Desktop/Git/ReadPack/assets/locales/en.json), [`assets/locales/mn.json`](file:///home/enkush-3/Desktop/Git/ReadPack/assets/locales/mn.json) |
+| **`book-cover-aspect-and-asset-resolver`** | Номын хавтасны 2:3 харьцааг хадгалж тайрагдахаас сэргийлэх (`photo_5`, `photo_21`), Ижил төстэй номын унасан хавтасны локал зураг таних (`photo_16`), үнэлгээний бейжийг гарчиг халхлахгүй доод буланд байрлуулах (`photo_20`) | [`lib/shared/widgets/book_cover_image.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/shared/widgets/book_cover_image.dart), [`lib/features/home/widgets/features_book.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/home/widgets/features_book.dart), [`lib/features/home/widgets/books_card.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/home/widgets/books_card.dart) |
+| **`auth-credential-scrubber-and-recovery-agent`** | Нэвтрэх талбар дахь урьдчилан бөглөсөн (`enkush@readpack.app` / `readpack123`) тестийн өгөгдлийг цэвэрлэх (`photo_23`) ба `"Нууц үг мартсан?"` сэргээх урсгал нэмэх | [`lib/features/auth/widgets/signin.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/auth/widgets/signin.dart) |
+| **`search-focus-declutter-agent`** | Хайлтын түүхийг зөвхөн хайлтын талбар дээр фокус авсан үед харуулдаг болгож дэлгэцийн дээд хэсгийг цэгцлэх (`photo_20`) | [`lib/features/search/presentation/page/search.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/search/presentation/page/search.dart) |
+| **`quote-widget-preview-and-library-layout-fixer`** | Утасны виджет превьюг `2x2`, `4x2`, `4x4` сонголтоор бодитоор өөрчлөгддөг болгох (`photo_4`, `photo_13`), Сангийн номын тоог `BottomNavBar` бейжтэй ижилсүүлэх (`photo_14`/`photo_15`), `"Таалагдсан ❤️"` шүүлтүүр чип шахагдахаас сэргийлэх (`photo_14`), хоосон тэмдэглэлийн placeholder нуух (`photo_14`), тавиурын текстийг орчуулгатай холбох (`photo_15`) | [`lib/features/quotes/presentation/phone_widget_sheet.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/quotes/presentation/phone_widget_sheet.dart), [`lib/features/library/presentation/page/saved_page.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/library/presentation/page/saved_page.dart), [`lib/features/library/widgets/library_quote_card.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/library/widgets/library_quote_card.dart), [`lib/features/library/widgets/library_shelves_view.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/library/widgets/library_shelves_view.dart) |
+| **`book-detail-sliver-and-audio-deduplicator`** | Номын дэлгэрэнгүй хуудас дахь давхардсан inline аудио тоглуулагчийг хасаж шууд `ReaderPage(openAudioInitially: true)` руу чиглүүлэх, `SliverAppBar` хураагдах үед номын гарчгийг харуулах (`photo_16`) | [`lib/features/details/presentation/page/book_detail.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/details/presentation/page/book_detail.dart), [`lib/features/details/widgets/book_detail_app_bar.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/details/widgets/book_detail_app_bar.dart), `lib/features/details/widgets/book_detail_audio_player.dart` (устгасан) |
+| **`reader-audio-engine-and-hud-unoccluder`** | Уншигч дотор аудио тоглож байхад доод падингийг нэмэгдүүлж бичвэр халхлагдахаас сэргийлэх (`photo_19`), Унтах таймерыг орчуулгатай холбох, Типографи шүүгээний зайг нягтруулах (`photo_17`) | [`lib/features/reader/presentation/page/reader_page.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/reader/presentation/page/reader_page.dart), [`lib/features/reader/widgets/reader_scroll_view.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/reader/widgets/reader_scroll_view.dart), [`lib/features/reader/widgets/reader_page_view.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/reader/widgets/reader_page_view.dart), [`lib/features/reader/widgets/reader_appearance_sheet.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/reader/widgets/reader_appearance_sheet.dart) |
 
 ---
 
-### Batch 3: Design Polish & Navigation Hierarchy Agent (`design-hierarchy-gatekeeper`)
-- **Assigned Agent**: `design-hierarchy-gatekeeper`
-- **Scope & Target Files**:
-  - `lib/app_shell.dart`
-  - `lib/features/details/presentation/page/book_detail.dart`
-  - `lib/features/details/widgets/book_detail_overview_tab.dart`
-  - `lib/features/profile/widgets/profile_header_card.dart`
-  - `lib/features/profile/widgets/profile_retake_card.dart` (Deleted orphaned file)
-  - `lib/features/profile/widgets/profile_settings_card.dart` (Deleted orphaned file)
-- **Resolution**:
-  - Confined floating `ContinueReadingCard` exclusively to the Home tab (`_selectedIndex == 0`), preventing it from blocking the Search, Library, or Profile viewports.
-  - Removed the anti-pattern `#Аудиогүй` (`headset_off_rounded`) negative badge from Book Details header chips.
-  - Upgraded author other works bibliography chips into interactive `AnimatedPressable` buttons with tactile micro-interactions that navigate directly to related books.
-  - Preserved strict guest vs authenticated profile decoupling in `ProfileHeaderCard` while ensuring settings navigation is clean.
-  - Cleaned out orphaned dead code components (`ProfileRetakeCard`, `ProfileSettingsCard`).
+### 🔗 SEQUENTIAL BATCH 2 (Дарааллаар ажилласан — State/Model болон хамааралтай дэлгэцүүдийн 3 агент)
+| Дараалал | Агент | Үүрэг (Role) | Зассан файлууд |
+| :--- | :--- | :--- | :--- |
+| **Step 1** | **`telemetry-and-gamification-state-engine`** | `UserProfile` дотор 7 хоногийн минут (`weeklyMinutes`), өдрийн цагийн хуваарилалт (`timeOfDayMinutes`), сануулгын цаг (`reminderHour`, `remindersEnabled`) нэмэх; `BookGamificationManager` дотор нэгдсэн эрэмбэтэй Лидерборд (`getLeaderboardEntries`) болон орчуулгатай цол (`computeLocalizedLevelTitle`) үүсгэх; `BookProvider`-оос гараар Streak нэмдэг `incrementStreak()` залилангийн функцийг бүрмөсөн устгах | [`lib/models/user_stats.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/models/user_stats.dart), [`lib/core/providers/helpers/book_gamification_manager.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/core/providers/helpers/book_gamification_manager.dart), [`lib/core/providers/book_provider.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/core/providers/book_provider.dart) |
+| **Step 2** | **`home-continue-reading-relocator`** | `AppShell.bottomNavigationBar` доторх хөвөгч хар `ContinueReadingCard`-ыг буулгаж, `HomePage`-ийн урсгал дотор өнгөний горимд (`Light`/`Dark`) зохицсон байдлаар байршуулах (`photo_5`, `photo_21`); Нүүрний Streak модал дахь гараар `+1` нэмдэг товчийг устгаж уншигч руу үсэрдэг болгох | [`lib/app_shell.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/app_shell.dart), [`lib/features/home/presentation/page/home.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/home/presentation/page/home.dart), [`lib/features/home/widgets/continue_reading_card.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/home/widgets/continue_reading_card.dart), [`lib/features/home/widgets/streak_modal_sheet.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/home/widgets/streak_modal_sheet.dart) |
+| **Step 3** | **`profile-leaderboard-schedule-settings-harmonizer`** | Профайл, Лидерборд, Уншлагын хуваарь, Streak, Түвшин, Тохиргоо хуудсуудын өгөгдлийн зөрчил (`photo_1`, `photo_2`, `photo_6`, `photo_9`, `photo_11`), давхардсан Daily Goal сонголтууд (`photo_3`, `photo_7`), зочны Settings товч дутуу (`photo_22`), бүтэн хуудасны доорх bottom-sheet drag pill-үүдийг цэгцлэх (`photo_1`, `photo_2`, `photo_10`, `photo_12`) | [`lib/features/profile/widgets/profile_header_card.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/widgets/profile_header_card.dart), [`lib/features/profile/widgets/profile_xp_card.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/widgets/profile_xp_card.dart), [`lib/features/profile/widgets/profile_guest_card.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/widgets/profile_guest_card.dart), [`lib/features/profile/widgets/profile_achievements_card.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/widgets/profile_achievements_card.dart), [`lib/features/profile/widgets/profile_habits_card.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/widgets/profile_habits_card.dart), [`lib/features/profile/widgets/profile_league_card.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/widgets/profile_league_card.dart), [`lib/features/profile/widgets/profile_edit_dialog.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/widgets/profile_edit_dialog.dart), [`lib/features/profile/presentation/page/reading_schedule_page.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/presentation/page/reading_schedule_page.dart), [`lib/features/profile/presentation/page/streak_detail_page.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/presentation/page/streak_detail_page.dart), [`lib/features/profile/presentation/page/user_level_detail_page.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/profile/presentation/page/user_level_detail_page.dart), [`lib/features/leaderboard/presentation/page/leaderboard_page.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/leaderboard/presentation/page/leaderboard_page.dart), [`lib/features/settings/presentation/page/settings_page.dart`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/features/settings/presentation/page/settings_page.dart) |
 
 ---
 
-### Batch 4: Complete Localization & Copywriting Agent (`i18n-localization-finisher`)
-- **Assigned Agent**: `i18n-localization-finisher`
-- **Scope & Target Files**:
-  - `assets/locales/mn.json`
-  - `assets/locales/en.json`
-  - `lib/features/home/widgets/home_quote_banner.dart`
-  - `lib/features/library/widgets/library_collection_dialogs.dart`
-  - `lib/features/library/widgets/library_reading_card.dart`
-  - `lib/features/library/widgets/library_saved_card.dart`
-  - `lib/features/profile/widgets/read_books_sheet.dart`
-  - `lib/features/profile/presentation/page/reading_schedule_page.dart`
-- **Resolution**:
-  - Added full translation keys across both Mongolian (`mn.json`) and English (`en.json`) for quotes, reading schedule time-slots, collection dialogs, download confirmations, and book details.
-  - Replaced hardcoded Mongolian strings in widgets with `AppLocalizations.of(context)?.t(...)` fallbacks.
+## 2. Шийдвэрлэсэн Гол Асуудлуудын Нарийвчилсан Тайлан
 
----
+1. **Өгөгдлийн Бүрэн Нэгдмэл Байдал (Data Integrity & Single Source of Truth):**
+   - **Лидерборд ба Профайл Лигийн Карт (`photo_1`, `photo_6`, `photo_11`):** `ProfileLeagueCard` болон `LeaderboardPage` хоёр өөр жагсаалт, өөр XP харуулж, `1820 XP < 2840 XP` байхад 3-р байрт жагсааж байсныг [`BookGamificationManager.getLeaderboardEntries`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/core/providers/helpers/book_gamification_manager.dart) функцээр нэгтгэж, XP-ээр буурах дарааллаар үнэн зөв эрэмбэлдэг болгов. Refresh хийх бүрд өрсөлдөгчдийн XP-г хуурамчаар нэмдэг `bonus = (_refreshSeed % 3) * 5` логикийг бүрмөсөн устгав.
+   - **Уншлагын Цагийн Хуваарь (`photo_2`, `photo_6`, `photo_9`):** `ProfileHabitsCard` болон `ReadingSchedulePage` хоёр өөр хувь (`35%/25%/40%` vs `14%/26%/52%/8%`) болон өөр гарагийн минут харуулж байсныг [`UserProfile`](file:///home/enkush-3/Desktop/Git/ReadPack/lib/models/user_stats.dart) моделийн `weeklyMinutes`, `morningPercentage`, `afternoonPercentage`, `eveningPercentage`, `nightPercentage` талбаруудаас шууд уншдаг болгож 100% ижилсүүлэв. Сануулгын цаг сонголт (`reminderHour`) болон унтраалга (`remindersEnabled`) `SharedPreferences`-д хадгалагддаг болов.
+   - **Цуврал Өдөр (Streak) Шударга Тооцоолол (`photo_12`):** Хэрэглэгч ном уншилгүйгээр товч дараад цувралаа нэмдэг `incrementStreak()` функцийг устгаж, зөвхөн ном уншсан минутаар (`addReadingMinutes`) цуврал ахидаг болгов. 28 хоногийн календарийг бодит огноогоор (`DateTime.now().subtract(...)`) зурдаг болгов.
+   - **Хадгалсан Номын Тоо (`photo_14`, `photo_15`):** Сангийн толгой хэсгийн номын тоог `BottomNavBar` бейжтэй ижил эх сурвалжаас (`bookProvider.savedBooks.length`) авдаг болгов.
 
-## 3. Verification & Test Results
-
-### 1. Static Analysis
-```bash
-$ flutter analyze
-Analyzing ReadPack...
-No issues found! (ran in 1.6s)
-```
-
-### 2. Flutter Unit & Widget Tests
-```bash
-$ flutter test
-00:09 +87: All tests passed!
-```
-- Total test suites: 14 files
-- Total tests executed: 87
-- Passing: 87 (100%)
-- Failing: 0
-
-### 3. Backend Integration Tests
-```bash
-$ cd backend && npm test
-✔ ReadPack Express.js + MongoDB UserAccountTree & Smart Read-Through Book Catalog Suite
-ℹ tests 8
-ℹ pass 8
-ℹ fail 0
-```
-
----
-
-## 4. Status
-All critique findings are 100% resolved. Ready for Git staging and commit.
+2. **UI/UX, Layout ба Visual Polish Засварууд:**
+   - **Номын Хавтас Тайрагдалт ба Унасан Зураг (`photo_5`, `photo_16`, `photo_20`, `photo_21`):** Нүүр хуудасны онцлох номын картыг (`FeaturedBook`) 2:3 босоо хавтастай болгож `"DEE / WOR"` тайрагдалтыг арилгав. Ижил төстэй номнуудын (`BookDetailSimilarTab`) унасан зургийг локал `assets/public/books/*.png` зурагтай холбов. Үнэлгээний бейжийг доод баруун буланд шилжүүлэв.
+   - **Хөвөгч Хар Continue Reading Pill (`photo_5`, `photo_21`):** `AppShell.bottomNavigationBar`-аас салгаж `HomePage`-ийн контент дотор inline байршуулан Light/Dark горимд уусгав.
+   - **Утасны Дэлгэцийн Виджет Превью (`photo_4`, `photo_13`):** `2x2` (Жижиг), `4x2` (Дунд), `4x4` (Том) сонголт бүрд утасны загвар доторх виджетийн хэмжээ болон хэлбэр бодитоор өөрчлөгддөг болов.
+   - **Уншигч болон Аудио Давхардал (`photo_16`, `photo_17`, `photo_19`):** `BookDetailPage` дээрх давхардсан жижиг аудио тоглуулагчийг хасаж `ReaderPage`-ийн аудио горим руу нэгтгэв. Аудио карт нээлттэй үед уншигчийн доод падингийг `170px` болгон нэмэгдүүлж бичвэр халхлагдахаас сэргийлэв.
+   - **Давхардсан Тохиргоонууд ба Зочны Тохиргоо (`photo_3`, `photo_6`, `photo_7`, `photo_22`):** Зочин хэрэглэгч Тохиргоо руу орох товчийг нээж, `Icons.edit_outlined`-ийг `Icons.settings_outlined` болгов. `ProfileEditDialog` болон `SettingsPage`-ийн хоёр дахь карт дахь давхардсан `Daily Goal` товчнуудыг цэвэрлэж, офлайн номын кэш цэвэрлэх хэсгийг `SettingsPage`-д нэмэв.
+   - **Англи Хэлний 100% Орчуулга (`photo_6`, `photo_7`, `photo_8`, `photo_13`, `photo_15`):** Англи хэл дээр монголоор үлддэг байсан бүх текстүүдийг `en.json` болон `mn.json` толь бичигт бүрэн холбов.
