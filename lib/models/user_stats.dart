@@ -74,6 +74,10 @@ class UserProfile {
   final int yearlyGoalBooks;
   final bool onboardingCompleted;
   final String lastStreakDate;
+  final List<int> weeklyMinutes;
+  final Map<String, int> timeOfDayMinutes;
+  final int reminderHour;
+  final bool remindersEnabled;
 
   const UserProfile({
     this.name = 'Enkush',
@@ -95,6 +99,15 @@ class UserProfile {
     this.yearlyGoalBooks = 24,
     this.onboardingCompleted = true,
     this.lastStreakDate = '',
+    this.weeklyMinutes = const [35, 45, 25, 40, 50, 60, 30],
+    this.timeOfDayMinutes = const {
+      'morning': 40,
+      'afternoon': 75,
+      'evening': 150,
+      'night': 20,
+    },
+    this.reminderHour = 20,
+    this.remindersEnabled = true,
     this.achievements = const [
       ReadingAchievement(
         id: 'streak_7',
@@ -130,7 +143,33 @@ class UserProfile {
 
   int get bestStreakDays => streakDays > 14 ? streakDays : 14;
 
+  int get totalWeeklyMinutes =>
+      weeklyMinutes.fold<int>(0, (sum, m) => sum + m);
+
+  int get _totalTimeOfDayMinutes {
+    final total = timeOfDayMinutes.values.fold<int>(0, (s, v) => s + v);
+    return total > 0 ? total : 285;
+  }
+
+  int get morningPercentage =>
+      (((timeOfDayMinutes['morning'] ?? 40) / _totalTimeOfDayMinutes) * 100)
+          .round();
+
+  int get afternoonPercentage =>
+      (((timeOfDayMinutes['afternoon'] ?? 75) / _totalTimeOfDayMinutes) * 100)
+          .round();
+
+  int get eveningPercentage =>
+      (((timeOfDayMinutes['evening'] ?? 150) / _totalTimeOfDayMinutes) * 100)
+          .round();
+
+  int get nightPercentage {
+    final rem = 100 - morningPercentage - afternoonPercentage - eveningPercentage;
+    return rem.clamp(0, 100);
+  }
+
   bool get isStreakClaimedToday {
+    if (minutesReadToday >= dailyGoalMinutes) return true;
     if (lastStreakDate.isEmpty) return false;
     final today = DateTime.now().toIso8601String().split('T')[0];
     return lastStreakDate == today;
@@ -195,6 +234,10 @@ class UserProfile {
     int? yearlyGoalBooks,
     bool? onboardingCompleted,
     String? lastStreakDate,
+    List<int>? weeklyMinutes,
+    Map<String, int>? timeOfDayMinutes,
+    int? reminderHour,
+    bool? remindersEnabled,
   }) {
     return UserProfile(
       name: name ?? this.name,
@@ -220,6 +263,10 @@ class UserProfile {
       yearlyGoalBooks: yearlyGoalBooks ?? this.yearlyGoalBooks,
       onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
       lastStreakDate: lastStreakDate ?? this.lastStreakDate,
+      weeklyMinutes: weeklyMinutes ?? this.weeklyMinutes,
+      timeOfDayMinutes: timeOfDayMinutes ?? this.timeOfDayMinutes,
+      reminderHour: reminderHour ?? this.reminderHour,
+      remindersEnabled: remindersEnabled ?? this.remindersEnabled,
     );
   }
 
@@ -244,6 +291,10 @@ class UserProfile {
     'yearlyGoalBooks': yearlyGoalBooks,
     'onboardingCompleted': onboardingCompleted,
     'lastStreakDate': lastStreakDate,
+    'weeklyMinutes': weeklyMinutes,
+    'timeOfDayMinutes': timeOfDayMinutes,
+    'reminderHour': reminderHour,
+    'remindersEnabled': remindersEnabled,
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
@@ -273,5 +324,19 @@ class UserProfile {
     yearlyGoalBooks: json['yearlyGoalBooks'] as int? ?? 24,
     onboardingCompleted: json['onboardingCompleted'] as bool? ?? true,
     lastStreakDate: json['lastStreakDate'] as String? ?? '',
+    weeklyMinutes: (json['weeklyMinutes'] as List<dynamic>?)
+            ?.map((e) => (e as num).toInt())
+            .toList() ??
+        const [35, 45, 25, 40, 50, 60, 30],
+    timeOfDayMinutes: (json['timeOfDayMinutes'] as Map<String, dynamic>?)
+            ?.map((k, v) => MapEntry(k, (v as num).toInt())) ??
+        const {
+          'morning': 40,
+          'afternoon': 75,
+          'evening': 150,
+          'night': 20,
+        },
+    reminderHour: json['reminderHour'] as int? ?? 20,
+    remindersEnabled: json['remindersEnabled'] as bool? ?? true,
   );
 }

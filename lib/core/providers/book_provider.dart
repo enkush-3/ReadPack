@@ -119,6 +119,9 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
           if (bookMap.containsKey(r.id)) {
             final old = bookMap[r.id]!;
             bookMap[r.id] = r.copyWith(
+              image: (old.image != null && old.image!.startsWith('assets/'))
+                  ? old.image
+                  : r.image,
               isSaved: old.isSaved,
               isFavorite: old.isFavorite,
               progress: old.progress,
@@ -219,7 +222,9 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       bool? recommendationsEnabled,
       bool? streakFreezeAvailable,
       List<String>? favoriteGenres,
-      int? yearlyGoalBooks}) {
+      int? yearlyGoalBooks,
+      int? reminderHour,
+      bool? remindersEnabled}) {
     _userProfile = _userProfile.copyWith(
       name: name,
       email: email,
@@ -231,28 +236,19 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       streakFreezeAvailable: streakFreezeAvailable,
       favoriteGenres: favoriteGenres,
       yearlyGoalBooks: yearlyGoalBooks,
+      reminderHour: reminderHour,
+      remindersEnabled: remindersEnabled,
     );
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
     BookProviderPersistence.syncProfilePreferences(_apiService, _userProfile);
   }
 
-  bool incrementStreak() {
-    final today = DateTime.now().toIso8601String().split('T')[0];
-    if (_userProfile.lastStreakDate == today) {
-      return false;
-    }
-    _userProfile = _userProfile.copyWith(
-      streakDays: _userProfile.streakDays + 1,
-      lastStreakDate: today,
-      minutesReadToday: _userProfile.minutesReadToday < _userProfile.dailyGoalMinutes
-          ? _userProfile.dailyGoalMinutes
-          : _userProfile.minutesReadToday,
-      xp: _userProfile.xp + 50,
+  void updateReadingReminder({int? hour, bool? enabled}) {
+    updateUserProfile(
+      reminderHour: hour,
+      remindersEnabled: enabled,
     );
-    notifyListeners();
-    BookProviderPersistence.persistUserProfile(_userProfile);
-    return true;
   }
 
   void updateYearlyGoalBooks(int goal) {
@@ -286,6 +282,15 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       _bookmarks[index] = _bookmarks[index].copyWith(
         isLiked: !_bookmarks[index].isLiked,
       );
+      notifyListeners();
+      BookProviderPersistence.persistBookmarks(_bookmarks);
+    }
+  }
+
+  void updateBookmarkNote(String bookmarkId, String note) {
+    final index = _bookmarks.indexWhere((b) => b.id == bookmarkId);
+    if (index != -1) {
+      _bookmarks[index] = _bookmarks[index].copyWith(note: note.trim());
       notifyListeners();
       BookProviderPersistence.persistBookmarks(_bookmarks);
     }
