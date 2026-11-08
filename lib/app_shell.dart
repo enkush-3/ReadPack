@@ -26,6 +26,7 @@ class _AppShellState extends State<AppShell>
   late int _selectedIndex;
   int _previousIndex = 0;
   late AnimationController _tabAnimController;
+  bool _isContinueDismissed = false;
 
   @override
   void initState() {
@@ -97,27 +98,31 @@ class _AppShellState extends State<AppShell>
           builder: (context, bookProvider, _) {
             final isGuest = bookProvider.userProfile.isGuest;
             final continueBooks = bookProvider.continueReadingBooks;
-            final showContinue = !isGuest && continueBooks.isNotEmpty;
+            final showContinue =
+                !isGuest && !_isContinueDismissed && continueBooks.isNotEmpty;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (showContinue)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: ContinueReadingCard(
-                      book: continueBooks.first,
-                      onTap: () {
-                        final book = continueBooks.first;
-                        Navigator.of(context).pushNamed(
-                          Routes.reader,
-                          arguments: {
-                            'book': book,
-                            'initialChapterIndex': book.currentChapterIndex,
-                          },
-                        );
-                      },
-                    ),
+                  ContinueReadingCard(
+                    book: continueBooks.first,
+                    isFullWidth: true,
+                    onClose: () {
+                      setState(() {
+                        _isContinueDismissed = true;
+                      });
+                    },
+                    onTap: () {
+                      final book = continueBooks.first;
+                      Navigator.of(context).pushNamed(
+                        Routes.reader,
+                        arguments: {
+                          'book': book,
+                          'initialChapterIndex': book.currentChapterIndex,
+                        },
+                      );
+                    },
                   ),
                 BottomNavBar(
                   selectedIndex: _selectedIndex,

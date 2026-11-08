@@ -87,28 +87,28 @@ class UserProfile {
     this.username = '@enkush',
     this.phoneNumber = '+976 99112233',
     this.avatarUrl = '',
-    this.streakDays = 7,
+    this.streakDays = 0,
     this.dailyGoalMinutes = 30,
-    this.minutesReadToday = 24,
-    this.totalBooksRead = 14,
-    this.totalHoursRead = 42,
-    this.readingSpeedWpm = 250,
+    this.minutesReadToday = 0,
+    this.totalBooksRead = 0,
+    this.totalHoursRead = 0,
+    this.readingSpeedWpm = 200,
     this.isGuest = false,
     this.streakFreezeAvailable = true,
     this.notificationsEnabled = true,
     this.recommendationsEnabled = true,
-    this.xp = 1450,
-    this.weeklyLeague = 'Gold League',
+    this.xp = 0,
+    this.weeklyLeague = 'Bronze League',
     this.favoriteGenres = const ['Бизнес', 'Хувь хүний хөгжил', 'Сэтгэл зүй'],
     this.yearlyGoalBooks = 24,
     this.onboardingCompleted = true,
     this.lastStreakDate = '',
-    this.weeklyMinutes = const [35, 45, 25, 40, 50, 60, 30],
+    this.weeklyMinutes = const [0, 0, 0, 0, 0, 0, 0],
     this.timeOfDayMinutes = const {
-      'morning': 40,
-      'afternoon': 75,
-      'evening': 150,
-      'night': 20,
+      'morning': 0,
+      'afternoon': 0,
+      'evening': 0,
+      'night': 0,
     },
     this.reminderHour = 20,
     this.remindersEnabled = true,
@@ -118,21 +118,24 @@ class UserProfile {
         title: '🔥 7 Day Streak',
         description: 'Read every day for one full week',
         icon: '🔥',
-        isUnlocked: true,
+        isUnlocked: false,
+        progress: 0.0,
       ),
       ReadingAchievement(
         id: 'bookworm',
         title: '🐛 Avid Bookworm',
         description: 'Finish reading 10 or more books',
         icon: '📚',
-        isUnlocked: true,
+        isUnlocked: false,
+        progress: 0.0,
       ),
       ReadingAchievement(
         id: 'night_owl',
         title: '🦉 Night Owl',
         description: 'Read past midnight for 30 minutes',
         icon: '🌙',
-        isUnlocked: true,
+        isUnlocked: false,
+        progress: 0.0,
       ),
       ReadingAchievement(
         id: 'speed_reader',
@@ -140,7 +143,7 @@ class UserProfile {
         description: 'Read at over 240 words per minute',
         icon: '⚡',
         isUnlocked: false,
-        progress: 0.8,
+        progress: 0.0,
       ),
     ],
   });
@@ -222,29 +225,35 @@ class UserProfile {
     );
   }
 
-  int get bestStreakDays => streakDays > 14 ? streakDays : 14;
+  int get bestStreakDays => streakDays;
 
   int get totalWeeklyMinutes =>
       weeklyMinutes.fold<int>(0, (sum, m) => sum + m);
 
-  int get _totalTimeOfDayMinutes {
-    final total = timeOfDayMinutes.values.fold<int>(0, (s, v) => s + v);
-    return total > 0 ? total : 285;
+  int get _totalTimeOfDayMinutes =>
+      timeOfDayMinutes.values.fold<int>(0, (sum, m) => sum + m);
+
+  double get morningPercentage {
+    final total = _totalTimeOfDayMinutes;
+    if (total == 0) return 0.0;
+    return ((timeOfDayMinutes['morning'] ?? 0) / total).clamp(0.0, 1.0);
   }
 
-  double get morningPercentage =>
-      ((timeOfDayMinutes['morning'] ?? 40) / _totalTimeOfDayMinutes)
-          .clamp(0.0, 1.0);
+  double get afternoonPercentage {
+    final total = _totalTimeOfDayMinutes;
+    if (total == 0) return 0.0;
+    return ((timeOfDayMinutes['afternoon'] ?? 0) / total).clamp(0.0, 1.0);
+  }
 
-  double get afternoonPercentage =>
-      ((timeOfDayMinutes['afternoon'] ?? 75) / _totalTimeOfDayMinutes)
-          .clamp(0.0, 1.0);
-
-  double get eveningPercentage =>
-      ((timeOfDayMinutes['evening'] ?? 150) / _totalTimeOfDayMinutes)
-          .clamp(0.0, 1.0);
+  double get eveningPercentage {
+    final total = _totalTimeOfDayMinutes;
+    if (total == 0) return 0.0;
+    return ((timeOfDayMinutes['evening'] ?? 0) / total).clamp(0.0, 1.0);
+  }
 
   double get nightPercentage {
+    final total = _totalTimeOfDayMinutes;
+    if (total == 0) return 0.0;
     final rem =
         1.0 - morningPercentage - afternoonPercentage - eveningPercentage;
     return rem.clamp(0.0, 1.0);
@@ -391,12 +400,12 @@ class UserProfile {
     username: json['username'] as String? ?? '@enkush',
     phoneNumber: json['phoneNumber'] as String? ?? '+976 99112233',
     avatarUrl: json['avatarUrl'] as String? ?? '',
-    streakDays: json['streakDays'] as int? ?? 7,
+    streakDays: json['streakDays'] as int? ?? 0,
     dailyGoalMinutes: json['dailyGoalMinutes'] as int? ?? 30,
-    minutesReadToday: json['minutesReadToday'] as int? ?? 24,
-    totalBooksRead: json['totalBooksRead'] as int? ?? 14,
-    totalHoursRead: json['totalHoursRead'] as int? ?? 42,
-    readingSpeedWpm: json['readingSpeedWpm'] as int? ?? 250,
+    minutesReadToday: json['minutesReadToday'] as int? ?? 0,
+    totalBooksRead: json['totalBooksRead'] as int? ?? 0,
+    totalHoursRead: json['totalHoursRead'] as int? ?? 0,
+    readingSpeedWpm: json['readingSpeedWpm'] as int? ?? 200,
     isGuest: json['isGuest'] as bool? ?? false,
     streakFreezeAvailable: json['streakFreezeAvailable'] as bool? ?? true,
     notificationsEnabled: json['notificationsEnabled'] as bool? ?? true,
@@ -405,8 +414,8 @@ class UserProfile {
             ?.map((a) => ReadingAchievement.fromJson(a as Map<String, dynamic>))
             .toList() ??
         const [],
-    xp: json['xp'] as int? ?? 1450,
-    weeklyLeague: json['weeklyLeague'] as String? ?? 'Gold League',
+    xp: json['xp'] as int? ?? 0,
+    weeklyLeague: json['weeklyLeague'] as String? ?? 'Bronze League',
     favoriteGenres: (json['favoriteGenres'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
@@ -417,14 +426,14 @@ class UserProfile {
     weeklyMinutes: (json['weeklyMinutes'] as List<dynamic>?)
             ?.map((e) => (e as num).toInt())
             .toList() ??
-        const [35, 45, 25, 40, 50, 60, 30],
+        const [0, 0, 0, 0, 0, 0, 0],
     timeOfDayMinutes: (json['timeOfDayMinutes'] as Map<String, dynamic>?)
             ?.map((k, v) => MapEntry(k, (v as num).toInt())) ??
         const {
-          'morning': 40,
-          'afternoon': 75,
-          'evening': 150,
-          'night': 20,
+          'morning': 0,
+          'afternoon': 0,
+          'evening': 0,
+          'night': 0,
         },
     reminderHour: json['reminderHour'] as int? ?? 20,
     remindersEnabled: json['remindersEnabled'] as bool? ?? true,

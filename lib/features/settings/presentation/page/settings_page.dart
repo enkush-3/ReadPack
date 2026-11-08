@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/providers/theme_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
-import 'package:readpack/features/library/widgets/library_collection_dialogs.dart';
 import 'package:readpack/features/profile/widgets/profile_challenge_card.dart';
 import 'package:readpack/features/profile/widgets/profile_edit_dialog.dart';
 import 'package:readpack/features/quotes/presentation/phone_widget_sheet.dart';
@@ -220,49 +219,9 @@ class SettingsPage extends StatelessWidget {
             ),
           ],
 
-          // Section 3: Татсан номууд (Downloaded Books - Зочин болон хэрэглэгч хоёуланд нь)
-          const SizedBox(height: 24),
-          _buildSectionHeader(
-            l10n?.t('library.downloaded') ?? 'Офлайн таталт',
-            colorScheme,
-          ),
-          const SizedBox(height: 8),
-          _buildCard(
-            colorScheme: colorScheme,
-            isDark: isDark,
-            children: [
-              ListTile(
-                leading: Icon(
-                  Icons.file_download_done_rounded,
-                  color: colorScheme.primary,
-                ),
-                title: Text(
-                  l10n?.t('library.downloaded_books') ?? 'Татсан номууд',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  '${bookProvider.downloadedBookIds.length} ном төхөөрөмж дээр хадгалагдсан (${bookProvider.cacheSizeMb})',
-                  style: const TextStyle(fontSize: 12),
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-                onTap: () {
-                  final downloadedCol = bookProvider.collections.firstWhere(
-                    (c) => c.id == 'c_downloaded',
-                    orElse: () => bookProvider.collections.first,
-                  );
-                  LibraryCollectionDialogs.showCollectionDetailsSheet(
-                    context,
-                    bookProvider,
-                    downloadedCol,
-                  );
-                },
-              ),
-            ],
-          ),
-
           const SizedBox(height: 24),
 
-          // Section 4: Харагдах байдал & Хэл (Appearance & Language)
+          // Section 3: Харагдах байдал & Хэл (Appearance & Language)
           _buildSectionHeader(
             l10n?.t('settings.appearance') ?? 'Харагдах байдал & Хэл',
             colorScheme,
@@ -648,158 +607,91 @@ class SettingsPage extends StatelessWidget {
       isDark: isDark,
       children: [
         Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AnimatedPressable(
-                    onTap: () => ProfileEditDialog.show(context, bookProvider),
-                    child: UserAvatar(
-                      profile: profile,
-                      size: 60,
-                      fontSize: 24,
-                      showEditBadge: true,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              AnimatedPressable(
+                onTap: () => ProfileEditDialog.show(context, bookProvider),
+                child: UserAvatar(
+                  profile: profile,
+                  size: 54,
+                  fontSize: 22,
+                  showEditBadge: false,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                profile.name,
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                        Flexible(
+                          child: Text(
+                            profile.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary
-                                    .withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                l10n?.t('settings.registered_badge') ??
-                                    'Бүртгэлтэй',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          profile.username.isNotEmpty
-                              ? profile.username
-                              : '@${profile.email.split('@').first}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.primary,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.email_outlined,
-                              size: 13,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                profile.email,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: colorScheme.onSurface
-                                      .withValues(alpha: 0.65),
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (profile.phoneNumber.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.phone_outlined,
-                                size: 13,
-                                color: colorScheme.onSurface
-                                    .withValues(alpha: 0.5),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                profile.phoneNumber,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: colorScheme.onSurface
-                                      .withValues(alpha: 0.65),
-                                ),
-                              ),
-                            ],
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
                           ),
-                        ],
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            l10n?.t('settings.registered_badge') ??
+                                'Бүртгэлтэй',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Divider(
-                height: 1,
-                color: colorScheme.outlineVariant.withValues(alpha: 0.25),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.primary,
-                      side: BorderSide(
-                        color: colorScheme.primary.withValues(alpha: 0.35),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    const SizedBox(height: 2),
+                    Text(
+                      profile.username.isNotEmpty
+                          ? profile.username
+                          : '@${profile.email.split('@').first}',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.primary,
                       ),
                     ),
-                    icon: const Icon(Icons.edit_note_rounded, size: 16),
-                    label: Text(
-                      l10n?.t('settings.edit_profile_action') ??
-                          'Мэдээлэл засах',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: 2),
+                    Text(
+                      profile.phoneNumber.isNotEmpty
+                          ? '${profile.email} • ${profile.phoneNumber}'
+                          : profile.email,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: colorScheme.onSurface.withValues(alpha: 0.65),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    onPressed: () =>
-                        ProfileEditDialog.show(context, bookProvider),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                color: colorScheme.primary,
+                tooltip: l10n?.t('settings.edit_profile_action') ?? 'Засах',
+                onPressed: () =>
+                    ProfileEditDialog.show(context, bookProvider),
               ),
             ],
           ),

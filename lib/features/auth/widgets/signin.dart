@@ -155,7 +155,7 @@ class _SignInPageState extends State<SignInPage> {
       } else {
         Navigator.of(context).pushReplacementNamed(
           Routes.appshell,
-          arguments: 3,
+          arguments: 0,
         );
       }
     }
@@ -166,7 +166,7 @@ class _SignInPageState extends State<SignInPage> {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     } else {
-      Navigator.of(context).pushReplacementNamed(Routes.appshell);
+      Navigator.of(context).pushReplacementNamed(Routes.appshell, arguments: 0);
     }
   }
 
@@ -178,7 +178,7 @@ class _SignInPageState extends State<SignInPage> {
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
     } else {
-      Navigator.of(context).pushReplacementNamed(Routes.appshell, arguments: 3);
+      Navigator.of(context).pushReplacementNamed(Routes.appshell, arguments: 0);
     }
   }
 

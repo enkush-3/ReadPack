@@ -472,3 +472,4 @@ users (Collection)
 3. **Зочин горим (Guest Mode):**
    - Зочин хэрэглэгчийн дата локал SharedPreferences / Hive дээр хадгалагдана.
    - Зочин хэрэглэгч бүртгүүлэх үед (`POST /api/v1/auth/signup`) локал өгөгдлийг серверийн Document Tree-тэй нэгтгэнэ (Merge on SignUp).
+

@@ -134,7 +134,7 @@ void main() {
     test('UserProfile defaults and copyWith work properly', () {
       const profile = UserProfile();
       expect(profile.name, 'Enkush');
-      expect(profile.streakDays, 7);
+      expect(profile.streakDays, 0);
       expect(profile.dailyGoalMinutes, 30);
       expect(profile.isGuest, isFalse);
       expect(profile.streakFreezeAvailable, isTrue);

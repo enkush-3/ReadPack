@@ -13,8 +13,6 @@ class LeaderboardPage extends StatefulWidget {
 }
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
-  bool _isRefreshing = false;
-
   int _daysRemainingInMonth() {
     final now = DateTime.now();
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
@@ -23,14 +21,8 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 
   Future<void> _handleRefresh(BookProvider provider) async {
-    setState(() => _isRefreshing = true);
     await provider.refresh();
     await Future.delayed(const Duration(milliseconds: 350));
-    if (mounted) {
-      setState(() {
-        _isRefreshing = false;
-      });
-    }
   }
 
   @override
@@ -61,20 +53,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           ),
         ),
         elevation: 0,
-        actions: [
-          IconButton(
-            tooltip: l10n?.t('common.refresh') ?? 'Шинэчлэх',
-            onPressed:
-                _isRefreshing ? null : () => _handleRefresh(bookProvider),
-            icon: _isRefreshing
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.refresh_rounded),
-          ),
-        ],
       ),
       body: RefreshWrapper(
         onRefresh: () => _handleRefresh(bookProvider),

@@ -218,11 +218,15 @@ class BookGamificationManager {
   }
 
   static UserProfile loginAsGuest(UserProfile profile) {
-    return profile.copyWith(
+    return UserProfile.freshUser(
       name: 'Зочин',
       email: 'guest@readpack.app',
+      username: '@guest',
+    ).copyWith(
       isGuest: true,
-      streakDays: 1,
+      streakDays: 0,
+      minutesReadToday: 0,
+      xp: 0,
     );
   }
 
@@ -234,12 +238,11 @@ class BookGamificationManager {
         : (profile.username.isNotEmpty
             ? profile.username
             : '@${email.split('@').first.toLowerCase()}');
-    return profile.copyWith(
+    return UserProfile.freshUser(
       name: name.isNotEmpty ? name : 'Уншигч',
       email: email,
       username: cleanUsername,
       phoneNumber: phoneNumber ?? profile.phoneNumber,
-      isGuest: false,
     );
   }
 
@@ -258,12 +261,15 @@ class BookGamificationManager {
   }
 
   static UserProfile logout() {
-    return const UserProfile(
+    return UserProfile.freshUser(
       name: 'Зочин',
       email: 'guest@readpack.app',
+      username: '@guest',
+    ).copyWith(
       isGuest: true,
       streakDays: 0,
       minutesReadToday: 0,
+      xp: 0,
     );
   }
 

@@ -479,39 +479,49 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
         useDark ? const Color(0xFFFBBF24) : const Color(0xFF9A6B26);
 
     final badgeText = _selectedSource == 0
-        ? (l10n?.t('widget.badge_daily') ?? '📖 ӨДРИЙН ЭШЛЭЛ')
-        : (l10n?.t('widget.badge_saved') ?? '📌 ХАДГАЛСАН ИШЛЭЛ');
+        ? (l10n?.t('widget.badge_daily') ?? 'өдрийн эшлэл')
+        : (l10n?.t('widget.badge_saved') ?? 'хадгалсан эшлэл');
 
     final footerText = (book.isNotEmpty && book != author)
         ? '— $author · $book'
-        : '— $author';
+        : '— $author · ReadPack';
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: useDark
-              ? [const Color(0xFF1E293B), const Color(0xFF090D16)]
-              : [const Color(0xFFDCEBFA), const Color(0xFFC3DDFD)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFB0D5FC),
+            Color(0xFFD8EAFF),
+            Color(0xFFEBF4FE),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+          color: const Color(0xFF90C2F9),
           width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Row(
+          // Realistic Android Status Bar (matching real phone screenshot)
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '21:20',
+                '20:20',
                 style: TextStyle(
-                  color: useDark ? Colors.white70 : const Color(0xFF334155),
+                  color: Color(0xFF334155),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -519,206 +529,234 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
               Row(
                 children: [
                   Icon(
-                    Icons.wifi,
-                    size: 14,
-                    color: useDark ? Colors.white70 : const Color(0xFF334155),
+                    Icons.signal_cellular_alt_rounded,
+                    size: 13,
+                    color: Color(0xFF334155),
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                   Icon(
-                    Icons.battery_full,
+                    Icons.wifi,
+                    size: 13,
+                    color: Color(0xFF334155),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.battery_5_bar_rounded,
                     size: 14,
-                    color: useDark ? Colors.white70 : const Color(0xFF334155),
+                    color: Color(0xFF334155),
+                  ),
+                  SizedBox(width: 2),
+                  Text(
+                    '58%',
+                    style: TextStyle(
+                      color: Color(0xFF334155),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          if (_selectedSize == 0)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 6,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    constraints: const BoxConstraints(minHeight: 150),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: widgetBg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: widgetBorder, width: 1.5),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black
-                              .withValues(alpha: useDark ? 0.35 : 0.10),
-                          blurRadius: 14,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          badgeText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            color: widgetAccent,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '“$quote”',
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Serif',
-                            fontSize: 14.5,
-                            fontStyle: FontStyle.italic,
-                            color: widgetText,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          author,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12.0,
-                            fontWeight: FontWeight.bold,
-                            color: widgetSubText,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildMockAppIcon(Icons.auto_stories_rounded,
-                              const Color(0xFFE07A5F), useDark),
-                          _buildMockAppIcon(Icons.calendar_month_rounded,
-                              const Color(0xFF3B82F6), useDark),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildMockAppIcon(Icons.headphones_rounded,
-                              const Color(0xFF10B981), useDark),
-                          _buildMockAppIcon(Icons.bookmark_rounded,
-                              const Color(0xFF8B5CF6), useDark),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            )
-          else
-            AnimatedContainer(
+          const SizedBox(height: 16),
+
+          // The Authentic ReadPack Widget (100% faithful to Android Widget)
+          Center(
+            child: AnimatedContainer(
               duration: const Duration(milliseconds: 220),
-              width: double.infinity,
+              width: _selectedSize == 0 ? 220 : double.infinity,
               constraints: BoxConstraints(
-                minHeight: _selectedSize == 2 ? 210 : 120,
+                minHeight: _selectedSize == 2 ? 190 : (_selectedSize == 0 ? 130 : 110),
               ),
-              padding: EdgeInsets.all(_selectedSize == 2 ? 20 : 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: _selectedSize == 2 ? 18 : 16,
+                vertical: _selectedSize == 2 ? 16 : 14,
+              ),
               decoration: BoxDecoration(
                 color: widgetBg,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: widgetBorder, width: 1.5),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: widgetBorder, width: 1.2),
                 boxShadow: [
                   BoxShadow(
-                    color:
-                        Colors.black.withValues(alpha: useDark ? 0.35 : 0.10),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withValues(alpha: 0.28),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: _selectedSize == 2
-                    ? MainAxisAlignment.spaceBetween
-                    : MainAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Widget Header: Category Badge + ReadPack logo text
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        badgeText,
-                        style: TextStyle(
-                          fontSize: _selectedSize == 2 ? 13.0 : 12.0,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                          color: widgetAccent,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.menu_book_rounded,
+                            size: 13,
+                            color: widgetAccent,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            badgeText.toLowerCase(),
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.bold,
+                              color: widgetAccent,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
                       ),
                       Text(
                         'ReadPack',
                         style: TextStyle(
-                          fontSize: _selectedSize == 2 ? 12.0 : 11.0,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w600,
-                          color: widgetSubText.withValues(alpha: 0.85),
+                          color: widgetSubText.withValues(alpha: 0.75),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
+
+                  // Widget Body: Quote Text
                   Text(
                     '“$quote”',
-                    maxLines: _selectedSize == 1 ? 3 : 6,
+                    maxLines: _selectedSize == 2 ? 6 : (_selectedSize == 0 ? 3 : 4),
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: 'Serif',
-                      fontSize: _selectedSize == 2 ? 18.0 : 15.5,
+                      fontSize: _selectedSize == 2
+                          ? 16.5
+                          : (_selectedSize == 0 ? 13.5 : 14.5),
                       fontStyle: FontStyle.italic,
                       color: widgetText,
-                      height: 1.45,
+                      height: 1.42,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
+
+                  // Widget Footer: Author & Source
                   Text(
                     footerText,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: _selectedSize == 2 ? 13.5 : 12.5,
-                      fontWeight: FontWeight.bold,
+                      fontSize: _selectedSize == 2 ? 12.0 : 11.0,
+                      fontWeight: FontWeight.w600,
                       color: widgetSubText,
                     ),
                   ),
                 ],
               ),
             ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Realistic Android Google Search Pill Bar
+          Container(
+            height: 38,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.75),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFF4285F4),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'G',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.mic_rounded,
+                  size: 18,
+                  color: Color(0xFF64748B),
+                ),
+                const SizedBox(width: 12),
+                const Icon(
+                  Icons.camera_alt_outlined,
+                  size: 18,
+                  color: Color(0xFF64748B),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Android Launcher App Icons Dock (Phone, Message, Browser, Camera)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildPhoneDockIcon(
+                icon: Icons.phone_rounded,
+                color: const Color(0xFF22C55E),
+              ),
+              _buildPhoneDockIcon(
+                icon: Icons.chat_bubble_rounded,
+                color: const Color(0xFF3B82F6),
+              ),
+              _buildPhoneDockIcon(
+                icon: Icons.explore_rounded,
+                color: const Color(0xFFEF4444),
+              ),
+              _buildPhoneDockIcon(
+                icon: Icons.camera_rounded,
+                color: const Color(0xFF64748B),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMockAppIcon(IconData icon, Color color, bool useDark) {
+  Widget _buildPhoneDockIcon({
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
-      width: 44,
-      height: 44,
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: useDark ? 0.25 : 0.18),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        color: Colors.white.withValues(alpha: 0.85),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Icon(icon, size: 20, color: color),
+      child: Icon(icon, color: color, size: 20),
     );
   }
 

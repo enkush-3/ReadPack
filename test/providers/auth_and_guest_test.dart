@@ -23,7 +23,7 @@ void main() {
       expect(provider.userProfile.isGuest, isTrue);
       expect(provider.userProfile.name, 'Зочин');
       expect(provider.userProfile.email, 'guest@readpack.app');
-      expect(provider.userProfile.streakDays, greaterThanOrEqualTo(1));
+      expect(provider.userProfile.streakDays, greaterThanOrEqualTo(0));
     });
 
     test('loginWithEmail transitions from guest to registered user', () {

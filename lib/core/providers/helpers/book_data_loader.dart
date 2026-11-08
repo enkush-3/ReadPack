@@ -40,9 +40,14 @@ class BookDataLoader {
       'Clear Thinking',
       'Sapiens',
     ];
-    var userProfile = const UserProfile();
+    var userProfile = UserProfile.freshUser(
+      name: 'Enkush',
+      email: 'enkush@readpack.app',
+      username: '@enkush',
+      phoneNumber: '+976 99112233',
+    );
     var collections = <BookCollection>[];
-    var downloadedBookIds = <String>{'book_1'};
+    var downloadedBookIds = <String>{};
 
     final prefs = await SharedPreferences.getInstance();
     final savedIds =

@@ -106,7 +106,7 @@ void main() {
     test('User level titles scale correctly with XP', () {
       expect(provider.userLevelTitle, contains('Lv.'));
 
-      provider.addXp(2000);
+      provider.addXp(3500);
       expect(provider.userProfile.xp, greaterThanOrEqualTo(3000));
       expect(provider.userLevelTitle, contains('Lv. 4'));
     });
@@ -137,24 +137,22 @@ void main() {
 
     test('addReadingMinutes grants XP and daily goal bonus', () {
       final initialXp = provider.userProfile.xp;
+      final initialMinutes = provider.userProfile.minutesReadToday;
 
-      // Initial minutesReadToday is 24, dailyGoalMinutes is 30.
-      // Add 2 minutes: 2 * 5 = 10 XP (total 26 < 30)
+      // Add 2 minutes: 2 * 5 = 10 XP
       provider.addReadingMinutes(2);
       expect(provider.userProfile.xp, initialXp + 10);
-      expect(provider.userProfile.minutesReadToday, 26);
+      expect(provider.userProfile.minutesReadToday, initialMinutes + 2);
 
-      // Now add 5 minutes to reach 31 minutes (crosses 30-min goal)
-      // Should get 5 * 5 = 25 XP plus 50 XP bonus = 75 XP
-      provider.addReadingMinutes(5);
-      expect(provider.userProfile.xp, initialXp + 10 + 75);
-      expect(provider.userProfile.minutesReadToday, 31);
+      // Now add minutes to reach past 30-min goal (crosses 30-min goal)
+      final neededToCrossGoal = (provider.userProfile.dailyGoalMinutes - provider.userProfile.minutesReadToday) + 1;
+      provider.addReadingMinutes(neededToCrossGoal);
+      expect(provider.userProfile.xp, initialXp + 10 + (neededToCrossGoal * 5) + 50);
+      expect(provider.userProfile.minutesReadToday, initialMinutes + 2 + neededToCrossGoal);
     });
 
     test('totalDownloadedStorageMb correctly calculates sum of downloaded book sizes', () {
-      // book_1 is pre-seeded in initial state
       final initialStorage = provider.totalDownloadedStorageMb;
-      expect(initialStorage, greaterThan(8.0));
 
       final nonDownloadedBook = provider.books.firstWhere((b) => !provider.isBookDownloaded(b.id));
 

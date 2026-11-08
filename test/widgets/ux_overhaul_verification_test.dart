@@ -143,10 +143,16 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ContinueReadingCard), findsOneWidget);
+      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+
+      // Tap close button and verify it dismisses the card
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pumpAndSettle();
+      expect(find.byType(ContinueReadingCard), findsNothing);
     });
 
     testWidgets(
-        'SettingsPage renders merged profile card, downloaded books tile, and bottom logout button',
+        'SettingsPage renders merged profile card with edit icon and bottom logout button, without downloaded books tile',
         (tester) async {
       tester.view.physicalSize = const Size(800, 2400);
       tester.view.devicePixelRatio = 1.0;
@@ -167,10 +173,11 @@ void main() {
       // Merged card details
       expect(find.text('Test User'), findsOneWidget);
       expect(find.text('Бүртгэлтэй'), findsOneWidget);
-      expect(find.text('Мэдээлэл засах'), findsOneWidget);
+      expect(find.byIcon(Icons.edit_outlined), findsAtLeastNWidgets(1));
+      expect(find.text('Мэдээлэл засах'), findsNothing);
 
-      // Downloaded books tile
-      expect(find.text('Татсан номууд'), findsOneWidget);
+      // Downloaded books tile was removed per user request
+      expect(find.text('Татсан номууд'), findsNothing);
 
       // Logout button at the bottom
       expect(find.text('Гарах (Logout)'), findsOneWidget);

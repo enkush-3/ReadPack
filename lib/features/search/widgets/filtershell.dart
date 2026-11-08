@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:readpack/features/search/model/filter_data.dart';
 import 'package:readpack/features/search/widgets/filter_dialog_sections.dart';
@@ -6,7 +5,7 @@ import 'package:readpack/helper/translation.dart';
 
 export 'package:readpack/features/search/model/filter_data.dart';
 
-class FilterBottomSheet extends StatefulWidget {
+class FilterBottomSheet extends StatelessWidget {
   final FilterData initialData;
   final void Function(FilterData) onApply;
 
@@ -20,37 +19,34 @@ class FilterBottomSheet extends StatefulWidget {
     BuildContext context,
     FilterData initialData,
   ) {
-    return showDialog<FilterData>(
+    return showModalBottomSheet<FilterData>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.3),
-      barrierDismissible: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
       builder: (context) {
-        return _BlurFilterDialog(initialData: initialData);
+        return _FilterBottomSheetContent(initialData: initialData);
       },
     );
   }
 
-  @override
-  State<FilterBottomSheet> createState() => _FilterBottomSheetState();
-}
-
-class _FilterBottomSheetState extends State<FilterBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return const SizedBox.shrink();
   }
 }
 
-class _BlurFilterDialog extends StatefulWidget {
+class _FilterBottomSheetContent extends StatefulWidget {
   final FilterData initialData;
 
-  const _BlurFilterDialog({required this.initialData});
+  const _FilterBottomSheetContent({required this.initialData});
 
   @override
-  State<_BlurFilterDialog> createState() => _BlurFilterDialogState();
+  State<_FilterBottomSheetContent> createState() =>
+      _FilterBottomSheetContentState();
 }
 
-class _BlurFilterDialogState extends State<_BlurFilterDialog> {
+class _FilterBottomSheetContentState extends State<_FilterBottomSheetContent> {
   late FilterData _data;
 
   @override
@@ -81,207 +77,153 @@ class _BlurFilterDialogState extends State<_BlurFilterDialog> {
     final clearText = l10n?.t('filter.clear') ?? 'Цэвэрлэх';
     final applyText = l10n?.t('filter.apply') ?? 'Шүүх';
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
+    return Container(
+      constraints: BoxConstraints(maxHeight: size.height * 0.8),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.2),
-              ),
+          // Drag handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 48,
+            height: 5,
+            decoration: BoxDecoration(
+              color: colorScheme.onSurface.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(3),
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: 1),
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutQuart,
-              builder: (context, value, child) {
-                return Transform.translate(
-                  offset: Offset(0, size.height * 0.6 * (1 - value)),
-                  child: Opacity(
-                    opacity: value.clamp(0.0, 1.0),
-                    child: child,
-                  ),
-                );
-              },
-              child: Container(
-                constraints: BoxConstraints(
-                  maxHeight: size.height * 0.75,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 24,
-                      offset: const Offset(0, -8),
-                    ),
-                  ],
-                ),
-                child: GestureDetector(
-                  onVerticalDragUpdate: (details) {
-                    if (details.primaryDelta != null && details.primaryDelta! > 8) {
-                      Navigator.pop(context);
-                    }
-                  },
-                  behavior: HitTestBehavior.translucent,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(top: 12),
-                        width: 48,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: colorScheme.onSurface.withValues(alpha: 0.25),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
-                        child: Center(
-                          child: Text(
-                            filterTitle,
-                            style: TextStyle(
-                              fontFamily: 'Serif',
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            FilterSectionTitle(title: categorySection),
-                            const SizedBox(height: 12),
-                            CategoryChips(
-                              selected: _data.categories,
-                              onChanged: (v) =>
-                                  setState(() => _data.categories = v),
-                            ),
-                            const SizedBox(height: 24),
-                            FilterSectionTitle(title: ratingSection),
-                            const SizedBox(height: 12),
-                            RatingFilterSection(
-                              selected: _data.minRating,
-                              onChanged: (v) =>
-                                  setState(() => _data.minRating = v),
-                            ),
-                            const SizedBox(height: 24),
-                            FilterSectionTitle(title: sortSection),
-                            const SizedBox(height: 12),
-                            SortOptionsSection(
-                              selected: _data.sortBy,
-                              onChanged: (v) =>
-                                  setState(() => _data.sortBy = v),
-                            ),
-                            const SizedBox(height: 24),
-                            FilterSectionTitle(
-                              title: l10n?.t('filter.mood') ??
-                                  'Сэтгэл хөдлөл (Mood & Pace)',
-                            ),
-                            const SizedBox(height: 12),
-                            MoodChipsSection(
-                              selected: _data.mood,
-                              onChanged: (v) => setState(() => _data.mood = v),
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: colorScheme.surface,
-                        border: Border(
-                          top: BorderSide(
-                            color: colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                        ),
-                      ),
-                      child: SafeArea(
-                        top: false,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _resetFilters,
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: colorScheme.onSurface,
-                                  side: BorderSide(
-                                    color: colorScheme.onSurface
-                                        .withValues(alpha: 0.2),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: Text(
-                                  clearText,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: ElevatedButton(
-                                onPressed: _applyFilters,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: colorScheme.primary,
-                                  foregroundColor: colorScheme.onPrimary,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: Text(
-                                  applyText,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+            child: Center(
+              child: Text(
+                filterTitle,
+                style: TextStyle(
+                  fontFamily: 'Serif',
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
+          Divider(
+            height: 1,
+            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FilterSectionTitle(title: categorySection),
+                  const SizedBox(height: 10),
+                  CategoryChips(
+                    selected: _data.categories,
+                    onChanged: (newCategories) {
+                      setState(() {
+                        _data.categories = newCategories;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  FilterSectionTitle(title: ratingSection),
+                  const SizedBox(height: 10),
+                  RatingFilterSection(
+                    selected: _data.minRating,
+                    onChanged: (rating) {
+                      setState(() => _data.minRating = rating);
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  FilterSectionTitle(title: sortSection),
+                  const SizedBox(height: 10),
+                  SortOptionsSection(
+                    selected: _data.sortBy,
+                    onChanged: (sort) {
+                      setState(() => _data.sortBy = sort);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Divider(
+            height: 1,
+            color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              12,
+              24,
+              MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _resetFilters,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: colorScheme.onSurface,
+                      side: BorderSide(
+                        color: colorScheme.outlineVariant
+                            .withValues(alpha: 0.3),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      clearText,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: _applyFilters,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      applyText,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
