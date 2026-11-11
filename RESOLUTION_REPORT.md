@@ -21,6 +21,8 @@
 - `node --check` — backend app/service/model/test файлууд амжилттай.
 - `NODE_PATH=/tmp/readpack-test-deps/node_modules node --test test/backend.test.js` — амжилттай, 11 тест.
 - `git diff --check` — whitespace алдаа алга.
+- Android debug build: Flutter 3.44 / AGP 8.11.1-д тааруулахын тулд `flutter_local_notifications`-ийг 22.3.3 дээр pin хийж, core library desugaring нэмэв; 23.0.1 хувилбар SDK 37/AGP 9.1 шаардаж build тасалдуулж байсан.
+- Бодит SM S931B төхөөрөмж дээр debug апп нээгдэж, USB reverse-ээр локал backend `/api/v1/health` амжилттай хариулсныг баталгаажуулав. Түр backend store `/tmp/readpack-local-dev-store.json`-д байна.
 - Auth/session, OTP retry/expiry, user ID тусгаарлалт, XP idempotency, refresh/logout, provider token verification, device ownership болон password recovery тестүүд амжилттай.
 
 ## Бодит ажиллагааны тохиргоо
