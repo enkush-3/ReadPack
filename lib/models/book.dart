@@ -110,6 +110,7 @@ class Book {
   final List<BookReview> reviews;
   final List<String> tags;
   final bool hasAudio;
+  final String? audioUrl;
   final int audioDurationMinutes;
 
   const Book({
@@ -133,8 +134,9 @@ class Book {
     this.keyTakeaways = const [],
     this.reviews = const [],
     this.tags = const [],
-    this.hasAudio = true,
-    this.audioDurationMinutes = 15,
+    this.hasAudio = false,
+    this.audioUrl,
+    this.audioDurationMinutes = 0,
   });
 
   Book copyWith({
@@ -159,8 +161,12 @@ class Book {
     List<BookReview>? reviews,
     List<String>? tags,
     bool? hasAudio,
+    String? audioUrl,
     int? audioDurationMinutes,
   }) {
+    final resolvedAudioUrl = hasAudio == false
+        ? null
+        : (audioUrl ?? this.audioUrl);
     return Book(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -182,9 +188,9 @@ class Book {
       keyTakeaways: keyTakeaways ?? this.keyTakeaways,
       reviews: reviews ?? this.reviews,
       tags: tags ?? this.tags,
-      hasAudio: hasAudio ?? this.hasAudio,
-      audioDurationMinutes:
-          audioDurationMinutes ?? this.audioDurationMinutes,
+      hasAudio: resolvedAudioUrl != null && resolvedAudioUrl.trim().isNotEmpty,
+      audioUrl: resolvedAudioUrl,
+      audioDurationMinutes: audioDurationMinutes ?? this.audioDurationMinutes,
     );
   }
 
@@ -210,43 +216,53 @@ class Book {
     'reviews': reviews.map((r) => r.toJson()).toList(),
     'tags': tags,
     'hasAudio': hasAudio,
+    if (audioUrl != null) 'audioUrl': audioUrl,
     'audioDurationMinutes': audioDurationMinutes,
   };
 
-  factory Book.fromJson(Map<String, dynamic> json) => Book(
-    id: json['id'] as String,
-    title: json['title'] as String,
-    author: json['author'] as String,
-    description: json['description'] as String? ?? '',
-    rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
-    reviewsCount: json['reviewsCount'] as int? ?? 100,
-    category: json['category'] as String? ?? 'General',
-    pages: json['pages'] as int? ?? 200,
-    readTimeMinutes: json['readTimeMinutes'] as int? ?? 120,
-    image: json['image'] as String?,
-    colorHex: json['colorHex'] as int? ?? 0xFF182350,
-    progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
-    currentPage: json['currentPage'] as int? ?? 0,
-    currentChapterIndex: json['currentChapterIndex'] as int? ?? 0,
-    isSaved: json['isSaved'] as bool? ?? false,
-    isFavorite: json['isFavorite'] as bool? ?? false,
-    chapters: (json['chapters'] as List<dynamic>?)
-            ?.map((c) => BookChapter.fromJson(c as Map<String, dynamic>))
-            .toList() ??
-        [],
-    keyTakeaways: (json['keyTakeaways'] as List<dynamic>?)
-            ?.map((e) => e.toString())
-            .toList() ??
-        [],
-    reviews: (json['reviews'] as List<dynamic>?)
-            ?.map((r) => BookReview.fromJson(r as Map<String, dynamic>))
-            .toList() ??
-        [],
-    tags: (json['tags'] as List<dynamic>?)
-            ?.map((t) => t.toString())
-            .toList() ??
-        [],
-    hasAudio: json['hasAudio'] as bool? ?? true,
-    audioDurationMinutes: json['audioDurationMinutes'] as int? ?? 15,
-  );
+  factory Book.fromJson(Map<String, dynamic> json) {
+    final audioUrl = json['audioUrl'] as String?;
+    final hasAudio = audioUrl != null && audioUrl.trim().isNotEmpty;
+    return Book(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      author: json['author'] as String,
+      description: json['description'] as String? ?? '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 4.5,
+      reviewsCount: json['reviewsCount'] as int? ?? 100,
+      category: json['category'] as String? ?? 'General',
+      pages: json['pages'] as int? ?? 200,
+      readTimeMinutes: json['readTimeMinutes'] as int? ?? 120,
+      image: json['image'] as String?,
+      colorHex: json['colorHex'] as int? ?? 0xFF182350,
+      progress: (json['progress'] as num?)?.toDouble() ?? 0.0,
+      currentPage: json['currentPage'] as int? ?? 0,
+      currentChapterIndex: json['currentChapterIndex'] as int? ?? 0,
+      isSaved: json['isSaved'] as bool? ?? false,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+      chapters:
+          (json['chapters'] as List<dynamic>?)
+              ?.map((c) => BookChapter.fromJson(c as Map<String, dynamic>))
+              .toList() ??
+          [],
+      keyTakeaways:
+          (json['keyTakeaways'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      reviews:
+          (json['reviews'] as List<dynamic>?)
+              ?.map((r) => BookReview.fromJson(r as Map<String, dynamic>))
+              .toList() ??
+          [],
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((t) => t.toString()).toList() ??
+          [],
+      hasAudio: hasAudio,
+      audioUrl: audioUrl,
+      audioDurationMinutes: hasAudio
+          ? json['audioDurationMinutes'] as int? ?? 0
+          : 0,
+    );
+  }
 }

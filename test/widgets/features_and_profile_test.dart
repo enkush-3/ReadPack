@@ -15,6 +15,7 @@ import 'package:readpack/features/profile/presentation/page/profile_page.dart';
 import 'package:readpack/features/settings/presentation/page/settings_page.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/secure_storage_mock.dart';
 
 late Map<String, dynamic> _mnMap;
 late Map<String, dynamic> _enMap;
@@ -60,7 +61,10 @@ Widget createLocalizedTestWidget({
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: Scaffold(body: child),
+      home: MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: Scaffold(body: child),
+      ),
     ),
   );
 }
@@ -77,174 +81,236 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    mockSecureStorage();
   });
 
   group('Deep Verification of Features and Localization', () {
-    testWidgets('ProfilePage renders statistics and habits, SettingsPage renders 2026 Challenge',
-        (tester) async {
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      bookProvider.loginWithEmail('user@test.com', 'Test User');
+    testWidgets(
+      'ProfilePage renders statistics and habits, SettingsPage renders 2026 Challenge',
+      (tester) async {
+        final bookProvider = BookProvider();
+        addTearDown(bookProvider.dispose);
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        bookProvider.loginWithEmail('user@test.com', 'Test User');
 
-      await tester.pumpWidget(createLocalizedTestWidget(
-        child: const ProfilePage(),
-        bookProvider: bookProvider,
-      ));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createLocalizedTestWidget(
+            child: const ProfilePage(),
+            bookProvider: bookProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Check statistics & habits
-      expect(find.text('Статистик үзүүлэлт'), findsOneWidget);
-      expect(find.text('Уншсан ном'), findsOneWidget);
+        // Check statistics & habits
+        expect(find.text('Статистик үзүүлэлт'), findsOneWidget);
+        expect(find.text('Уншсан ном'), findsOneWidget);
 
-      // Verify SettingsPage renders 2026 Reading Challenge
-      await tester.pumpWidget(createLocalizedTestWidget(
-        child: const SettingsPage(),
-        bookProvider: bookProvider,
-      ));
-      await tester.pumpAndSettle();
+        // Verify SettingsPage renders 2026 Reading Challenge
+        await tester.pumpWidget(
+          createLocalizedTestWidget(
+            child: const SettingsPage(),
+            bookProvider: bookProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('2026'), findsWidgets);
-      expect(find.byIcon(Icons.emoji_events_rounded), findsOneWidget);
-    });
+        expect(find.text('2026'), findsWidgets);
+        expect(find.byIcon(Icons.emoji_events_rounded), findsOneWidget);
+      },
+    );
 
-    testWidgets('ProfilePage displays localized guest user name in English and Mongolian',
-        (tester) async {
-      final guestProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      guestProvider.loginAsGuest();
-      final themeProvider = ThemeProvider();
+    testWidgets(
+      'ProfilePage displays localized guest user name in English and Mongolian',
+      (tester) async {
+        final guestProvider = BookProvider();
+        addTearDown(guestProvider.dispose);
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        guestProvider.loginAsGuest();
+        final themeProvider = ThemeProvider();
 
-      // Test Mongolian
-      await tester.pumpWidget(createLocalizedTestWidget(
-        child: const ProfilePage(),
-        locale: const Locale('mn'),
-        bookProvider: guestProvider,
-        themeProvider: themeProvider,
-      ));
-      await tester.pumpAndSettle();
-      expect(find.text('Зочин уншигч'), findsOneWidget);
+        // Test Mongolian
+        await tester.pumpWidget(
+          createLocalizedTestWidget(
+            child: const ProfilePage(),
+            locale: const Locale('mn'),
+            bookProvider: guestProvider,
+            themeProvider: themeProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Зочин уншигч'), findsOneWidget);
 
-      // Switch to English
-      themeProvider.setLocale(const Locale('en'));
-      await tester.pumpWidget(createLocalizedTestWidget(
-        child: const ProfilePage(),
-        locale: const Locale('en'),
-        bookProvider: guestProvider,
-        themeProvider: themeProvider,
-      ));
-      await tester.pumpAndSettle();
-      expect(find.text('Guest Reader'), findsOneWidget);
-    });
+        // Switch to English
+        themeProvider.setLocale(const Locale('en'));
+        await tester.pumpWidget(
+          createLocalizedTestWidget(
+            child: const ProfilePage(),
+            locale: const Locale('en'),
+            bookProvider: guestProvider,
+            themeProvider: themeProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Guest Reader'), findsOneWidget);
+      },
+    );
 
-    testWidgets('HomeHeader displays streak flame badge and opens sheet with 7 days',
-        (tester) async {
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+    testWidgets(
+      'HomeHeader displays streak flame badge and opens sheet with 7 days',
+      (tester) async {
+        final bookProvider = BookProvider();
+        addTearDown(bookProvider.dispose);
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        bookProvider.loginWithEmail('reader@test.com', 'Reader');
 
-      await tester.pumpWidget(createLocalizedTestWidget(
-        child: HomeHeader(userName: bookProvider.userProfile.name),
-        bookProvider: bookProvider,
-      ));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createLocalizedTestWidget(
+            child: HomeHeader(userName: bookProvider.userProfile.name),
+            bookProvider: bookProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Find streak flame button and tap it
-      final flameFinder = find.text('🔥');
-      expect(flameFinder, findsOneWidget);
-      await tester.tap(flameFinder);
-      await tester.pumpAndSettle();
+        // Find streak flame button and tap it
+        final flameFinder = find.text('🔥');
+        expect(flameFinder, findsOneWidget);
+        await tester.tap(flameFinder);
+        await tester.pumpAndSettle();
 
-      // Streak sheet should be open with 7 days of the week in Mongolian
-      expect(find.text('7 хоногийн амжилт'), findsOneWidget);
-      expect(find.text('Да'), findsOneWidget);
-      expect(find.text('Мя'), findsOneWidget);
-      expect(find.text('Лх'), findsOneWidget);
-      expect(find.text('Пү'), findsOneWidget);
-      expect(find.text('Ба'), findsOneWidget);
-      expect(find.text('Бя'), findsOneWidget);
-      expect(find.text('Ня'), findsOneWidget);
-    });
+        // Streak sheet should be open with 7 days of the week in Mongolian
+        expect(find.text('7 хоногийн амжилт'), findsOneWidget);
+        expect(find.text('Да'), findsOneWidget);
+        expect(find.text('Мя'), findsOneWidget);
+        expect(find.text('Лх'), findsOneWidget);
+        expect(find.text('Пү'), findsOneWidget);
+        expect(find.text('Ба'), findsOneWidget);
+        expect(find.text('Бя'), findsOneWidget);
+        expect(find.text('Ня'), findsOneWidget);
+      },
+    );
 
-    testWidgets('BookDetailPage allows submitting inline review using account user profile',
-        (tester) async {
+    testWidgets(
+      'BookDetailPage allows submitting inline review using account user profile',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 3000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final book = BookRepository.getInitialBooks().first;
+        final bookProvider = BookProvider();
+        addTearDown(bookProvider.dispose);
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        bookProvider.loginWithEmail('reader@test.com', 'Reader');
+
+        await tester.pumpWidget(
+          createLocalizedTestWidget(
+            child: BookDetailPage(book: book),
+            bookProvider: bookProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // In overview tab (tab 0), reviews form is removed
+        expect(find.text('Сэтгэгдэл илгээх'), findsNothing);
+
+        // Tap 'Сэтгэгдэл' tab (tab 2)
+        final reviewsTab = find.text('Сэтгэгдэл');
+        expect(reviewsTab, findsOneWidget);
+        await tester.tap(reviewsTab);
+        await tester.pumpAndSettle();
+
+        final submitButton = find.text('Сэтгэгдэл илгээх');
+        expect(submitButton, findsOneWidget);
+
+        // Name textfield is removed; only comment TextField remains
+        final textFields = find.byType(TextField);
+        expect(textFields, findsOneWidget);
+
+        // Enter comment
+        await tester.enterText(
+          textFields.first,
+          'Гайхалтай урам зориг өгсөн гайхамшигт бүтээл!',
+        );
+        await tester.tap(submitButton);
+        await tester.pumpAndSettle();
+
+        // Verify review was added with account user name (bookProvider.userProfile.name)
+        final updatedBook = bookProvider.books.firstWhere(
+          (b) => b.id == book.id,
+        );
+        expect(
+          updatedBook.reviews.any(
+            (r) => r.userName == bookProvider.userProfile.name,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    testWidgets(
+      'BookDetailPage displays sign-in prompt in reviews tab when user is guest',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 3000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final book = BookRepository.getInitialBooks().first;
+        final guestProvider = BookProvider();
+        addTearDown(guestProvider.dispose);
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        guestProvider.loginAsGuest();
+
+        await tester.pumpWidget(
+          createLocalizedTestWidget(
+            child: BookDetailPage(book: book),
+            bookProvider: guestProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Tap 'Сэтгэгдэл' tab
+        await tester.tap(find.text('Сэтгэгдэл'));
+        await tester.pumpAndSettle();
+
+        // Guest prompt should be displayed
+        expect(
+          find.text('Сэтгэгдэл бичихийн тулд нэвтэрнэ үү'),
+          findsOneWidget,
+        );
+        expect(find.text('Нэвтрэх / Бүртгүүлэх'), findsOneWidget);
+        expect(find.text('Сэтгэгдэл илгээх'), findsNothing);
+      },
+    );
+
+    testWidgets('HomePage renders 2-column SliverGrid for books', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 3000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final book = BookRepository.getInitialBooks().first;
       final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+      addTearDown(bookProvider.dispose);
+      await tester.runAsync(
+        () => Future.delayed(const Duration(milliseconds: 100)),
+      );
 
-      await tester.pumpWidget(createLocalizedTestWidget(
-        child: BookDetailPage(book: book),
-        bookProvider: bookProvider,
-      ));
-      await tester.pumpAndSettle();
-
-      // In overview tab (tab 0), reviews form is removed
-      expect(find.text('Сэтгэгдэл илгээх'), findsNothing);
-
-      // Tap 'Сэтгэгдэл' tab (tab 2)
-      final reviewsTab = find.text('Сэтгэгдэл');
-      expect(reviewsTab, findsOneWidget);
-      await tester.tap(reviewsTab);
-      await tester.pumpAndSettle();
-
-      final submitButton = find.text('Сэтгэгдэл илгээх');
-      expect(submitButton, findsOneWidget);
-
-      // Name textfield is removed; only comment TextField remains
-      final textFields = find.byType(TextField);
-      expect(textFields, findsOneWidget);
-
-      // Enter comment
-      await tester.enterText(textFields.first, 'Гайхалтай урам зориг өгсөн гайхамшигт бүтээл!');
-      await tester.tap(submitButton);
-      await tester.pumpAndSettle();
-
-      // Verify review was added with account user name (bookProvider.userProfile.name)
-      final updatedBook = bookProvider.books.firstWhere((b) => b.id == book.id);
-      expect(updatedBook.reviews.any((r) => r.userName == bookProvider.userProfile.name), isTrue);
-    });
-
-    testWidgets('BookDetailPage displays sign-in prompt in reviews tab when user is guest',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 3000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final book = BookRepository.getInitialBooks().first;
-      final guestProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      guestProvider.loginAsGuest();
-
-      await tester.pumpWidget(createLocalizedTestWidget(
-        child: BookDetailPage(book: book),
-        bookProvider: guestProvider,
-      ));
-      await tester.pumpAndSettle();
-
-      // Tap 'Сэтгэгдэл' tab
-      await tester.tap(find.text('Сэтгэгдэл'));
-      await tester.pumpAndSettle();
-
-      // Guest prompt should be displayed
-      expect(find.text('Сэтгэгдэл бичихийн тулд нэвтэрнэ үү'), findsOneWidget);
-      expect(find.text('Нэвтрэх / Бүртгүүлэх'), findsOneWidget);
-      expect(find.text('Сэтгэгдэл илгээх'), findsNothing);
-    });
-
-    testWidgets('HomePage renders 2-column SliverGrid for books', (tester) async {
-      tester.view.physicalSize = const Size(800, 3000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-
-      await tester.pumpWidget(createLocalizedTestWidget(
-        child: const HomePage(),
-        bookProvider: bookProvider,
-      ));
+      await tester.pumpWidget(
+        createLocalizedTestWidget(
+          child: const HomePage(),
+          bookProvider: bookProvider,
+        ),
+      );
       await tester.pumpAndSettle();
 
       // Find SliverGrid
@@ -252,9 +318,10 @@ void main() {
       expect(sliverGridFinder, findsOneWidget);
 
       final sliverGrid = tester.widget<SliverGrid>(sliverGridFinder);
-      final delegate = sliverGrid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+      final delegate =
+          sliverGrid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
       expect(delegate.crossAxisCount, 2);
-      expect(delegate.childAspectRatio, 0.68);
+      expect(delegate.childAspectRatio, 0.54);
     });
   });
 }

@@ -19,7 +19,8 @@ class BookProviderPersistence {
   static const String keyDownloadedBooks = 'readpack_downloaded_books';
 
   static Future<void> persistNotifications(
-      List<NotificationItem> notifications) async {
+    List<NotificationItem> notifications,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     final list = notifications.map((n) => jsonEncode(n.toJson())).toList();
     await prefs.setStringList(keyNotifications, list);
@@ -64,7 +65,8 @@ class BookProviderPersistence {
   }
 
   static Future<void> persistCollections(
-      List<BookCollection> collections) async {
+    List<BookCollection> collections,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     final list = collections.map((c) => jsonEncode(c.toJson())).toList();
     await prefs.setStringList(keyCollections, list);
@@ -80,12 +82,6 @@ class BookProviderPersistence {
     await prefs.setString(keyUserProfile, jsonEncode(profile.toJson()));
   }
 
-  static Future<void> syncAuthTree(
-      BookApiService api, UserProfile profile) async {
-    if (profile.isGuest || profile.email.isEmpty) return;
-    await api.syncUserAccountTree(email: profile.email, name: profile.name);
-  }
-
   static Future<void> syncBookReadingNode(
     BookApiService api,
     UserProfile profile,
@@ -99,12 +95,9 @@ class BookProviderPersistence {
     final idx = books.indexWhere((b) => b.id == bookId);
     if (idx < 0) return;
     final book = books[idx];
-    if (profile.isGuest || profile.email.isEmpty) {
-      await api.syncBookToCentralCatalog(book);
-      return;
-    }
+    if (profile.isGuest || profile.userId.isEmpty) return;
     await api.syncUserReadingToTree(
-      userIdOrEmail: profile.email,
+      userIdOrEmail: profile.userId,
       book: book,
       shelfId: shelfId,
       status: status,
@@ -114,10 +107,12 @@ class BookProviderPersistence {
   }
 
   static Future<void> syncProfilePreferences(
-      BookApiService api, UserProfile profile) async {
-    if (profile.isGuest || profile.email.isEmpty) return;
+    BookApiService api,
+    UserProfile profile,
+  ) async {
+    if (profile.isGuest || profile.userId.isEmpty) return;
     await api.updateUserPreferencesTree(
-      userIdOrEmail: profile.email,
+      userIdOrEmail: profile.userId,
       payload: {
         'displayName': profile.name,
         'dailyGoalMinutes': profile.dailyGoalMinutes,

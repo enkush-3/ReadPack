@@ -10,7 +10,6 @@ import 'package:readpack/features/quotes/presentation/phone_widget_sheet.dart';
 import 'package:readpack/features/shared/common/refresh.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/bookmark.dart';
-import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/empty_state_view.dart';
 import 'package:readpack/shared/widgets/error_state_view.dart';
 import 'package:readpack/shared/widgets/skeleton_loader.dart';
@@ -19,11 +18,7 @@ class SavedPage extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
   final int initialSegment;
 
-  const SavedPage({
-    super.key,
-    this.onNavigateTab,
-    this.initialSegment = 0,
-  });
+  const SavedPage({super.key, this.onNavigateTab, this.initialSegment = 0});
 
   @override
   State<SavedPage> createState() => _SavedPageState();
@@ -57,8 +52,7 @@ class _SavedPageState extends State<SavedPage> {
     final l10n = AppLocalizations.of(context);
 
     final libraryTitle = l10n?.t('library.title') ?? 'Миний Сан';
-    final readingSegment =
-        l10n?.t('library.currently_reading') ?? 'Уншиж буй';
+    final readingSegment = l10n?.t('library.currently_reading') ?? 'Уншиж буй';
     final savedSegment = l10n?.t('library.saved') ?? 'Хадгалсан';
     final shelvesSegment = l10n?.t('library.shelves') ?? 'Цуглуулгууд';
     final quotesSegment = l10n?.t('library.quotes') ?? 'Ишлэлүүд';
@@ -89,57 +83,18 @@ class _SavedPageState extends State<SavedPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // 4-Segment Switcher with Sliding Pill Animation
-                      Container(
-                        height: 44,
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.35),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final tabWidth = constraints.maxWidth / 4;
-                            return Stack(
-                              children: [
-                                AnimatedPositioned(
-                                  duration: const Duration(milliseconds: 260),
-                                  curve: Curves.easeOutCubic,
-                                  left: _selectedSegment * tabWidth,
-                                  top: 0,
-                                  bottom: 0,
-                                  width: tabWidth,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.primary,
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: colorScheme.primary
-                                              .withValues(alpha: 0.22),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    _buildSegmentItem(
-                                        0, readingSegment, colorScheme),
-                                    _buildSegmentItem(
-                                        1, savedSegment, colorScheme),
-                                    _buildSegmentItem(
-                                        2, shelvesSegment, colorScheme),
-                                    _buildSegmentItem(
-                                        3, quotesSegment, colorScheme),
-                                  ],
-                                ),
-                              ],
-                            );
-                          },
+                      // Keep all four labels readable at narrow widths by
+                      // allowing the segment controls to scroll horizontally.
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Row(
+                          children: [
+                            _buildSegmentItem(0, readingSegment, colorScheme),
+                            _buildSegmentItem(1, savedSegment, colorScheme),
+                            _buildSegmentItem(2, shelvesSegment, colorScheme),
+                            _buildSegmentItem(3, quotesSegment, colorScheme),
+                          ],
                         ),
                       ),
                     ],
@@ -161,34 +116,24 @@ class _SavedPageState extends State<SavedPage> {
     );
   }
 
-  Widget _buildSegmentItem(
-    int index,
-    String label,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildSegmentItem(int index, String label, ColorScheme colorScheme) {
     final isSelected = _selectedSegment == index;
 
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _selectSegment(index),
-        child: Center(
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 220),
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected
-                  ? colorScheme.onPrimary
-                  : colorScheme.onSurface.withValues(alpha: 0.72),
-            ),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label, maxLines: 1),
+        selected: isSelected,
+        showCheckmark: false,
+        selectedColor: colorScheme.secondaryContainer,
+        labelStyle: TextStyle(
+          color: isSelected
+              ? colorScheme.onSecondaryContainer
+              : colorScheme.onSurfaceVariant,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
         ),
+        side: BorderSide(color: colorScheme.outlineVariant),
+        onSelected: (_) => _selectSegment(index),
       ),
     );
   }
@@ -237,9 +182,11 @@ class _SavedPageState extends State<SavedPage> {
           hasScrollBody: false,
           child: EmptyStateView(
             icon: Icons.menu_book_rounded,
-            title: l10n?.t('library.empty_reading_title') ??
+            title:
+                l10n?.t('library.empty_reading_title') ??
                 'Одоогоор уншиж буй ном алга',
-            message: l10n?.t('library.empty_reading_desc') ??
+            message:
+                l10n?.t('library.empty_reading_desc') ??
                 'Нүүр хуудаснаас сонирхсон номоо сонгоод уншиж эхлээрэй.',
             actionLabel: l10n?.t('library.explore_books') ?? 'Ном хайх',
             onAction: () => widget.onNavigateTab?.call(0),
@@ -249,16 +196,10 @@ class _SavedPageState extends State<SavedPage> {
       return SliverPadding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         sliver: SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final book = readingBooks[index];
-              return LibraryReadingCard(
-                book: book,
-                provider: provider,
-              );
-            },
-            childCount: readingBooks.length,
-          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final book = readingBooks[index];
+            return LibraryReadingCard(book: book, provider: provider);
+          }, childCount: readingBooks.length),
         ),
       );
     }
@@ -271,9 +212,11 @@ class _SavedPageState extends State<SavedPage> {
           hasScrollBody: false,
           child: EmptyStateView(
             icon: Icons.bookmark_border_rounded,
-            title: l10n?.t('library.empty_saved_title') ??
+            title:
+                l10n?.t('library.empty_saved_title') ??
                 'Хадгалсан ном байхгүй байна',
-            message: l10n?.t('library.empty_saved_desc') ??
+            message:
+                l10n?.t('library.empty_saved_desc') ??
                 'Дараа уншихаар хадгалсан номнууд тань энд харагдана.',
             actionLabel: l10n?.t('library.explore_books') ?? 'Номууд үзэх',
             onAction: () => widget.onNavigateTab?.call(0),
@@ -287,18 +230,12 @@ class _SavedPageState extends State<SavedPage> {
             crossAxisCount: 2,
             mainAxisSpacing: 16,
             crossAxisSpacing: 16,
-            childAspectRatio: 0.60,
+            childAspectRatio: 0.54,
           ),
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final book = savedBooks[index];
-              return LibrarySavedCard(
-                book: book,
-                provider: provider,
-              );
-            },
-            childCount: savedBooks.length,
-          ),
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final book = savedBooks[index];
+            return LibrarySavedCard(book: book, provider: provider);
+          }, childCount: savedBooks.length),
         ),
       );
     }
@@ -328,61 +265,50 @@ class _SavedPageState extends State<SavedPage> {
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       sliver: SliverList(
         delegate: SliverChildListDelegate([
-          // Sub-Filter Bar & Phone Widget Button
+          // Quote filters and widget settings remain separate controls so
+          // localized labels can wrap without squeezing the action target.
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: [
-                        _buildQuoteFilterChip(
-                          index: 0,
-                          label: '$filterAllText (${allBookmarks.length})',
-                          colorScheme: colorScheme,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildQuoteFilterChip(
-                          index: 1,
-                          label:
-                              '$filterBookmarkedText (${allBookmarks.where((b) => !b.isLiked).length})',
-                          colorScheme: colorScheme,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildQuoteFilterChip(
-                          index: 2,
-                          label:
-                              '$filterLikedText ❤️ (${allBookmarks.where((b) => b.isLiked).length})',
-                          colorScheme: colorScheme,
-                        ),
-                      ],
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton.filledTonal(
+                    tooltip:
+                        l10n?.t('widget.title') ?? 'Утасны дэлгэцийн виджет',
+                    onPressed: () => PhoneWidgetSheet.show(context),
+                    icon: const Icon(Icons.widgets_rounded),
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      foregroundColor: colorScheme.onSecondaryContainer,
+                      backgroundColor: colorScheme.secondaryContainer,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Tooltip(
-                  message: l10n?.t('widget.title') ?? 'Утасны дэлгэцийн виджет',
-                  child: AnimatedPressable(
-                    onTap: () => PhoneWidgetSheet.show(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: colorScheme.primary.withValues(alpha: 0.25),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.widgets_rounded,
-                        size: 16,
-                        color: colorScheme.primary,
-                      ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    _buildQuoteFilterChip(
+                      index: 0,
+                      label: '$filterAllText (${allBookmarks.length})',
+                      colorScheme: colorScheme,
                     ),
-                  ),
+                    _buildQuoteFilterChip(
+                      index: 1,
+                      label:
+                          '$filterBookmarkedText (${allBookmarks.where((b) => !b.isLiked).length})',
+                      colorScheme: colorScheme,
+                    ),
+                    _buildQuoteFilterChip(
+                      index: 2,
+                      label:
+                          '$filterLikedText (${allBookmarks.where((b) => b.isLiked).length})',
+                      colorScheme: colorScheme,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -394,7 +320,10 @@ class _SavedPageState extends State<SavedPage> {
             switchOutCurve: Curves.easeInCubic,
             transitionBuilder: (child, animation) {
               final slide = Tween<Offset>(
-                begin: Offset(_selectedSegment >= _previousSegment ? 0.06 : -0.06, 0),
+                begin: Offset(
+                  _selectedSegment >= _previousSegment ? 0.06 : -0.06,
+                  0,
+                ),
                 end: Offset.zero,
               ).animate(animation);
               return FadeTransition(
@@ -407,10 +336,13 @@ class _SavedPageState extends State<SavedPage> {
                     key: ValueKey('empty_quotes_$_quoteFilterIndex'),
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                        vertical: 40, horizontal: 20),
+                      vertical: 40,
+                      horizontal: 20,
+                    ),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.2),
+                      color: colorScheme.surfaceContainerHighest.withValues(
+                        alpha: 0.2,
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Column(
@@ -427,9 +359,9 @@ class _SavedPageState extends State<SavedPage> {
                         Text(
                           _quoteFilterIndex == 2
                               ? (l10n?.t('library.empty_liked_quotes_title') ??
-                                  'Таалагдсан ишлэл хараахан алга')
+                                    'Таалагдсан ишлэл хараахан алга')
                               : (l10n?.t('library.empty_quotes_title') ??
-                                  'Ишлэл олдсонгүй'),
+                                    'Ишлэл олдсонгүй'),
                           style: const TextStyle(
                             fontFamily: 'Serif',
                             fontWeight: FontWeight.bold,
@@ -440,9 +372,9 @@ class _SavedPageState extends State<SavedPage> {
                         Text(
                           _quoteFilterIndex == 2
                               ? (l10n?.t('library.empty_liked_quotes_desc') ??
-                                  'Ишлэлүүд дээрх зүрхэн дээр дарж таалагдсандаа нэмээрэй.')
+                                    'Ишлэлүүд дээрх зүрхэн дээр дарж таалагдсандаа нэмээрэй.')
                               : (l10n?.t('library.empty_quotes_desc') ??
-                                  'Ном уншиж байхдаа онцлох эшлэлээ тэмдэглэн аваарай.'),
+                                    'Ном уншиж байхдаа онцлох эшлэлээ тэмдэглэн аваарай.'),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12,
@@ -454,12 +386,10 @@ class _SavedPageState extends State<SavedPage> {
                   )
                 : Column(
                     key: ValueKey(
-                        'quotes_list_${_quoteFilterIndex}_${displayedBookmarks.length}'),
+                      'quotes_list_${_quoteFilterIndex}_${displayedBookmarks.length}',
+                    ),
                     children: displayedBookmarks.map((bm) {
-                      return LibraryQuoteCard(
-                        bm: bm,
-                        provider: provider,
-                      );
+                      return LibraryQuoteCard(bm: bm, provider: provider);
                     }).toList(),
                   ),
           ),
@@ -474,43 +404,19 @@ class _SavedPageState extends State<SavedPage> {
     required ColorScheme colorScheme,
   }) {
     final isSelected = _quoteFilterIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _quoteFilterIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary
-              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? colorScheme.primary
-                : colorScheme.outlineVariant.withValues(alpha: 0.3),
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected
-                ? colorScheme.onPrimary
-                : colorScheme.onSurface.withValues(alpha: 0.72),
-          ),
-        ),
+    return ChoiceChip(
+      label: Text(label, maxLines: 1),
+      selected: isSelected,
+      showCheckmark: false,
+      selectedColor: colorScheme.secondaryContainer,
+      labelStyle: TextStyle(
+        color: isSelected
+            ? colorScheme.onSecondaryContainer
+            : colorScheme.onSurfaceVariant,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
       ),
+      side: BorderSide(color: colorScheme.outlineVariant),
+      onSelected: (_) => setState(() => _quoteFilterIndex = index),
     );
   }
 }

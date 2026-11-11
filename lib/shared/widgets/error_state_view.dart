@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/helper/translation.dart';
-import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/animated_button.dart';
 
 class ErrorStateView extends StatelessWidget {
   final String errorMessage;
@@ -28,64 +28,36 @@ class ErrorStateView extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: colorScheme.error.withValues(alpha: 0.1),
+                color: colorScheme.errorContainer,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.error_outline_rounded,
                 size: 36,
-                color: colorScheme.error,
+                color: colorScheme.onErrorContainer,
               ),
             ),
             const SizedBox(height: 20),
             Text(
               l10n?.t('error.title') ?? 'Алдаа гарлаа',
-              style: TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               errorMessage,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 20),
-            AnimatedPressable(
-              onTap: onRetry,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.refresh_rounded,
-                      size: 18,
-                      color: colorScheme.onPrimary,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      l10n?.t('common.retry') ?? 'Дахин оролдох',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            AnimatedButton(
+              onPressed: onRetry,
+              icon: Icons.refresh_rounded,
+              semanticLabel: l10n?.t('common.retry') ?? 'Дахин оролдох',
+              child: Text(l10n?.t('common.retry') ?? 'Дахин оролдох'),
             ),
           ],
         ),

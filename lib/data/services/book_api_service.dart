@@ -2,24 +2,35 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:readpack/data/book_repository.dart';
+import 'package:readpack/data/services/api_configuration.dart';
+import 'package:readpack/data/services/auth_api_service.dart';
 import 'package:readpack/models/book.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BookApiService {
-  static const String defaultBackendBaseUrl = 'http://localhost:4000/api/v1';
+  static String get defaultBackendBaseUrl => ApiConfiguration.baseUrl;
   static const String openLibrarySearchUrl =
       'https://openlibrary.org/search.json';
   static const String _gutendexBaseUrl = 'https://gutendex.com/books/';
   static const String cacheKey = 'readpack_cached_api_books';
   static const Duration defaultTimeout = Duration(seconds: 6);
 
-  final http.Client _client;
+  late final http.Client _client;
+  late final AuthApiService _authService;
   final String backendBaseUrl;
 
   BookApiService({
     http.Client? client,
-    this.backendBaseUrl = defaultBackendBaseUrl,
-  }) : _client = client ?? http.Client();
+    AuthApiService? authService,
+    String? backendBaseUrl,
+  }) : backendBaseUrl = backendBaseUrl ?? defaultBackendBaseUrl {
+    _client = client ?? http.Client();
+    _authService =
+        authService ??
+        AuthApiService(client: _client, baseUrl: this.backendBaseUrl);
+  }
+
+  AuthApiService get authService => _authService;
 
   /// Fetches books via Smart Read-Through Search:
   /// 1. Local/Central Express+MongoDB Catalog first (`$backendBaseUrl/books/search`)
@@ -68,16 +79,15 @@ class BookApiService {
       } else {
         uri = trimmed.isEmpty
             ? Uri.parse(baseEndpoint)
-            : Uri.parse(
-                '$baseEndpoint?search=${Uri.encodeComponent(trimmed)}');
+            : Uri.parse('$baseEndpoint?search=${Uri.encodeComponent(trimmed)}');
       }
 
       try {
         final response = await _client.get(uri).timeout(defaultTimeout);
         if (response.statusCode == 200) {
-          final Map<String, dynamic> data = jsonDecode(
-            utf8.decode(response.bodyBytes),
-          ) as Map<String, dynamic>;
+          final Map<String, dynamic> data =
+              jsonDecode(utf8.decode(response.bodyBytes))
+                  as Map<String, dynamic>;
 
           final books = <Book>[];
 
@@ -95,8 +105,7 @@ class BookApiService {
           }
 
           // 2. Parse Central DB or Gutendex 'results' array if present
-          final List<dynamic> results =
-              data['results'] as List<dynamic>? ?? [];
+          final List<dynamic> results = data['results'] as List<dynamic>? ?? [];
           for (final item in results) {
             if (item is Map<String, dynamic>) {
               final book = _parseRemoteBook(item);
@@ -135,9 +144,8 @@ class BookApiService {
     try {
       final response = await _client.get(uri).timeout(defaultTimeout);
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(
-          utf8.decode(response.bodyBytes),
-        ) as Map<String, dynamic>;
+        final Map<String, dynamic> data =
+            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
 
         final List<dynamic>? docs = data['docs'] as List<dynamic>?;
         if (docs != null && docs.isNotEmpty) {
@@ -191,7 +199,8 @@ class BookApiService {
           ? 'https://covers.openlibrary.org/b/id/$coverId-L.jpg'
           : 'assets/public/books/atomic_habits.png';
 
-      final subjects = (doc['subject'] as List<dynamic>?) ??
+      final subjects =
+          (doc['subject'] as List<dynamic>?) ??
           (doc['subject_facet'] as List<dynamic>?) ??
           [];
       final category = _mapSubjectsToCategory(subjects);
@@ -200,16 +209,15 @@ class BookApiService {
       final readTime = (pages * 1.1).round();
       final rawRating = (doc['ratings_average'] as num?)?.toDouble() ?? 4.6;
       final rating = double.parse(rawRating.clamp(3.8, 5.0).toStringAsFixed(1));
-      final ratingsCount = (doc['ratings_count'] as int?) ??
+      final ratingsCount =
+          (doc['ratings_count'] as int?) ??
           ((doc['edition_count'] as int? ?? 15) * 12);
       final publishYear = doc['first_publish_year'] as int?;
       final firstSentenceList = doc['first_sentence'] as List<dynamic>?;
       final firstSentence =
           firstSentenceList != null && firstSentenceList.isNotEmpty
-              ? firstSentenceList.first.toString()
-              : '';
-
-      final hasAudio = (coverId ?? pages) % 2 == 0;
+          ? firstSentenceList.first.toString()
+          : '';
 
       final chapters = [
         BookChapter(
@@ -253,8 +261,8 @@ class BookApiService {
         currentChapterIndex: 0,
         isSaved: false,
         isFavorite: false,
-        hasAudio: hasAudio,
-        audioDurationMinutes: hasAudio ? readTime : 0,
+        hasAudio: false,
+        audioDurationMinutes: 0,
         keyTakeaways: [
           '$authorName-ийн дэвшүүлсэн гол философи болон практик зарчмууд.',
           'Системтэй сэтгэлгээ ба тууштай дадлыг хэвшүүлэх арга зам.',
@@ -293,97 +301,77 @@ class BookApiService {
     Map<String, dynamic>? highlight,
     Map<String, dynamic>? note,
   }) async {
-    final uri = Uri.parse(
-      '$backendBaseUrl/users/${Uri.encodeComponent(userIdOrEmail)}/reading',
-    );
     try {
-      final response = await _client
-          .post(
-            uri,
-            headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'book': book.toJson(),
-              'shelfId': shelfId,
-              'status': status,
-              'progress': book.progress,
-              'currentChapter': book.currentChapterIndex,
-              'currentPage': book.currentPage,
-              'minutesRead': minutesRead,
-              if (highlight != null) 'highlight': highlight,
-              if (note != null) 'note': note,
-            }),
-          )
-          .timeout(const Duration(seconds: 3));
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(utf8.decode(response.bodyBytes))
-            as Map<String, dynamic>;
-      }
+      return await _authService.requestAuthorized(
+        'POST',
+        '/users/${Uri.encodeComponent(userIdOrEmail)}/reading',
+        body: {
+          'book': book.toJson(),
+          'shelfId': shelfId,
+          'status': status,
+          'progress': book.progress,
+          'currentChapter': book.currentChapterIndex,
+          'currentPage': book.currentPage,
+          'minutesRead': minutesRead,
+          if (highlight != null) 'highlight': highlight,
+          if (note != null) 'note': note,
+        },
+      );
     } catch (_) {}
     return null;
   }
 
-  /// Authenticates or registers a user in the Express + MongoDB backend,
-  /// returning the hierarchical `UserAccountTree` document.
-  Future<Map<String, dynamic>?> syncUserAccountTree({
-    required String email,
-    required String name,
+  Future<Map<String, dynamic>?> recordReadingEvent({
+    required String userId,
+    required String eventId,
+    required int minutesRead,
+    Book? book,
+    String? bookId,
   }) async {
-    final uri = Uri.parse('$backendBaseUrl/auth/login');
+    if (minutesRead <= 0 ||
+        eventId.trim().isEmpty ||
+        (book == null && (bookId == null || bookId.trim().isEmpty))) {
+      return null;
+    }
     try {
-      final response = await _client
-          .post(
-            uri,
-            headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode({'email': email, 'name': name}),
-          )
-          .timeout(const Duration(seconds: 3));
-      if (response.statusCode == 200) {
-        return jsonDecode(utf8.decode(response.bodyBytes))
-            as Map<String, dynamic>;
-      }
-    } catch (_) {}
-    return null;
+      return await _authService.requestAuthorized(
+        'POST',
+        '/users/${Uri.encodeComponent(userId)}/reading/events',
+        body: {
+          'eventId': eventId,
+          'minutesRead': minutesRead,
+          'timezoneOffsetMinutes': DateTime.now().timeZoneOffset.inMinutes,
+          if (book != null) 'book': book.toJson(),
+          if (book == null && bookId != null) 'bookId': bookId,
+        },
+      );
+    } catch (_) {
+      return null;
+    }
   }
+
+  Future<Map<String, dynamic>> fetchLeaderboard({String period = 'weekly'}) =>
+      _authService.fetchLeaderboard(period: period);
 
   /// Updates user profile & preferences in the MongoDB `UserAccountTree`.
   Future<Map<String, dynamic>?> updateUserPreferencesTree({
     required String userIdOrEmail,
     required Map<String, dynamic> payload,
   }) async {
-    final uri = Uri.parse(
-      '$backendBaseUrl/users/${Uri.encodeComponent(userIdOrEmail)}/tree',
-    );
     try {
-      final response = await _client
-          .put(
-            uri,
-            headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode(payload),
-          )
-          .timeout(const Duration(seconds: 3));
-      if (response.statusCode == 200) {
-        return jsonDecode(utf8.decode(response.bodyBytes))
-            as Map<String, dynamic>;
-      }
+      return await _authService.updateUserTree(userIdOrEmail, payload);
     } catch (_) {}
     return null;
   }
 
   /// Synchronizes a book directly into the Central Books Catalog (`POST /api/v1/books/sync`).
   Future<Map<String, dynamic>?> syncBookToCentralCatalog(Book book) async {
-    final uri = Uri.parse('$backendBaseUrl/books/sync');
     try {
-      final response = await _client
-          .post(
-            uri,
-            headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode({'book': book.toJson()}),
-          )
-          .timeout(const Duration(seconds: 3));
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonDecode(utf8.decode(response.bodyBytes))
-            as Map<String, dynamic>;
-      }
+      return await _authService.requestAuthorized(
+        'POST',
+        '/books/sync',
+        body: {'book': book.toJson()},
+      );
     } catch (_) {}
     return null;
   }
@@ -415,8 +403,13 @@ class BookApiService {
 
       final Map<String, dynamic> formats =
           map['formats'] as Map<String, dynamic>? ?? {};
-      final String coverUrl = formats['image/jpeg'] as String? ??
+      final String coverUrl =
+          formats['image/jpeg'] as String? ??
           'assets/public/books/atomic_habits.png';
+      final audioUrl =
+          formats['audio/mpeg'] as String? ??
+          formats['audio/mp4'] as String? ??
+          formats['audio/ogg'] as String?;
 
       final int downloadCount = map['download_count'] as int? ?? 120;
       final double rating = (4.0 + (downloadCount % 10) * 0.1).clamp(4.0, 5.0);
@@ -458,8 +451,9 @@ class BookApiService {
         currentChapterIndex: 0,
         isSaved: false,
         isFavorite: false,
-        hasAudio: true,
-        audioDurationMinutes: readTime,
+        audioUrl: audioUrl,
+        hasAudio: audioUrl != null && audioUrl.trim().isNotEmpty,
+        audioDurationMinutes: 0,
         keyTakeaways: [
           'Classic wisdom that withstands the test of historical eras.',
           'Fundamental principles of human perspective and creative imagination.',

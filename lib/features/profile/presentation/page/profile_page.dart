@@ -9,8 +9,25 @@ import 'package:readpack/features/profile/widgets/profile_league_card.dart';
 import 'package:readpack/features/profile/widgets/profile_xp_card.dart';
 import 'package:readpack/helper/translation.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final provider = context.read<BookProvider>();
+      if (!provider.userProfile.isGuest) {
+        provider.refreshLeaderboard(period: 'monthly');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

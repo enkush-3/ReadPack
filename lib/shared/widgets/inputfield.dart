@@ -40,14 +40,12 @@ class _InputFieldState extends State<InputField> {
     final borderSide = BorderSide(
       color: widget.errorText != null
           ? colorScheme.error
-          : colorScheme.outlineVariant.withValues(alpha: 0.35),
-      width: 1.2,
+          : colorScheme.outlineVariant,
+      width: 1,
     );
     final focusedBorderSide = BorderSide(
-      color: widget.errorText != null
-          ? colorScheme.error
-          : colorScheme.primary,
-      width: 1.6,
+      color: widget.errorText != null ? colorScheme.error : colorScheme.primary,
+      width: 2,
     );
 
     return Column(
@@ -61,13 +59,12 @@ class _InputFieldState extends State<InputField> {
           textInputAction: widget.textInputAction ?? TextInputAction.next,
           onChanged: widget.onChanged,
           onSubmitted: widget.onSubmitted,
-          style: TextStyle(
-            fontSize: 15,
-            color: colorScheme.onSurface,
-          ),
+          style: TextStyle(fontSize: 16, color: colorScheme.onSurface),
           decoration: InputDecoration(
             filled: true,
-            fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+            fillColor: colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.25,
+            ),
             hintText: widget.hint,
             hintStyle: TextStyle(
               color: colorScheme.onSurface.withValues(alpha: 0.4),
@@ -108,17 +105,11 @@ class _InputFieldState extends State<InputField> {
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: radius,
-              borderSide: BorderSide(
-                color: colorScheme.error,
-                width: 1.2,
-              ),
+              borderSide: BorderSide(color: colorScheme.error, width: 1),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: radius,
-              borderSide: BorderSide(
-                color: colorScheme.error,
-                width: 1.6,
-              ),
+              borderSide: BorderSide(color: colorScheme.error, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
@@ -132,10 +123,7 @@ class _InputFieldState extends State<InputField> {
             padding: const EdgeInsets.only(left: 12),
             child: Text(
               widget.errorText!,
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.error,
-              ),
+              style: TextStyle(fontSize: 12, color: colorScheme.error),
             ),
           ),
         ],

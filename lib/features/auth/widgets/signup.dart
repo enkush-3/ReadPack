@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/data/services/social_auth_service.dart';
+import 'package:readpack/data/services/contact_normalizer.dart';
+import 'package:readpack/features/auth/auth_error_message.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/iconbutton.dart';
@@ -12,10 +15,7 @@ import 'package:readpack/shared/widgets/submitbutton.dart';
 class SignUpPage extends StatefulWidget {
   final VoidCallback onSwitchToLogin;
 
-  const SignUpPage({
-    super.key,
-    required this.onSwitchToLogin,
-  });
+  const SignUpPage({super.key, required this.onSwitchToLogin});
 
   @override
   State<SignUpPage> createState() => _SignUpPageState();
@@ -34,6 +34,7 @@ class _SignUpPageState extends State<SignUpPage> {
   String? _contactError;
   String? _passwordError;
   String? _confirmPasswordError;
+  String? _formError;
 
   @override
   void dispose() {
@@ -62,8 +63,10 @@ class _SignUpPageState extends State<SignUpPage> {
     final l10n = AppLocalizations.of(context);
     bool isValid = true;
     if (name.isEmpty) {
-      setState(() => _nameError =
-          l10n?.t('validation.name_too_short') ?? 'Бүтэн нэрээ оруулна уу');
+      setState(
+        () => _nameError =
+            l10n?.t('validation.name_too_short') ?? 'Бүтэн нэрээ оруулна уу',
+      );
       isValid = false;
     }
 
@@ -73,57 +76,63 @@ class _SignUpPageState extends State<SignUpPage> {
         isValid = false;
       }
     } else {
-      if (email.isEmpty || !email.contains('@')) {
-        setState(() => _contactError =
-            l10n?.t('validation.email_invalid') ?? 'Имэйл хаягаа зөв оруулна уу');
+      if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
+        setState(
+          () => _contactError =
+              l10n?.t('validation.email_invalid') ??
+              'Имэйл хаягаа зөв оруулна уу',
+        );
         isValid = false;
       }
     }
 
-    if (password.length < 6) {
-      setState(() => _passwordError = l10n?.t('validation.password_too_short') ??
-          'Нууц үг хамгийн багадаа 6 тэмдэгт байна');
+    if (password.length < 8) {
+      setState(
+        () => _passwordError =
+            l10n?.t('validation.password_too_short') ??
+            'Нууц үг хамгийн багадаа 6 тэмдэгт байна',
+      );
       isValid = false;
     }
 
-    if (confirmPassword.isNotEmpty && confirmPassword != password) {
-      setState(() =>
-          _confirmPasswordError = 'Нууц үг хоорондоо таарахгүй байна');
+    if (confirmPassword != password) {
+      setState(
+        () => _confirmPasswordError = 'Нууц үг хоорондоо таарахгүй байна',
+      );
       isValid = false;
     }
 
     if (!isValid) return;
 
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-
-    final targetContact = _isPhoneMode ? phone : email;
-
-    // Check if Routes.verify is registered and can be pushed
+    final targetContact = _isPhoneMode ? normalizePhoneNumber(phone) : email;
+    setState(() {
+      _isLoading = true;
+      _formError = null;
+    });
     try {
+      final challenge = await context.read<BookProvider>().beginSignUp(
+        name: name,
+        contact: targetContact,
+        contactType: _isPhoneMode ? 'phone' : 'email',
+        password: password,
+      );
+      if (!mounted) return;
+      setState(() => _isLoading = false);
       Navigator.of(context).pushNamed(
         Routes.verify,
         arguments: {
           'purpose': 'signup',
           'target': targetContact,
-          'name': name,
-          'password': password,
           'isPhone': _isPhoneMode,
+          'challengeId': challenge.id,
         },
       );
-    } catch (_) {
-      // Fallback for tests or environments without Routes.verify
-      final bookProvider = context.read<BookProvider>();
-      bookProvider.registerNewUser(
-        name: name,
-        email: _isPhoneMode ? '$phone@readpack.app' : email,
-        phoneNumber: _isPhoneMode ? phone : '',
-        username: '@${name.toLowerCase().replaceAll(' ', '')}',
-      );
-      Navigator.of(context).pushReplacementNamed(Routes.onboarding);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _formError = authErrorMessage(error, l10n);
+      });
     }
   }
 
@@ -132,22 +141,34 @@ class _SignUpPageState extends State<SignUpPage> {
     Navigator.of(context).pushReplacementNamed(Routes.appshell);
   }
 
-  void _loginWithSocial(String providerName) {
-    final email = _emailController.text.trim().contains('@')
-        ? _emailController.text.trim()
-        : '${providerName.toLowerCase()}@readpack.app';
-    final name = _nameController.text.trim().isNotEmpty
-        ? _nameController.text.trim()
-        : '$providerName Уншигч';
-    context.read<BookProvider>().registerNewUser(
-          email: email,
-          name: name,
-          username: '@${providerName.toLowerCase()}_reader',
-        );
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    } else {
-      Navigator.of(context).pushReplacementNamed(Routes.onboarding);
+  Future<void> _loginWithSocial(String providerName) async {
+    final l10n = AppLocalizations.of(context);
+    setState(() {
+      _isLoading = true;
+      _formError = null;
+    });
+    try {
+      final provider = providerName.toLowerCase();
+      final token = provider == 'google'
+          ? await SocialAuthService.signInWithGoogle()
+          : await SocialAuthService.signInWithFacebook();
+      if (token == null || !mounted) return;
+      await context.read<BookProvider>().signInWithProvider(
+        provider: provider,
+        token: token,
+      );
+      if (!mounted) return;
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        Navigator.of(context).pushReplacementNamed(Routes.onboarding);
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _formError = authErrorMessage(error, l10n));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -161,8 +182,7 @@ class _SignUpPageState extends State<SignUpPage> {
     final emailHint = l10n?.t('auth.email_hint') ?? 'Имэйл хаягаа оруулна уу';
     final passwordHint =
         l10n?.t('auth.password_hint') ?? 'Нууц үгээ оруулна уу';
-    final haveAccountText =
-        l10n?.t('auth.have_account') ?? 'Бүртгэлтэй юу?';
+    final haveAccountText = l10n?.t('auth.have_account') ?? 'Бүртгэлтэй юу?';
     final signinText = l10n?.t('auth.signin') ?? 'Нэвтрэх';
 
     return Column(
@@ -226,7 +246,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      'Имэйл хаяг',
+                      l10n?.t('auth.email_tab') ?? 'Имэйл хаяг',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: !_isPhoneMode
@@ -269,7 +289,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      'Утасны дугаар',
+                      l10n?.t('auth.phone_tab') ?? 'Утасны дугаар',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: _isPhoneMode
@@ -333,6 +353,13 @@ class _SignUpPageState extends State<SignUpPage> {
           onSubmitted: (_) => _validateAndSubmit(),
         ),
         const SizedBox(height: 22),
+        if (_formError != null) ...[
+          Text(
+            _formError!,
+            style: TextStyle(color: colorScheme.error, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+        ],
         SubmitButton(
           label: signupText,
           isLoading: _isLoading,

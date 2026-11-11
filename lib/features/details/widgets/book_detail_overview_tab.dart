@@ -55,10 +55,13 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
 
     final allBooks = context.watch<BookProvider>().books;
     final relatedBooks = allBooks
-        .where((b) =>
-            b.id != currentBook.id &&
-            (b.author.toLowerCase() == currentBook.author.toLowerCase() ||
-                b.category.toLowerCase() == currentBook.category.toLowerCase()))
+        .where(
+          (b) =>
+              b.id != currentBook.id &&
+              (b.author.toLowerCase() == currentBook.author.toLowerCase() ||
+                  b.category.toLowerCase() ==
+                      currentBook.category.toLowerCase()),
+        )
         .take(4)
         .toList();
 
@@ -83,8 +86,10 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
                 decoration: BoxDecoration(
                   color: Color(currentBook.colorHex).withValues(alpha: 0.2),
                   shape: BoxShape.circle,
-                  border:
-                      Border.all(color: Color(currentBook.colorHex), width: 2),
+                  border: Border.all(
+                    color: Color(currentBook.colorHex),
+                    width: 2,
+                  ),
                 ),
                 child: Center(
                   child: Text(
@@ -137,7 +142,9 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
           if (relatedBooks.isNotEmpty) ...[
             const SizedBox(height: 14),
             Text(
-              l10n?.t('book.author_other_works', {'author': currentBook.author}) ??
+              l10n?.t('book.author_other_works', {
+                    'author': currentBook.author,
+                  }) ??
                   '${currentBook.author} зохиогчийн бусад бүтээл:',
               style: TextStyle(
                 fontSize: 12,
@@ -152,14 +159,15 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
               children: relatedBooks.map((b) {
                 return AnimatedPressable(
                   onTap: () {
-                    Navigator.of(context).pushNamed(
-                      Routes.bookDetail,
-                      arguments: b,
-                    );
+                    Navigator.of(
+                      context,
+                    ).pushNamed(Routes.bookDetail, arguments: b);
                   },
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -176,12 +184,16 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
                           color: colorScheme.primary,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          b.title,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.primary,
+                        Flexible(
+                          child: Text(
+                            b.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onPrimaryContainer,
+                            ),
                           ),
                         ),
                       ],
@@ -267,8 +279,8 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -278,22 +290,27 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          takeawaysText,
-                          style: TextStyle(
-                            fontFamily: 'Serif',
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
+                        Expanded(
+                          child: Text(
+                            takeawaysText,
+                            style: TextStyle(
+                              fontFamily: 'Serif',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.primary,
+                            ),
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.12),
+                        color: colorScheme.secondaryContainer,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -301,7 +318,7 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
-                          color: colorScheme.primary,
+                          color: colorScheme.onSecondaryContainer,
                         ),
                       ),
                     ),
@@ -317,8 +334,9 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
                       color: colorScheme.surface.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color:
-                            colorScheme.outlineVariant.withValues(alpha: 0.3),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.3,
+                        ),
                       ),
                     ),
                     child: Row(
@@ -348,8 +366,9 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
                             takeaway,
                             style: TextStyle(
                               fontSize: 13,
-                              color:
-                                  colorScheme.onSurface.withValues(alpha: 0.85),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.85,
+                              ),
                               height: 1.45,
                             ),
                           ),

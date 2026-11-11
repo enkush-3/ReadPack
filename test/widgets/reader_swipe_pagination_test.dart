@@ -7,19 +7,21 @@ import 'package:readpack/features/reader/presentation/page/reader_page.dart';
 import 'package:readpack/features/reader/widgets/reader_page_view.dart';
 import 'package:readpack/models/book.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/secure_storage_mock.dart';
+
+late BookProvider _provider;
 
 Widget createTestReader(Book book) {
+  _provider = BookProvider();
   final themeProvider = ThemeProvider();
   themeProvider.setPaginated(true);
 
   return MultiProvider(
     providers: [
       ChangeNotifierProvider.value(value: themeProvider),
-      ChangeNotifierProvider(create: (_) => BookProvider()),
+      ChangeNotifierProvider<BookProvider>.value(value: _provider),
     ],
-    child: MaterialApp(
-      home: ReaderPage(book: book),
-    ),
+    child: MaterialApp(home: ReaderPage(book: book)),
   );
 }
 
@@ -28,6 +30,7 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    mockSecureStorage();
   });
 
   const testLongBook = Book(
@@ -60,22 +63,29 @@ void main() {
   );
 
   group('Reader Swipe Pagination Tests', () {
-    testWidgets('Renders ReaderPageView and PageView when isPaginated is true',
-        (tester) async {
-      await tester.pumpWidget(createTestReader(testLongBook));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Renders ReaderPageView and PageView when isPaginated is true',
+      (tester) async {
+        await tester.pumpWidget(createTestReader(testLongBook));
+        addTearDown(_provider.dispose);
+        await tester.runAsync(() => _provider.initialized);
+        await tester.pumpAndSettle();
 
-      expect(find.byType(ReaderPageView), findsOneWidget);
-      expect(find.byType(PageView), findsOneWidget);
-    });
+        expect(find.byType(ReaderPageView), findsOneWidget);
+        expect(find.byType(PageView), findsOneWidget);
+      },
+    );
 
-    testWidgets('Swiping left and right on PageView navigates pages smoothly',
-        (tester) async {
+    testWidgets('Swiping left and right on PageView navigates pages smoothly', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(600, 1000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
       await tester.pumpWidget(createTestReader(testLongBook));
+      addTearDown(_provider.dispose);
+      await tester.runAsync(() => _provider.initialized);
       await tester.pumpAndSettle();
 
       final pageViewFinder = find.byType(PageView);

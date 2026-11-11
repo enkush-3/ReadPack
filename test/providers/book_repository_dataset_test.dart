@@ -23,13 +23,14 @@ void main() {
       }
     });
 
-    test('books have audio support metadata and duration', () {
+    test('books without audio URLs are not marked as audiobooks', () {
       final books = BookRepository.getInitialBooks();
       final audioBooks = books.where((b) => b.hasAudio).toList();
 
-      expect(audioBooks.isNotEmpty, isTrue);
-      for (final book in audioBooks) {
-        expect(book.audioDurationMinutes, greaterThan(0));
+      expect(audioBooks, isEmpty);
+      for (final book in books) {
+        expect(book.hasAudio, isFalse);
+        expect(book.audioDurationMinutes, 0);
       }
     });
 

@@ -39,7 +39,7 @@ class FeaturedBookCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
     final readText = l10n?.t('book.read') ?? 'Унших';
-    final hasAudio = book?.hasAudio ?? true;
+    final hasAudio = book?.hasAudio ?? false;
 
     return AnimatedPressable(
       onTap: onTap,

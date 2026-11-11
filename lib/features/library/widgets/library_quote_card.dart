@@ -6,17 +6,12 @@ import 'package:readpack/features/quotes/presentation/phone_widget_sheet.dart';
 import 'package:readpack/features/shared/widgets/quote_share_modal.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/bookmark.dart';
-import 'package:readpack/shared/widgets/animated_pressable.dart';
 
 class LibraryQuoteCard extends StatelessWidget {
   final Bookmark bm;
   final BookProvider provider;
 
-  const LibraryQuoteCard({
-    super.key,
-    required this.bm,
-    required this.provider,
-  });
+  const LibraryQuoteCard({super.key, required this.bm, required this.provider});
 
   @override
   Widget build(BuildContext context) {
@@ -27,23 +22,20 @@ class LibraryQuoteCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(18),
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.28),
           width: 1,
         ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 5,
-                color: accentColor,
-              ),
+              Container(width: 5, color: accentColor),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -70,7 +62,7 @@ class LibraryQuoteCard extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: colorScheme.primary,
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ),
@@ -80,41 +72,47 @@ class LibraryQuoteCard extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              GestureDetector(
-                                onTap: () {
+                              IconButton(
+                                tooltip: bm.isLiked
+                                    ? (l10n?.t('library.quote_unliked') ??
+                                          'Remove from liked quotes')
+                                    : (l10n?.t('library.quote_liked') ??
+                                          'Like quote'),
+                                onPressed: () {
                                   provider.toggleLikeBookmark(bm.id);
-                                  ScaffoldMessenger.of(context)
-                                      .hideCurrentSnackBar();
+                                  ScaffoldMessenger.of(
+                                    context,
+                                  ).hideCurrentSnackBar();
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(
                                         !bm.isLiked
                                             ? (l10n?.t('library.quote_liked') ??
-                                                'Таалагдсан ишлэлд нэмэгдлээ ❤️')
+                                                  'Таалагдсан ишлэлд нэмэгдлээ ❤️')
                                             : (l10n?.t(
-                                                    'library.quote_unliked') ??
-                                                'Таалагдсан ишлэлээс хасагдлаа'),
+                                                    'library.quote_unliked',
+                                                  ) ??
+                                                  'Таалагдсан ишлэлээс хасагдлаа'),
                                       ),
                                       duration: const Duration(seconds: 1),
                                     ),
                                   );
                                 },
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 12),
-                                  child: Icon(
-                                    bm.isLiked
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    size: 20,
-                                    color: bm.isLiked
-                                        ? Colors.redAccent
-                                        : colorScheme.onSurface
-                                            .withValues(alpha: 0.45),
-                                  ),
+                                icon: Icon(
+                                  bm.isLiked
+                                      ? Icons.favorite_rounded
+                                      : Icons.favorite_border_rounded,
+                                ),
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(48, 48),
+                                  foregroundColor: bm.isLiked
+                                      ? colorScheme.error
+                                      : colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                              GestureDetector(
-                                onTap: () {
+                              IconButton(
+                                tooltip: l10n?.t('common.delete') ?? 'Устгах',
+                                onPressed: () {
                                   provider.removeBookmark(bm.id);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -126,11 +124,10 @@ class LibraryQuoteCard extends StatelessWidget {
                                     ),
                                   );
                                 },
-                                child: Icon(
-                                  Icons.delete_outline_rounded,
-                                  size: 18,
-                                  color: colorScheme.onSurface
-                                      .withValues(alpha: 0.45),
+                                icon: const Icon(Icons.delete_outline_rounded),
+                                style: IconButton.styleFrom(
+                                  minimumSize: const Size(48, 48),
+                                  foregroundColor: colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ],
@@ -153,7 +150,9 @@ class LibraryQuoteCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: colorScheme.surface.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(8),
@@ -163,8 +162,9 @@ class LibraryQuoteCard extends StatelessWidget {
                               Icon(
                                 Icons.notes_rounded,
                                 size: 13,
-                                color: colorScheme.onSurface
-                                    .withValues(alpha: 0.55),
+                                color: colorScheme.onSurface.withValues(
+                                  alpha: 0.55,
+                                ),
                               ),
                               const SizedBox(width: 6),
                               Expanded(
@@ -172,8 +172,9 @@ class LibraryQuoteCard extends StatelessWidget {
                                   bm.note,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: colorScheme.onSurface
-                                        .withValues(alpha: 0.7),
+                                    color: colorScheme.onSurface.withValues(
+                                      alpha: 0.7,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -188,8 +189,8 @@ class LibraryQuoteCard extends StatelessWidget {
                         alignment: WrapAlignment.end,
                         children: [
                           // Story Card Share Button
-                          AnimatedPressable(
-                            onTap: () {
+                          FilledButton.tonalIcon(
+                            onPressed: () {
                               final matchingBook = provider.books
                                   .where((b) => b.id == bm.bookId)
                                   .firstOrNull;
@@ -200,64 +201,39 @@ class LibraryQuoteCard extends StatelessWidget {
                                 author: matchingBook?.author ?? bm.chapterTitle,
                               );
                             },
-                            child: Container(
+                            icon: const Icon(Icons.auto_awesome_rounded),
+                            label: Text(
+                              l10n?.t('library.share_story_btn') ??
+                                  'Story карт',
+                              maxLines: 1,
+                            ),
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(48, 48),
+                              foregroundColor: colorScheme.onSecondaryContainer,
+                              backgroundColor: colorScheme.secondaryContainer,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF8A2387),
-                                    Color(0xFFE94057)
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.auto_awesome,
-                                    size: 12,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    l10n?.t('library.share_story_btn') ??
-                                        'Story карт',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
+                                horizontal: 12,
                               ),
                             ),
                           ),
-                          AnimatedPressable(
-                            onTap: () {
+                          IconButton.filledTonal(
+                            tooltip: l10n?.t('widget.title') ?? 'Утасны виджет',
+                            onPressed: () {
                               PhoneWidgetSheet.show(
                                 context,
                                 initialBookmark: bm,
                               );
                             },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 6),
-                              decoration: BoxDecoration(
-                                color:
-                                    colorScheme.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.widgets_rounded,
-                                size: 14,
-                                color: colorScheme.primary,
-                              ),
+                            icon: const Icon(Icons.widgets_rounded),
+                            style: IconButton.styleFrom(
+                              minimumSize: const Size(48, 48),
+                              foregroundColor: colorScheme.onSecondaryContainer,
+                              backgroundColor: colorScheme.secondaryContainer,
                             ),
                           ),
-                          AnimatedPressable(
-                            onTap: () {
+                          IconButton.filledTonal(
+                            tooltip: l10n?.t('library.copy') ?? 'Хуулах',
+                            onPressed: () {
                               Clipboard.setData(ClipboardData(text: bm.quote));
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
@@ -269,60 +245,35 @@ class LibraryQuoteCard extends StatelessWidget {
                                 ),
                               );
                             },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 6),
-                              decoration: BoxDecoration(
-                                color:
-                                    colorScheme.primary.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.copy_rounded,
-                                size: 14,
-                                color: colorScheme.primary,
-                              ),
+                            icon: const Icon(Icons.copy_rounded),
+                            style: IconButton.styleFrom(
+                              minimumSize: const Size(48, 48),
+                              foregroundColor: colorScheme.onSecondaryContainer,
+                              backgroundColor: colorScheme.secondaryContainer,
                             ),
                           ),
                           if (bm.bookId != 'daily_quote_source' &&
                               provider.books.isNotEmpty)
-                            AnimatedPressable(
-                              onTap: () {
+                            TextButton.icon(
+                              onPressed: () {
                                 final book = provider.books.firstWhere(
                                   (b) => b.id == bm.bookId,
                                   orElse: () => provider.books.first,
                                 );
-                                Navigator.of(context).pushNamed(
-                                  Routes.bookDetail,
-                                  arguments: book,
-                                );
+                                Navigator.of(
+                                  context,
+                                ).pushNamed(Routes.bookDetail, arguments: book);
                               },
-                              child: Container(
+                              icon: const Icon(Icons.menu_book_rounded),
+                              label: Text(
+                                l10n?.t('library.view_book') ?? 'Ном үзэх',
+                                maxLines: 1,
+                              ),
+                              style: TextButton.styleFrom(
+                                minimumSize: const Size(48, 48),
+                                foregroundColor: colorScheme.primary,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      l10n?.t('library.view_book') ??
-                                          'Ном үзэх',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Icon(
-                                      Icons.arrow_forward_ios_rounded,
-                                      size: 10,
-                                      color: colorScheme.onPrimary,
-                                    ),
-                                  ],
+                                  horizontal: 12,
                                 ),
                               ),
                             ),

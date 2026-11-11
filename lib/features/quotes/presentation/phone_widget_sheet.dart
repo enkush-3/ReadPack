@@ -10,10 +10,7 @@ import 'package:readpack/shared/widgets/animated_pressable.dart';
 class PhoneWidgetSheet extends StatefulWidget {
   final Bookmark? initialBookmark;
 
-  const PhoneWidgetSheet({
-    super.key,
-    this.initialBookmark,
-  });
+  const PhoneWidgetSheet({super.key, this.initialBookmark});
 
   static void show(BuildContext context, {Bookmark? initialBookmark}) {
     showModalBottomSheet(
@@ -30,8 +27,9 @@ class PhoneWidgetSheet extends StatefulWidget {
 }
 
 class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
-  static const MethodChannel _widgetChannel =
-      MethodChannel('com.example.readpact/widget');
+  static const MethodChannel _widgetChannel = MethodChannel(
+    'com.example.readpact/widget',
+  );
 
   // 0: Quote of the Day, 1: Saved Quotes, 2: Specific Chosen Quote
   int _selectedSource = 0;
@@ -64,8 +62,9 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
       final savedBmId = prefs.getString('widget_quote_bookmark_id');
       if (widget.initialBookmark == null && savedBmId != null) {
         final provider = context.read<BookProvider>();
-        final found =
-            provider.bookmarks.where((b) => b.id == savedBmId).firstOrNull;
+        final found = provider.bookmarks
+            .where((b) => b.id == savedBmId)
+            .firstOrNull;
         if (found != null) {
           _selectedCustomBookmark = found;
         }
@@ -77,6 +76,8 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
     required String quoteText,
     required String quoteAuthor,
     required String quoteBook,
+    required String languageCode,
+    required ColorScheme widgetColorScheme,
   }) async {
     final l10n = AppLocalizations.of(context);
     final prefs = await SharedPreferences.getInstance();
@@ -87,6 +88,39 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
     await prefs.setInt('widget_quote_mode', _selectedSource);
     await prefs.setInt('widget_quote_size', _selectedSize);
     await prefs.setString('widget_quote_theme_mode', _selectedThemeMode);
+    await prefs.setString('widget_quote_language', languageCode);
+    await prefs.setInt(
+      'widget_quote_color_primary',
+      widgetColorScheme.primary.toARGB32(),
+    );
+    await prefs.setInt(
+      'widget_quote_color_onPrimary',
+      widgetColorScheme.onPrimary.toARGB32(),
+    );
+    await prefs.setInt(
+      'widget_quote_color_surface',
+      widgetColorScheme.surface.toARGB32(),
+    );
+    await prefs.setInt(
+      'widget_quote_color_onSurface',
+      widgetColorScheme.onSurface.toARGB32(),
+    );
+    await prefs.setInt(
+      'widget_quote_color_surfaceContainer',
+      widgetColorScheme.surfaceContainer.toARGB32(),
+    );
+    await prefs.setInt(
+      'widget_quote_color_outlineVariant',
+      widgetColorScheme.outlineVariant.toARGB32(),
+    );
+    await prefs.setInt(
+      'widget_quote_color_secondary',
+      widgetColorScheme.secondary.toARGB32(),
+    );
+    await prefs.setInt(
+      'widget_quote_color_onSecondary',
+      widgetColorScheme.onSecondary.toARGB32(),
+    );
     await prefs.setString('widget_quote_source', sourceStr);
     await prefs.setString('widget_quote_text', quoteText);
     await prefs.setString('widget_quote_author', quoteAuthor);
@@ -100,7 +134,9 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
 
     if (_selectedCustomBookmark != null) {
       await prefs.setString(
-          'widget_quote_bookmark_id', _selectedCustomBookmark!.id);
+        'widget_quote_bookmark_id',
+        _selectedCustomBookmark!.id,
+      );
     }
 
     try {
@@ -129,8 +165,28 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
     final colorScheme = Theme.of(context).colorScheme;
     final bookProvider = context.watch<BookProvider>();
     final l10n = AppLocalizations.of(context);
+    final systemIsDark =
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final selectedBrightness =
+        _selectedThemeMode == 'dark' ||
+            (_selectedThemeMode == 'system' && systemIsDark)
+        ? Brightness.dark
+        : Brightness.light;
+    final previewColorScheme = ColorScheme.fromSeed(
+      seedColor: colorScheme.primary,
+      brightness: selectedBrightness,
+    );
+    final lightPreviewScheme = ColorScheme.fromSeed(
+      seedColor: colorScheme.primary,
+      brightness: Brightness.light,
+    );
+    final darkPreviewScheme = ColorScheme.fromSeed(
+      seedColor: colorScheme.primary,
+      brightness: Brightness.dark,
+    );
 
-    final dailyQuote = l10n?.t('home.daily_quote') ??
+    final dailyQuote =
+        l10n?.t('home.daily_quote') ??
         'Ном уншдаг хүн үхэхээсээ өмнө мянган амьдралаар амьдардаг.';
     final dailyAuthor =
         l10n?.t('home.daily_quote_author') ?? 'Жорж Р.Р. Мартин';
@@ -144,27 +200,33 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
         final bm = _selectedCustomBookmark ?? bookProvider.bookmarks.first;
         previewQuote = bm.quote;
         previewBook = bm.bookTitle.isNotEmpty ? bm.bookTitle : 'ReadPack';
-        final matchingBook =
-            bookProvider.books.where((b) => b.id == bm.bookId).firstOrNull;
-        previewAuthor = matchingBook?.author ??
+        final matchingBook = bookProvider.books
+            .where((b) => b.id == bm.bookId)
+            .firstOrNull;
+        previewAuthor =
+            matchingBook?.author ??
             (bm.chapterTitle.isNotEmpty ? bm.chapterTitle : previewBook);
       } else {
-        previewQuote = l10n?.t('widget.no_saved_quotes') ??
+        previewQuote =
+            l10n?.t('widget.no_saved_quotes') ??
             'Та одоогоор өөрийн ишлэл хадгалаагүй байна.';
         previewAuthor = 'ReadPack';
         previewBook = '';
       }
     } else if (_selectedSource == 2) {
-      final bm = _selectedCustomBookmark ??
+      final bm =
+          _selectedCustomBookmark ??
           (bookProvider.bookmarks.isNotEmpty
               ? bookProvider.bookmarks.first
               : null);
       if (bm != null) {
         previewQuote = bm.quote;
         previewBook = bm.bookTitle.isNotEmpty ? bm.bookTitle : 'ReadPack';
-        final matchingBook =
-            bookProvider.books.where((b) => b.id == bm.bookId).firstOrNull;
-        previewAuthor = matchingBook?.author ??
+        final matchingBook = bookProvider.books
+            .where((b) => b.id == bm.bookId)
+            .firstOrNull;
+        previewAuthor =
+            matchingBook?.author ??
             (bm.chapterTitle.isNotEmpty ? bm.chapterTitle : previewBook);
       }
     }
@@ -215,13 +277,17 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  l10n?.t('widget.title') ?? 'Утасны виджет',
-                  style: TextStyle(
-                    fontFamily: 'Serif',
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
+                Expanded(
+                  child: Text(
+                    l10n?.t('widget.title') ?? 'Утасны виджет',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Serif',
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ],
@@ -251,7 +317,7 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                     quote: previewQuote,
                     author: previewAuthor,
                     book: previewBook,
-                    colorScheme: colorScheme,
+                    colorScheme: previewColorScheme,
                     l10n: l10n,
                   ),
 
@@ -299,20 +365,23 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.35),
+                        color: colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.35,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: colorScheme.outlineVariant
-                              .withValues(alpha: 0.35),
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.35,
+                          ),
                         ),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           isExpanded: true,
-                          value: (_selectedCustomBookmark ??
-                                  bookProvider.bookmarks.first)
-                              .id,
+                          value:
+                              (_selectedCustomBookmark ??
+                                      bookProvider.bookmarks.first)
+                                  .id,
                           items: bookProvider.bookmarks.map((bm) {
                             return DropdownMenuItem<String>(
                               value: bm.id,
@@ -369,8 +438,8 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                         mode: 'light',
                         label: l10n?.t('settings.theme_light') ?? 'Цайвар',
                         icon: Icons.light_mode_rounded,
-                        bgColor: const Color(0xFFFAF7F2),
-                        textColor: const Color(0xFF1E293B),
+                        bgColor: lightPreviewScheme.surfaceContainer,
+                        textColor: lightPreviewScheme.onSurface,
                         colorScheme: colorScheme,
                       ),
                       const SizedBox(width: 8),
@@ -378,8 +447,8 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                         mode: 'dark',
                         label: l10n?.t('settings.theme_dark') ?? 'Харанхуй',
                         icon: Icons.dark_mode_rounded,
-                        bgColor: const Color(0xFF0F172A),
-                        textColor: const Color(0xFFF8FAFC),
+                        bgColor: darkPreviewScheme.surfaceContainer,
+                        textColor: darkPreviewScheme.onSurface,
                         colorScheme: colorScheme,
                       ),
                     ],
@@ -396,23 +465,34 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                       color: colorScheme.onSurface,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n?.t('widget.preview_size_note') ??
+                        'Энэ нь зөвхөн урьдчилсан дүрслэлийн хэмжээг өөрчилнө. Нүүр дэлгэцийн бодит хэмжээг launcher тохируулна.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   const SizedBox(height: 10),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       _buildSizeOption(
-                          0,
-                          l10n?.t('widget.size_small') ?? 'Жижиг (2x2)',
-                          colorScheme),
-                      const SizedBox(width: 8),
+                        0,
+                        l10n?.t('widget.size_small') ?? 'Жижиг (2x2)',
+                        colorScheme,
+                      ),
                       _buildSizeOption(
-                          1,
-                          l10n?.t('widget.size_medium') ?? 'Дунд (4x2)',
-                          colorScheme),
-                      const SizedBox(width: 8),
+                        1,
+                        l10n?.t('widget.size_medium') ?? 'Дунд (4x2)',
+                        colorScheme,
+                      ),
                       _buildSizeOption(
-                          2,
-                          l10n?.t('widget.size_large') ?? 'Том (4x4)',
-                          colorScheme),
+                        2,
+                        l10n?.t('widget.size_large') ?? 'Том (4x4)',
+                        colorScheme,
+                      ),
                     ],
                   ),
 
@@ -434,13 +514,17 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                         quoteText: previewQuote,
                         quoteAuthor: previewAuthor,
                         quoteBook: previewBook,
+                        languageCode: l10n?.locale.languageCode ?? 'mn',
+                        widgetColorScheme: previewColorScheme,
                       ),
                       icon: const Icon(Icons.check_circle_rounded),
                       label: Text(
                         l10n?.t('widget.apply_button') ??
                             'Утасны виджетэд тохируулах',
                         style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
@@ -461,309 +545,112 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
     required ColorScheme colorScheme,
     required AppLocalizations? l10n,
   }) {
-    final systemIsDark =
-        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
-    final useDark = _selectedThemeMode == 'dark'
-        ? true
-        : (_selectedThemeMode == 'light' ? false : systemIsDark);
-
-    final Color widgetBg =
-        useDark ? const Color(0xFF0F172A) : const Color(0xFFFAF7F2);
-    final Color widgetBorder =
-        useDark ? const Color(0xFF334155) : const Color(0xFFE2D9C8);
-    final Color widgetText =
-        useDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B);
-    final Color widgetSubText =
-        useDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
-    final Color widgetAccent =
-        useDark ? const Color(0xFFFBBF24) : const Color(0xFF9A6B26);
-
     final badgeText = _selectedSource == 0
         ? (l10n?.t('widget.badge_daily') ?? 'өдрийн эшлэл')
         : (l10n?.t('widget.badge_saved') ?? 'хадгалсан эшлэл');
-
     final footerText = (book.isNotEmpty && book != author)
         ? '— $author · $book'
         : '— $author · ReadPack';
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [
-            Color(0xFFB0D5FC),
-            Color(0xFFD8EAFF),
-            Color(0xFFEBF4FE),
+            colorScheme.surfaceContainerLow,
+            colorScheme.surfaceContainer,
+            colorScheme.surface,
           ],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF90C2F9),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Realistic Android Status Bar (matching real phone screenshot)
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '20:20',
-                style: TextStyle(
-                  color: Color(0xFF334155),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Row(
-                children: [
-                  Icon(
-                    Icons.signal_cellular_alt_rounded,
-                    size: 13,
-                    color: Color(0xFF334155),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.wifi,
-                    size: 13,
-                    color: Color(0xFF334155),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.battery_5_bar_rounded,
-                    size: 14,
-                    color: Color(0xFF334155),
-                  ),
-                  SizedBox(width: 2),
-                  Text(
-                    '58%',
-                    style: TextStyle(
-                      color: Color(0xFF334155),
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // The Authentic ReadPack Widget (100% faithful to Android Widget)
           Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               width: _selectedSize == 0 ? 220 : double.infinity,
               constraints: BoxConstraints(
-                minHeight: _selectedSize == 2 ? 190 : (_selectedSize == 0 ? 130 : 110),
+                minHeight: _selectedSize == 2
+                    ? 190
+                    : (_selectedSize == 0 ? 130 : 110),
               ),
-              padding: EdgeInsets.symmetric(
-                horizontal: _selectedSize == 2 ? 18 : 16,
-                vertical: _selectedSize == 2 ? 16 : 14,
-              ),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: widgetBg,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: widgetBorder, width: 1.2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.28),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Widget Header: Category Badge + ReadPack logo text
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.menu_book_rounded,
-                            size: 13,
-                            color: widgetAccent,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            badgeText.toLowerCase(),
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.bold,
-                              color: widgetAccent,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ],
+                      Icon(
+                        Icons.menu_book_rounded,
+                        size: 16,
+                        color: colorScheme.primary,
                       ),
-                      Text(
-                        'ReadPack',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                          color: widgetSubText.withValues(alpha: 0.75),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          badgeText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-
-                  // Widget Body: Quote Text
+                  const SizedBox(height: 12),
                   Text(
                     '“$quote”',
-                    maxLines: _selectedSize == 2 ? 6 : (_selectedSize == 0 ? 3 : 4),
+                    maxLines: _selectedSize == 2
+                        ? 6
+                        : (_selectedSize == 0 ? 3 : 4),
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: 'Serif',
-                      fontSize: _selectedSize == 2
-                          ? 16.5
-                          : (_selectedSize == 0 ? 13.5 : 14.5),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontStyle: FontStyle.italic,
-                      color: widgetText,
-                      height: 1.42,
+                      height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 10),
-
-                  // Widget Footer: Author & Source
+                  const SizedBox(height: 12),
                   Text(
                     footerText,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: _selectedSize == 2 ? 12.0 : 11.0,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
-                      color: widgetSubText,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // Realistic Android Google Search Pill Bar
-          Container(
-            height: 38,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.75),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFF4285F4),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'G',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                const Icon(
-                  Icons.mic_rounded,
-                  size: 18,
-                  color: Color(0xFF64748B),
-                ),
-                const SizedBox(width: 12),
-                const Icon(
-                  Icons.camera_alt_outlined,
-                  size: 18,
-                  color: Color(0xFF64748B),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Android Launcher App Icons Dock (Phone, Message, Browser, Camera)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildPhoneDockIcon(
-                icon: Icons.phone_rounded,
-                color: const Color(0xFF22C55E),
-              ),
-              _buildPhoneDockIcon(
-                icon: Icons.chat_bubble_rounded,
-                color: const Color(0xFF3B82F6),
-              ),
-              _buildPhoneDockIcon(
-                icon: Icons.explore_rounded,
-                color: const Color(0xFFEF4444),
-              ),
-              _buildPhoneDockIcon(
-                icon: Icons.camera_rounded,
-                color: const Color(0xFF64748B),
-              ),
-            ],
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPhoneDockIcon({
-    required IconData icon,
-    required Color color,
-  }) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Icon(icon, color: color, size: 20),
     );
   }
 
   Widget _buildSourceChip(
-      int index, String label, IconData icon, ColorScheme colorScheme) {
-    final isSel = (_selectedSource == index) ||
-        (index == 1 && _selectedSource == 2);
+    int index,
+    String label,
+    IconData icon,
+    ColorScheme colorScheme,
+  ) {
+    final isSel =
+        (_selectedSource == index) || (index == 1 && _selectedSource == 2);
     return Expanded(
       child: AnimatedPressable(
         onTap: () => setState(() => _selectedSource = index),
@@ -792,8 +679,9 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                    color:
-                        isSel ? colorScheme.onPrimary : colorScheme.onSurface,
+                    color: isSel
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -806,29 +694,19 @@ class _PhoneWidgetSheetState extends State<PhoneWidgetSheet> {
 
   Widget _buildSizeOption(int size, String label, ColorScheme colorScheme) {
     final isSel = _selectedSize == size;
-    return Expanded(
-      child: AnimatedPressable(
-        onTap: () => setState(() => _selectedSize = size),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            color: isSel
-                ? colorScheme.primary
-                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                color: isSel ? colorScheme.onPrimary : colorScheme.onSurface,
-              ),
-            ),
-          ),
-        ),
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSel,
+      showCheckmark: false,
+      selectedColor: colorScheme.secondaryContainer,
+      labelStyle: TextStyle(
+        color: isSel
+            ? colorScheme.onSecondaryContainer
+            : colorScheme.onSurfaceVariant,
+        fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
       ),
+      side: BorderSide(color: colorScheme.outlineVariant),
+      onSelected: (_) => setState(() => _selectedSize = size),
     );
   }
 

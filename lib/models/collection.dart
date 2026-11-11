@@ -47,7 +47,8 @@ class BookCollection {
     name: json['name'] as String,
     description: json['description'] as String? ?? '',
     icon: json['icon'] as String? ?? 'bookmark',
-    bookIds: (json['bookIds'] as List<dynamic>?)
+    bookIds:
+        (json['bookIds'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         [],

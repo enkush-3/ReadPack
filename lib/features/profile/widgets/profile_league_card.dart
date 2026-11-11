@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:readpack/core/providers/book_provider.dart';
-import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/skeleton_loader.dart';
 
 class ProfileLeagueCard extends StatelessWidget {
   final BookProvider bookProvider;
 
-  const ProfileLeagueCard({
-    super.key,
-    required this.bookProvider,
-  });
+  const ProfileLeagueCard({super.key, required this.bookProvider});
 
   int _daysRemainingInMonth() {
     final now = DateTime.now();
@@ -24,16 +21,15 @@ class ProfileLeagueCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
     final profile = bookProvider.userProfile;
-    final leagueName = profile.weeklyLeague.isNotEmpty
-        ? profile.weeklyLeague
-        : (l10n?.t('profile.diamond_league') ?? 'Алмазан Лиг');
+    final leaderboardTitle =
+        l10n?.t('leaderboard.monthly_title') ?? 'Сарын Лидерборд';
     final daysLeft = _daysRemainingInMonth();
-    final daysRemainingLabel = (l10n?.t('gamification.days_remaining_month') ??
-            '$daysLeft өдөр үлдсэн')
-        .replaceAll('{days}', '$daysLeft');
+    final daysRemainingLabel =
+        (l10n?.t('gamification.days_remaining_month') ??
+                '$daysLeft өдөр үлдсэн')
+            .replaceAll('{days}', '$daysLeft');
 
-    final competitors =
-        BookGamificationManager.getLeaderboardEntries(profile).take(5).toList();
+    final competitors = bookProvider.leaderboardEntries.take(5).toList();
 
     return InkWell(
       borderRadius: BorderRadius.circular(20),
@@ -62,7 +58,7 @@ class ProfileLeagueCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '$leagueName • ${l10n?.t('leaderboard.monthly_title') ?? 'Сарын Лидерборд'}',
+                          leaderboardTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -109,6 +105,55 @@ class ProfileLeagueCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
+            if (bookProvider.isLeaderboardLoading && competitors.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Column(
+                  children: [
+                    SkeletonLoader(width: double.infinity, height: 18),
+                    SizedBox(height: 10),
+                    SkeletonLoader(width: double.infinity, height: 18),
+                    SizedBox(height: 10),
+                    SkeletonLoader(width: double.infinity, height: 18),
+                  ],
+                ),
+              )
+            else if (bookProvider.leaderboardError != null &&
+                competitors.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n?.t('leaderboard.load_error') ??
+                            'Лидерборд ачаалж чадсангүй.',
+                        style: TextStyle(
+                          color: colorScheme.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          bookProvider.refreshLeaderboard(period: 'monthly'),
+                      child: Text(l10n?.t('common.retry') ?? 'Дахин оролдох'),
+                    ),
+                  ],
+                ),
+              )
+            else if (competitors.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  l10n?.t('leaderboard.empty_title') ??
+                      'Одоогоор байр эзэлсэн уншигч алга',
+                  style: TextStyle(
+                    color: colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
             ...competitors.map((c) {
               final isUser = c.isUser;
               final displayName = isUser && profile.isGuest
@@ -116,8 +161,10 @@ class ProfileLeagueCard extends StatelessWidget {
                   : c.name;
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: isUser
                       ? colorScheme.primary.withValues(alpha: 0.12)
@@ -150,8 +197,9 @@ class ProfileLeagueCard extends StatelessWidget {
                         '$displayName${isUser ? ' (${l10n?.t('profile.you') ?? 'Та'})' : ''}',
                         style: TextStyle(
                           fontSize: 13,
-                          fontWeight:
-                              isUser ? FontWeight.bold : FontWeight.w500,
+                          fontWeight: isUser
+                              ? FontWeight.bold
+                              : FontWeight.w500,
                           color: isUser
                               ? colorScheme.primary
                               : colorScheme.onSurface,
@@ -172,18 +220,6 @@ class ProfileLeagueCard extends StatelessWidget {
                 ),
               );
             }),
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                l10n?.t('profile.diamond_promotion') ??
-                    '💎 Сарын эхний 3 байр Алмазан Лиг рүү дэвшинэ',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.teal,
-                ),
-              ),
-            ),
           ],
         ),
       ),

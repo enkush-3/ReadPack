@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/features/auth/auth_error_message.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/submitbutton.dart';
@@ -11,10 +12,7 @@ import 'package:readpack/shared/widgets/submitbutton.dart';
 class VerificationPage extends StatefulWidget {
   final Map<String, dynamic>? arguments;
 
-  const VerificationPage({
-    super.key,
-    this.arguments,
-  });
+  const VerificationPage({super.key, this.arguments});
 
   @override
   State<VerificationPage> createState() => _VerificationPageState();
@@ -32,11 +30,13 @@ class _VerificationPageState extends State<VerificationPage> {
   bool _isLoading = false;
   String? _errorMessage;
   bool _showNewPasswordFields = false;
+  String? _challengeId;
 
   String get _purpose => widget.arguments?['purpose'] as String? ?? 'signup';
   String get _target => widget.arguments?['target'] as String? ?? '';
-  String get _name => widget.arguments?['name'] as String? ?? '';
   bool get _isPhone => widget.arguments?['isPhone'] as bool? ?? false;
+  String get _resolvedChallengeId =>
+      _challengeId ?? (widget.arguments?['challengeId'] as String? ?? '');
 
   @override
   void initState() {
@@ -69,26 +69,54 @@ class _VerificationPageState extends State<VerificationPage> {
     });
   }
 
-  void _resendCode() {
+  Future<void> _resendCode() async {
     if (_secondsRemaining > 0) return;
-    _startTimer();
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _isPhone
-              ? 'Таны $_target дугаарт шинэ код илгээгдлээ: 123456'
-              : 'Таны $_target хаяг руу шинэ код илгээгдлээ: 123456',
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      if (_resolvedChallengeId.isEmpty) {
+        throw StateError('Баталгаажуулах хүсэлт олдсонгүй. Дахин эхлүүлнэ үү.');
+      }
+      final challenge = await context
+          .read<BookProvider>()
+          .resendVerificationCode(_resolvedChallengeId);
+      if (!mounted) return;
+      _challengeId = challenge.id;
+      _startTimer();
+      HapticFeedback.lightImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)?.t('auth.code_sent') ??
+                'Шинэ баталгаажуулах код илгээгдлээ.',
+          ),
         ),
-        duration: const Duration(seconds: 3),
-      ),
-    );
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _errorMessage = authErrorMessage(
+            error,
+            AppLocalizations.of(context),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _verifyOtp() async {
+    if (_isLoading) return;
     final code = _otpController.text.trim();
     if (code.length < 6) {
-      setState(() => _errorMessage = '6 оронтой кодыг бүрэн оруулна уу');
+      setState(
+        () => _errorMessage =
+            AppLocalizations.of(context)?.t('auth.otp_length_error') ??
+            '6 оронтой кодыг бүрэн оруулна уу',
+      );
       return;
     }
 
@@ -96,40 +124,37 @@ class _VerificationPageState extends State<VerificationPage> {
       _errorMessage = null;
       _isLoading = true;
     });
-
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (!mounted) return;
-
     if (_purpose == 'signup') {
-      final bookProvider = context.read<BookProvider>();
-      final emailVal = _isPhone ? '$_target@readpack.app' : _target;
-      final phoneVal = _isPhone ? _target : '';
-      final usernameVal =
-          '@${_name.toLowerCase().replaceAll(RegExp(r'\s+'), '_')}';
-
-      // Register fresh account with all 0 stats
-      bookProvider.registerNewUser(
-        email: emailVal,
-        name: _name.isNotEmpty ? _name : 'Шинэ Уншигч',
-        phoneNumber: phoneVal,
-        username: usernameVal,
-      );
-
-      setState(() => _isLoading = false);
-      HapticFeedback.mediumImpact();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Бүртгэл амжилттай баталгаажлаа! Тавтай морил.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        Routes.onboarding,
-        (route) => false,
-      );
+      if (_resolvedChallengeId.isEmpty) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage =
+              'Баталгаажуулах хүсэлт олдсонгүй. Бүртгэлээ дахин эхлүүлнэ үү.';
+        });
+        return;
+      }
+      try {
+        await context.read<BookProvider>().verifySignUp(
+          challengeId: _resolvedChallengeId,
+          code: code,
+        );
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        HapticFeedback.mediumImpact();
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(Routes.onboarding, (route) => false);
+      } catch (error) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = authErrorMessage(
+              error,
+              AppLocalizations.of(context),
+            );
+          });
+        }
+      }
     } else {
       // Forgot password flow
       setState(() {
@@ -144,13 +169,20 @@ class _VerificationPageState extends State<VerificationPage> {
     final newPass = _newPasswordController.text;
     final confirmPass = _confirmNewPasswordController.text;
 
-    if (newPass.length < 6) {
+    if (newPass.length < 8) {
       setState(
-          () => _errorMessage = 'Шинэ нууц үг хамгийн багадаа 6 тэмдэгт байна');
+        () => _errorMessage =
+            AppLocalizations.of(context)?.t('validation.password_too_short') ??
+            'Нууц үг хамгийн багадаа 8 тэмдэгт байна',
+      );
       return;
     }
     if (newPass != confirmPass) {
-      setState(() => _errorMessage = 'Шинэ нууц үг хоорондоо таарахгүй байна');
+      setState(
+        () => _errorMessage =
+            AppLocalizations.of(context)?.t('auth.password_mismatch') ??
+            'Шинэ нууц үг хоорондоо таарахгүй байна',
+      );
       return;
     }
 
@@ -159,20 +191,43 @@ class _VerificationPageState extends State<VerificationPage> {
       _isLoading = true;
     });
 
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    HapticFeedback.mediumImpact();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Нууц үг амжилттай шинэчлэгдлээ. Шинээр нэвтэрнэ үү.'),
-        duration: Duration(seconds: 3),
-      ),
-    );
-
-    Navigator.of(context).pushReplacementNamed(Routes.auth);
+    if (_resolvedChallengeId.isEmpty ||
+        _otpController.text.trim().length != 6) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Баталгаажуулах кодоо дахин шалгана уу.';
+      });
+      return;
+    }
+    try {
+      await context.read<BookProvider>().resetPassword(
+        challengeId: _resolvedChallengeId,
+        code: _otpController.text.trim(),
+        newPassword: newPass,
+      );
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)?.t('auth.password_reset_success') ??
+                'Нууц үг шинэчлэгдлээ. Шинээр нэвтэрнэ үү.',
+          ),
+        ),
+      );
+      Navigator.of(context).pushReplacementNamed(Routes.auth);
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _errorMessage = authErrorMessage(
+            error,
+            AppLocalizations.of(context),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -213,8 +268,8 @@ class _VerificationPageState extends State<VerificationPage> {
                       _showNewPasswordFields
                           ? Icons.lock_reset_rounded
                           : (_isPhone
-                              ? Icons.sms_outlined
-                              : Icons.mark_email_read_outlined),
+                                ? Icons.sms_outlined
+                                : Icons.mark_email_read_outlined),
                       size: 38,
                       color: colorScheme.primary,
                     ),
@@ -222,9 +277,10 @@ class _VerificationPageState extends State<VerificationPage> {
                   const SizedBox(height: 24),
                   Text(
                     _showNewPasswordFields
-                        ? 'Шинэ нууц үг тохируулах'
+                        ? (l10n?.t('auth.new_password_title') ??
+                              'Шинэ нууц үг тохируулах')
                         : (l10n?.t('auth.verification_code') ??
-                            'Баталгаажуулах код'),
+                              'Баталгаажуулах код'),
                     style: TextStyle(
                       fontFamily: 'Serif',
                       fontSize: 24,
@@ -236,10 +292,14 @@ class _VerificationPageState extends State<VerificationPage> {
                   const SizedBox(height: 10),
                   Text(
                     _showNewPasswordFields
-                        ? 'Өөрийн акаунтад ашиглах шинэ найдвартай нууц үгээ оруулна уу.'
+                        ? (l10n?.t('auth.new_password_desc') ??
+                              'Акаунтадаа ашиглах шинэ нууц үгээ оруулна уу.')
                         : (_target.isNotEmpty
-                            ? 'Бид таны $_target хаяг руу 6 оронтой баталгаажуулах код илгээлээ.'
-                            : 'Таны бүртгэл рүү илгээсэн 6 оронтой кодыг оруулна уу.'),
+                              ? (l10n?.t('auth.code_sent_to', {
+                                      'contact': _target,
+                                    }) ??
+                                    'Бид $_target руу 6 оронтой баталгаажуулах код илгээлээ.')
+                              : 'Таны бүртгэл рүү илгээсэн 6 оронтой кодыг оруулна уу.'),
                     style: TextStyle(
                       fontSize: 14,
                       color: colorScheme.onSurface.withValues(alpha: 0.65),
@@ -279,8 +339,9 @@ class _VerificationPageState extends State<VerificationPage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: List.generate(6, (index) {
                               final text = _otpController.text;
-                              final digit =
-                                  index < text.length ? text[index] : '';
+                              final digit = index < text.length
+                                  ? text[index]
+                                  : '';
                               final isCurrent = index == text.length;
 
                               return AnimatedContainer(
@@ -296,10 +357,11 @@ class _VerificationPageState extends State<VerificationPage> {
                                     color: isCurrent
                                         ? colorScheme.primary
                                         : (digit.isNotEmpty
-                                            ? colorScheme.primary
-                                                .withValues(alpha: 0.5)
-                                            : colorScheme.outlineVariant
-                                                .withValues(alpha: 0.4)),
+                                              ? colorScheme.primary.withValues(
+                                                  alpha: 0.5,
+                                                )
+                                              : colorScheme.outlineVariant
+                                                    .withValues(alpha: 0.4)),
                                     width: isCurrent ? 2 : 1.2,
                                   ),
                                 ),
@@ -336,19 +398,22 @@ class _VerificationPageState extends State<VerificationPage> {
                       runSpacing: 6,
                       children: [
                         Text(
-                          'Код очоогүй юу? ',
+                          l10n?.t('auth.otp_not_received') ?? 'Код очоогүй юу?',
                           style: TextStyle(
                             fontSize: 13,
-                            color: colorScheme.onSurface
-                                .withValues(alpha: 0.6),
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                         AnimatedPressable(
                           onTap: _secondsRemaining == 0 ? _resendCode : null,
                           child: Text(
                             _secondsRemaining > 0
-                                ? 'Дахин код авах ($_secondsRemainingс)'
-                                : 'Дахин код илгээх',
+                                ? (l10n?.t('auth.resend_code_wait', {
+                                        'seconds': '$_secondsRemaining',
+                                      }) ??
+                                      'Дахин код авах ($_secondsRemainingс)')
+                                : (l10n?.t('auth.resend_code') ??
+                                      'Дахин код илгээх'),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -372,7 +437,9 @@ class _VerificationPageState extends State<VerificationPage> {
                       controller: _newPasswordController,
                       obscureText: true,
                       decoration: InputDecoration(
-                        labelText: 'Шинэ нууц үг',
+                        labelText:
+                            l10n?.t('auth.new_password_label') ??
+                            'Шинэ нууц үг',
                         prefixIcon: const Icon(Icons.lock_outline_rounded),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -384,7 +451,9 @@ class _VerificationPageState extends State<VerificationPage> {
                       controller: _confirmNewPasswordController,
                       obscureText: true,
                       decoration: InputDecoration(
-                        labelText: 'Шинэ нууц үгээ баталгаажуулах',
+                        labelText:
+                            l10n?.t('auth.confirm_new_password') ??
+                            'Шинэ нууц үгээ баталгаажуулах',
                         prefixIcon: const Icon(Icons.lock_rounded),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
@@ -404,7 +473,9 @@ class _VerificationPageState extends State<VerificationPage> {
                     ],
                     const SizedBox(height: 32),
                     SubmitButton(
-                      label: 'Нууц үг шинэчлэх',
+                      label:
+                          l10n?.t('auth.reset_password_submit') ??
+                          'Нууц үг шинэчлэх',
                       isLoading: _isLoading,
                       onPressed: _resetPassword,
                     ),

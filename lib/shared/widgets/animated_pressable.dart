@@ -7,6 +7,9 @@ class AnimatedPressable extends StatefulWidget {
   final Duration duration;
   final Curve curve;
   final BorderRadius? borderRadius;
+  final FocusNode? focusNode;
+  final bool autofocus;
+  final String? semanticLabel;
 
   const AnimatedPressable({
     super.key,
@@ -16,6 +19,9 @@ class AnimatedPressable extends StatefulWidget {
     this.duration = const Duration(milliseconds: 150),
     this.curve = const Cubic(0.2, 0.0, 0.0, 1.0),
     this.borderRadius,
+    this.focusNode,
+    this.autofocus = false,
+    this.semanticLabel,
   });
 
   @override
@@ -24,22 +30,23 @@ class AnimatedPressable extends StatefulWidget {
 
 class _AnimatedPressableState extends State<AnimatedPressable>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
+  late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: widget.duration,
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: widget.scaleDown,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: widget.curve),
-    );
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimatedPressable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.duration != widget.duration) {
+      _controller.duration = widget.duration;
+    }
+    if (oldWidget.onTap != null && widget.onTap == null) {
+      _controller.reverse();
+    }
   }
 
   @override
@@ -48,46 +55,53 @@ class _AnimatedPressableState extends State<AnimatedPressable>
     super.dispose();
   }
 
-  void _onTapDown(TapDownDetails details) {
-    if (widget.onTap != null) {
+  void _onHighlightChanged(bool highlighted) {
+    if (widget.onTap == null) return;
+    if (MediaQuery.of(context).disableAnimations) {
+      _controller.value = 0;
+      return;
+    }
+    if (highlighted) {
       _controller.forward();
-    }
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    if (widget.onTap != null) {
-      _controller.reverse();
-    }
-  }
-
-  void _onTapCancel() {
-    if (widget.onTap != null) {
+    } else {
       _controller.reverse();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      onTap: widget.onTap,
-      child: AnimatedBuilder(
-        animation: _scaleAnimation,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: _scaleAnimation.value,
-            child: child,
-          );
-        },
-        child: widget.borderRadius != null
-            ? ClipRRect(
-                borderRadius: widget.borderRadius!,
-                child: widget.child,
-              )
-            : widget.child,
+    final enabled = widget.onTap != null;
+    final scheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: widget.semanticLabel,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: widget.onTap,
+          onHighlightChanged: _onHighlightChanged,
+          focusNode: widget.focusNode,
+          autofocus: widget.autofocus,
+          canRequestFocus: enabled,
+          mouseCursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+          borderRadius: widget.borderRadius,
+          focusColor: scheme.primary.withValues(alpha: 0.12),
+          hoverColor: scheme.primary.withValues(alpha: 0.08),
+          splashColor: scheme.primary.withValues(alpha: 0.12),
+          child: AnimatedBuilder(
+            animation: _controller,
+            child: widget.child,
+            builder: (context, child) {
+              final reduceMotion = MediaQuery.of(context).disableAnimations;
+              final scale = reduceMotion
+                  ? 1.0
+                  : 1 - ((1 - widget.scaleDown) * _controller.value);
+              return Transform.scale(scale: scale, child: child);
+            },
+          ),
+        ),
       ),
     );
   }

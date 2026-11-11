@@ -17,6 +17,7 @@ import 'package:readpack/features/profile/widgets/profile_league_card.dart';
 import 'package:readpack/features/profile/widgets/profile_xp_card.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/secure_storage_mock.dart';
 
 late Map<String, dynamic> _mnMap;
 
@@ -51,9 +52,7 @@ Widget createProfileTestWidget(BookProvider bookProvider) {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      routes: {
-        Routes.auth: (_) => const Scaffold(body: Text('AuthScreen')),
-      },
+      routes: {Routes.auth: (_) => const Scaffold(body: Text('AuthScreen'))},
       home: const ProfilePage(),
     ),
   );
@@ -69,71 +68,80 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    mockSecureStorage();
   });
 
   group('Guest Mode & Profile Decoupling Tests', () {
-    testWidgets('Guest Profile hides personal synced cards and shows ProfileGuestCard',
-        (tester) async {
+    testWidgets(
+      'Guest Profile hides personal synced cards and shows ProfileGuestCard',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 2000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final bookProvider = BookProvider();
+        addTearDown(bookProvider.dispose);
+        await tester.runAsync(() => bookProvider.initialized);
+        bookProvider.loginAsGuest();
+
+        await tester.pumpWidget(createProfileTestWidget(bookProvider));
+        await tester.pumpAndSettle();
+
+        // Guest card must be displayed
+        expect(find.byType(ProfileGuestCard), findsOneWidget);
+        expect(find.text('Нэвтрэх / Бүртгүүлэх'), findsOneWidget);
+
+        // Personal synced user cards MUST NOT be displayed for guest
+        expect(find.byType(ProfileXpCard), findsNothing);
+        expect(find.byType(ProfileLeagueCard), findsNothing);
+        expect(find.byType(ProfileChallengeCard), findsNothing);
+        expect(find.byType(ProfileHabitsCard), findsNothing);
+        expect(find.byType(ProfileAchievementsCard), findsNothing);
+
+        // Fake guest email and Edit Profile pencil button MUST NOT be displayed for guest, while Settings icon is available
+        expect(find.text('guest@readpack.app'), findsNothing);
+        expect(find.byIcon(Icons.edit_outlined), findsNothing);
+        expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Authenticated Profile renders all personal user cards and hides ProfileGuestCard',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 3000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final bookProvider = BookProvider();
+        addTearDown(bookProvider.dispose);
+        await tester.runAsync(() => bookProvider.initialized);
+        bookProvider.loginWithEmail('user@test.com', 'Test User');
+
+        await tester.pumpWidget(createProfileTestWidget(bookProvider));
+        await tester.pumpAndSettle();
+
+        // Guest card must not be present
+        expect(find.byType(ProfileGuestCard), findsNothing);
+
+        // Personal cards and Settings button must be present
+        expect(find.byType(ProfileXpCard), findsOneWidget);
+        expect(find.byType(ProfileLeagueCard), findsOneWidget);
+        expect(find.byType(ProfileHabitsCard), findsOneWidget);
+        expect(find.byType(ProfileAchievementsCard), findsOneWidget);
+        expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      },
+    );
+
+    testWidgets('Tapping login on ProfileGuestCard navigates to AuthScreen', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 2000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
       final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      bookProvider.loginAsGuest();
-
-      await tester.pumpWidget(createProfileTestWidget(bookProvider));
-      await tester.pumpAndSettle();
-
-      // Guest card must be displayed
-      expect(find.byType(ProfileGuestCard), findsOneWidget);
-      expect(find.text('Нэвтрэх / Бүртгүүлэх'), findsOneWidget);
-
-      // Personal synced user cards MUST NOT be displayed for guest
-      expect(find.byType(ProfileXpCard), findsNothing);
-      expect(find.byType(ProfileLeagueCard), findsNothing);
-      expect(find.byType(ProfileChallengeCard), findsNothing);
-      expect(find.byType(ProfileHabitsCard), findsNothing);
-      expect(find.byType(ProfileAchievementsCard), findsNothing);
-
-      // Fake guest email and Edit Profile pencil button MUST NOT be displayed for guest, while Settings icon is available
-      expect(find.text('guest@readpack.app'), findsNothing);
-      expect(find.byIcon(Icons.edit_outlined), findsNothing);
-      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
-    });
-
-    testWidgets('Authenticated Profile renders all personal user cards and hides ProfileGuestCard',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 3000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      bookProvider.loginWithEmail('user@test.com', 'Test User');
-
-      await tester.pumpWidget(createProfileTestWidget(bookProvider));
-      await tester.pumpAndSettle();
-
-      // Guest card must not be present
-      expect(find.byType(ProfileGuestCard), findsNothing);
-
-      // Personal cards and Settings button must be present
-      expect(find.byType(ProfileXpCard), findsOneWidget);
-      expect(find.byType(ProfileLeagueCard), findsOneWidget);
-      expect(find.byType(ProfileHabitsCard), findsOneWidget);
-      expect(find.byType(ProfileAchievementsCard), findsOneWidget);
-      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
-    });
-
-    testWidgets('Tapping login on ProfileGuestCard navigates to AuthScreen',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+      addTearDown(bookProvider.dispose);
+      await tester.runAsync(() => bookProvider.initialized);
       bookProvider.loginAsGuest();
 
       await tester.pumpWidget(createProfileTestWidget(bookProvider));
@@ -148,25 +156,28 @@ void main() {
       expect(find.text('AuthScreen'), findsOneWidget);
     });
 
-    testWidgets('ProfilePage renders without overflow on 360px screen at 2.0x text scale',
-        (tester) async {
-      tester.view.physicalSize = const Size(360, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'ProfilePage renders without overflow on 360px screen at 2.0x text scale',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 2000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      bookProvider.loginAsGuest();
+        final bookProvider = BookProvider();
+        addTearDown(bookProvider.dispose);
+        await tester.runAsync(() => bookProvider.initialized);
+        bookProvider.loginAsGuest();
 
-      await tester.pumpWidget(
-        MediaQuery(
-          data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
-          child: createProfileTestWidget(bookProvider),
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+            child: createProfileTestWidget(bookProvider),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(tester.takeException(), isNull);
-    });
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

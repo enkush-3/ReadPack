@@ -17,12 +17,20 @@ void main() {
       provider = BookProvider();
     });
 
+    test('starts without a seeded account identity', () async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(provider.userProfile.isGuest, isTrue);
+      expect(provider.userProfile.email, isEmpty);
+      expect(provider.userProfile.phoneNumber, isEmpty);
+    });
+
     test('loginAsGuest initializes guest profile correctly', () {
       provider.loginAsGuest();
 
       expect(provider.userProfile.isGuest, isTrue);
       expect(provider.userProfile.name, 'Зочин');
-      expect(provider.userProfile.email, 'guest@readpack.app');
+      expect(provider.userProfile.email, isEmpty);
       expect(provider.userProfile.streakDays, greaterThanOrEqualTo(0));
     });
 
@@ -86,7 +94,9 @@ void main() {
 
       provider.addReview(initialBook.id, review);
 
-      final updatedBook = provider.books.firstWhere((b) => b.id == initialBook.id);
+      final updatedBook = provider.books.firstWhere(
+        (b) => b.id == initialBook.id,
+      );
       expect(updatedBook.reviewsCount, initialReviewsCount + 1);
       expect(updatedBook.reviews.any((r) => r.id == 'rev_test_1'), isTrue);
     });

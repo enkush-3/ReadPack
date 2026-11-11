@@ -44,9 +44,7 @@ class ReaderTopHud extends StatelessWidget {
         decoration: BoxDecoration(
           color: readerBg.withValues(alpha: 0.95),
           border: Border(
-            bottom: BorderSide(
-              color: readerTextColor.withValues(alpha: 0.08),
-            ),
+            bottom: BorderSide(color: readerTextColor.withValues(alpha: 0.08)),
           ),
         ),
         child: Row(
@@ -121,7 +119,9 @@ class ReaderTopHud extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (book.hasAudio)
+                if (book.chapters.any(
+                  (chapter) => chapter.content.trim().isNotEmpty,
+                ))
                   AnimatedPressable(
                     onTap: onToggleAudio,
                     child: Padding(
@@ -198,9 +198,7 @@ class ReaderBottomHud extends StatelessWidget {
         decoration: BoxDecoration(
           color: readerBg.withValues(alpha: 0.95),
           border: Border(
-            top: BorderSide(
-              color: readerTextColor.withValues(alpha: 0.08),
-            ),
+            top: BorderSide(color: readerTextColor.withValues(alpha: 0.08)),
           ),
         ),
         child: Row(

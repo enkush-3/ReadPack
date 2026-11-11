@@ -4,6 +4,7 @@ import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/home/widgets/books_card.dart';
 import 'package:readpack/features/home/widgets/categories.dart';
+import 'package:readpack/features/home/widgets/continue_reading_card.dart';
 import 'package:readpack/features/home/widgets/header.dart';
 import 'package:readpack/features/home/widgets/home_featured_section.dart';
 import 'package:readpack/features/home/widgets/home_quote_banner.dart';
@@ -16,10 +17,7 @@ import 'package:readpack/shared/widgets/skeleton_loader.dart';
 class HomePage extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
 
-  const HomePage({
-    super.key,
-    this.onNavigateTab,
-  });
+  const HomePage({super.key, this.onNavigateTab});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -35,6 +33,7 @@ class _HomePageState extends State<HomePage> {
     'book.categories.adventure',
   ];
   int _selectedCategoryIndex = 0;
+  bool _isContinueDismissed = false;
 
   List<String> _getCategories(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -45,9 +44,9 @@ class _HomePageState extends State<HomePage> {
 
   void _onCategoryChanged(int index) {
     setState(() => _selectedCategoryIndex = index);
-    context
-        .read<BookProvider>()
-        .setSelectedCategory(_categoryKeys[_selectedCategoryIndex]);
+    context.read<BookProvider>().setSelectedCategory(
+      _categoryKeys[_selectedCategoryIndex],
+    );
   }
 
   @override
@@ -55,6 +54,7 @@ class _HomePageState extends State<HomePage> {
     final colorScheme = Theme.of(context).colorScheme;
     final bookProvider = context.watch<BookProvider>();
     final l10n = AppLocalizations.of(context);
+    final continueReadingBooks = bookProvider.continueReadingBooks;
     final userName = bookProvider.userProfile.name;
     final booksCountText = l10n?.t('home.books_count') ?? 'ном';
 
@@ -78,6 +78,31 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+
+              if (!bookProvider.userProfile.isGuest &&
+                  !_isContinueDismissed &&
+                  continueReadingBooks.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                    child: ContinueReadingCard(
+                      book: continueReadingBooks.first,
+                      onClose: () {
+                        setState(() => _isContinueDismissed = true);
+                      },
+                      onTap: () {
+                        final book = continueReadingBooks.first;
+                        Navigator.of(context).pushNamed(
+                          Routes.reader,
+                          arguments: {
+                            'book': book,
+                            'initialChapterIndex': book.currentChapterIndex,
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
 
               // 2. Loading State Handling
               if (bookProvider.isLoading) ...[
@@ -185,46 +210,45 @@ class _HomePageState extends State<HomePage> {
                   SliverToBoxAdapter(
                     child: EmptyStateView(
                       icon: Icons.search_off_rounded,
-                      title: l10n?.t('home.empty_category_title') ??
+                      title:
+                          l10n?.t('home.empty_category_title') ??
                           'Энэ ангилалд ном олдсонгүй',
-                      message: l10n?.t('home.empty_category_desc') ??
+                      message:
+                          l10n?.t('home.empty_category_desc') ??
                           'Өөр ангилал сонгож үзнэ үү.',
-                      actionLabel: l10n?.t('home.view_all_books') ??
-                          'Бүх номыг харах',
+                      actionLabel:
+                          l10n?.t('home.view_all_books') ?? 'Бүх номыг харах',
                       onAction: () => _onCategoryChanged(0),
                     ),
                   )
                 else
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24)
-                        .copyWith(bottom: 32),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                    ).copyWith(bottom: 32),
                     sliver: SliverGrid(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 0.68,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final book = bookProvider.filteredBooks[index];
-                          return BookCard(
-                            book: book,
-                            title: book.title,
-                            author: book.author,
-                            rating: book.rating,
-                            image: book.image,
-                            onTap: () {
-                              Navigator.of(context).pushNamed(
-                                Routes.bookDetail,
-                                arguments: book,
-                              );
-                            },
-                          );
-                        },
-                        childCount: bookProvider.filteredBooks.length,
-                      ),
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.54,
+                          ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final book = bookProvider.filteredBooks[index];
+                        return BookCard(
+                          book: book,
+                          title: book.title,
+                          author: book.author,
+                          rating: book.rating,
+                          image: book.image,
+                          onTap: () {
+                            Navigator.of(
+                              context,
+                            ).pushNamed(Routes.bookDetail, arguments: book);
+                          },
+                        );
+                      }, childCount: bookProvider.filteredBooks.length),
                     ),
                   ),
               ],

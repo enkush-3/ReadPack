@@ -12,11 +12,7 @@ class SearchResult extends StatelessWidget {
   final List<Book> books;
   final VoidCallback? onResetFilter;
 
-  const SearchResult({
-    super.key,
-    required this.books,
-    this.onResetFilter,
-  });
+  const SearchResult({super.key, required this.books, this.onResetFilter});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +24,8 @@ class SearchResult extends StatelessWidget {
       return EmptyStateView(
         icon: Icons.search_off_rounded,
         title: l10n?.t('book.no_results') ?? 'Хайлтад тохирох ном олдсонгүй',
-        message: l10n?.t('book.no_results_desc') ??
+        message:
+            l10n?.t('book.no_results_desc') ??
             'Нэр, зохиолч эсвэл түлхүүр үгээ өөрчилж хайна уу.',
         actionLabel: onResetFilter != null
             ? (l10n?.t('filter.clear') ?? 'Шүүлтүүр цэвэрлэх')
@@ -37,9 +34,11 @@ class SearchResult extends StatelessWidget {
       );
     }
 
-    final hasAnyChapterMatches = query.isNotEmpty &&
-        books.any((b) =>
-            bookProvider.getChapterMatchesForBook(b.id, query).isNotEmpty);
+    final hasAnyChapterMatches =
+        query.isNotEmpty &&
+        books.any(
+          (b) => bookProvider.getChapterMatchesForBook(b.id, query).isNotEmpty,
+        );
 
     if (hasAnyChapterMatches) {
       return ListView.builder(
@@ -50,22 +49,22 @@ class SearchResult extends StatelessWidget {
         itemCount: books.length,
         itemBuilder: (context, index) {
           final book = books[index];
-          final chapterMatches =
-              bookProvider.getChapterMatchesForBook(book.id, query);
+          final chapterMatches = bookProvider.getChapterMatchesForBook(
+            book.id,
+            query,
+          );
 
           return Container(
             margin: const EdgeInsets.only(bottom: 14),
             decoration: BoxDecoration(
-              color: Theme.of(context)
-                  .colorScheme
-                  .surfaceContainerHighest
-                  .withValues(alpha: 0.25),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outlineVariant
-                    .withValues(alpha: 0.25),
+                color: Theme.of(
+                  context,
+                ).colorScheme.outlineVariant.withValues(alpha: 0.25),
               ),
             ),
             child: Column(
@@ -75,12 +74,13 @@ class SearchResult extends StatelessWidget {
                   color: Colors.transparent,
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 6),
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
                     onTap: () {
-                      Navigator.of(context).pushNamed(
-                        Routes.bookDetail,
-                        arguments: book,
-                      );
+                      Navigator.of(
+                        context,
+                      ).pushNamed(Routes.bookDetail, arguments: book);
                     },
                     leading: SizedBox(
                       width: 44,
@@ -99,7 +99,9 @@ class SearchResult extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 15),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,40 +111,45 @@ class SearchResult extends StatelessWidget {
                           book.author,
                           style: TextStyle(
                             fontSize: 13,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.65),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.65),
                           ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded,
-                                size: 15, color: Colors.amber),
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 15,
+                              color: Colors.amber,
+                            ),
                             const SizedBox(width: 3),
                             Text(
                               book.rating.toStringAsFixed(1),
                               style: const TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold),
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               '• ${book.pages} ${l10n?.t('book.pages') ?? 'хуудас'}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withValues(alpha: 0.5),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.5),
                               ),
                             ),
                           ],
                         ),
                       ],
                     ),
-                    trailing:
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                    ),
                   ),
                 ),
                 if (chapterMatches.isNotEmpty) ...[
@@ -150,18 +157,18 @@ class SearchResult extends StatelessWidget {
                     padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.08),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.2),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.2),
                         ),
                       ),
                       child: Column(
@@ -181,8 +188,9 @@ class SearchResult extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                 ),
                               ),
@@ -196,10 +204,9 @@ class SearchResult extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontStyle: FontStyle.italic,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.75),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.75),
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -245,7 +252,7 @@ class SearchResult extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
-        childAspectRatio: 0.68,
+        childAspectRatio: 0.54,
       ),
       itemCount: books.length,
       itemBuilder: (context, index) {
@@ -257,10 +264,7 @@ class SearchResult extends StatelessWidget {
           rating: book.rating,
           image: book.image,
           onTap: () {
-            Navigator.of(context).pushNamed(
-              Routes.bookDetail,
-              arguments: book,
-            );
+            Navigator.of(context).pushNamed(Routes.bookDetail, arguments: book);
           },
         );
       },

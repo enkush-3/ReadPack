@@ -1,8 +1,39 @@
+# ReadPack — Material 3, API ба үйл ажиллагааны шинэчлэлт
+
+**Огноо:** 2026-11-12
+**Төлөв:** Локал хэрэгжилт дууссан; push хийгээгүй.
+
+Энэ шинэчлэлт нь доорх өмнөх UX засварын дараагийн ажлын багц болно. Доорх тайланг одоогийн код болон энэ багцын шалгалтаар баталгаажуулсан.
+
+## Хэрэгжүүлсэн зүйлс
+
+- **Material 3:** `#6750A4` seed, light/dark Material 3 схем, Android dynamic color дэмжлэг, sepia уншигчийн өнгө, уншихад чиглэсэн typography ба theme-ийн нэгдсэн компонентууд нэмэв. Хөдөлгөөн бууруулах системийн тохиргоог shared animation-д харгалзана.
+- **Дэлгэц ба төлөвүүд:** Home, Search, Library, Book Details, Reader, Profile, Leaderboard, Auth дэлгэц болон shared loading/empty/error компонентуудыг шинэчлэв. Continue Reading, уншигчийн удирдлага, номын хавтас, filter болон 360dp/2x text-ийн regression тестүүд нэмэгдэв.
+- **Auth ба API:** Backend-д Argon2id password hash, амжилттай legacy SHA-256 нэвтрэлтийн дараах hash migration, access/refresh JWT rotation, logout/revocation, OTP хязгаарлалт, password reset, Google/Facebook identity verification, email/SMS adapter-ууд нэмэв. Хувийн user tree/reading/device endpoint нь bearer token-оос user-ийг тогтоож, хүсэлтийн user ID-г шалгана.
+- **Уншлагын өгөгдөл:** Reading event нь unique `(userId,eventId)` түлхүүртэй, payload-ийн давхардлыг шалгаж, давтан хүсэлтээр XP давхар олгохгүй. Leaderboard нь бодит event-ээс тооцож, оролцогчгүй үед хоосон байна. Аудио номыг зөвхөн audio URL байхад тэмдэглэж, уншигчийн TTS-ийг төхөөрөмжийн TTS-тэй холбов.
+- **Мэдэгдэл ба widget:** Local reminder schedule болон FCM төхөөрөмжийн token бүртгэл нэмэгдэв. Android quote widget native provider ба color-role хадгалалттай; iOS дээр app доторх preview ашиглана.
+- **Тохиргооны заавар:** Үйлчилгээний secret-үүдийг repository-д оруулалгүй `docs/INTEGRATION_SETUP.md`, `backend/.env.example`, `ios/Flutter/RunnerSecrets.xcconfig.example`-д тохируулах заавар, жишээ файлууд нэмэв.
+
+## Баталгаажуулалт
+
+- `flutter analyze` — амжилттай, issue алга.
+- `flutter test` — амжилттай, 114 тест.
+- `node --check` — backend app/service/model/test файлууд амжилттай.
+- `NODE_PATH=/tmp/readpack-test-deps/node_modules node --test test/backend.test.js` — амжилттай, 11 тест.
+- `git diff --check` — whitespace алдаа алга.
+- Auth/session, OTP retry/expiry, user ID тусгаарлалт, XP idempotency, refresh/logout, provider token verification, device ownership болон password recovery тестүүд амжилттай.
+
+## Бодит ажиллагааны тохиргоо
+
+Email/SMS/push/provider үйлчилгээнүүд бодит credential шаардана. `docs/INTEGRATION_SETUP.md`-ийн орчны утгуудыг өгч тохируулах хүртэл тохируулаагүй delivery adapter-уудыг ажиллаж байгаа мэт үзүүлэхгүй. Android Firebase config байхгүй үед Google Services plugin хэрэглэхгүй. HTTPS API URL болон production MongoDB credential-ийг deployment орчинд тохируулах шаардлагатай. Android/iOS native release build болон бодит SMTP/Twilio/FCM/OAuth холболтыг энэ локал шалгалтаар төхөөрөмж/үйлчилгээ дээр туршаагүй.
+
+---
+
 # 🛠️ ReadPack v6.0 — MODE D: Dynamic Parallel Issue-Driven Resolution Report (`RESOLUTION_REPORT.md`)
 
-**Огноо:** 2026-11-08  
-**Горим:** `MODE D (Dynamic Parallel Issue-Driven Fixer)`  
-**Холбогдох шүүмж тайлан:** [`CRITIQUE_REPORT.md`](file:///home/enkush-3/Desktop/Git/ReadPack/CRITIQUE_REPORT.md)  
+**Огноо:** 2026-11-08
+**Горим:** `MODE D (Dynamic Parallel Issue-Driven Fixer)`
+**Холбогдох шүүмж тайлан:** [`CRITIQUE_REPORT.md`](file:///home/enkush-3/Desktop/Git/ReadPack/CRITIQUE_REPORT.md)
 **Шинжилсэн бодит дэлгэцийн агшин:** `assets/App-images/photo_1` – `photo_23` (нийт 23 зураг + код бүрэн аудит)
 
 ---

@@ -24,13 +24,13 @@ class SocialAuthButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: colorScheme.outlineVariant.withValues(alpha: 0.5),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
+              color: colorScheme.shadow.withValues(alpha: 0.08),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),

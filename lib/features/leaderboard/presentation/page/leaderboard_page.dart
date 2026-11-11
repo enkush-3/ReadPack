@@ -4,6 +4,9 @@ import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
 import 'package:readpack/features/shared/common/refresh.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/skeleton_loader.dart';
 
 class LeaderboardPage extends StatefulWidget {
   const LeaderboardPage({super.key});
@@ -13,6 +16,16 @@ class LeaderboardPage extends StatefulWidget {
 }
 
 class _LeaderboardPageState extends State<LeaderboardPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<BookProvider>().refreshLeaderboard(period: 'monthly');
+      }
+    });
+  }
+
   int _daysRemainingInMonth() {
     final now = DateTime.now();
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0).day;
@@ -21,26 +34,25 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 
   Future<void> _handleRefresh(BookProvider provider) async {
-    await provider.refresh();
-    await Future.delayed(const Duration(milliseconds: 350));
+    await provider.refreshLeaderboard(period: 'monthly');
   }
 
   @override
   Widget build(BuildContext context) {
     final bookProvider = Provider.of<BookProvider>(context);
-    final userProfile = bookProvider.userProfile;
     final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
     final daysLeft = _daysRemainingInMonth();
 
-    final competitors =
-        BookGamificationManager.getLeaderboardEntries(userProfile);
+    final competitors = bookProvider.leaderboardEntries;
 
-    final leagueName = l10n?.t('profile.diamond_league') ?? 'Алмазан Лиг';
-    final daysRemainingLabel = (l10n?.t('gamification.days_remaining_month') ??
-            '$daysLeft өдөр үлдсэн')
-        .replaceAll('{days}', '$daysLeft');
+    final leagueName =
+        l10n?.t('leaderboard.monthly_title') ?? 'Сарын Лидерборд';
+    final daysRemainingLabel =
+        (l10n?.t('gamification.days_remaining_month') ??
+                '$daysLeft өдөр үлдсэн')
+            .replaceAll('{days}', '$daysLeft');
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -106,29 +118,72 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
             ),
             const SizedBox(height: 8),
 
-            ...competitors.map((c) => _buildCompetitorTile(
-                  competitor: c,
-                  colorScheme: colorScheme,
-                  l10n: l10n,
-                )),
+            ..._buildLeaderboardContent(
+              bookProvider: bookProvider,
+              competitors: competitors,
+              colorScheme: colorScheme,
+              l10n: l10n,
+            ),
             const SizedBox(height: 16),
 
-            Center(
-              child: Text(
-                l10n?.t('profile.diamond_promotion') ??
-                    '💎 Сарын эхний 3 байр Алмазан Лиг рүү дэвшинэ',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.teal,
-                ),
-              ),
-            ),
             const SizedBox(height: 24),
           ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildLeaderboardContent({
+    required BookProvider bookProvider,
+    required List<LeaderboardCompetitor> competitors,
+    required ColorScheme colorScheme,
+    required AppLocalizations? l10n,
+  }) {
+    if (bookProvider.isLeaderboardLoading && competitors.isEmpty) {
+      final width = MediaQuery.sizeOf(context).width - 32;
+      return List<Widget>.generate(
+        4,
+        (index) => SkeletonLoader(
+          width: width,
+          height: 64,
+          borderRadius: 16,
+          margin: const EdgeInsets.only(bottom: 8),
+        ),
+      );
+    }
+    if (bookProvider.leaderboardError != null && competitors.isEmpty) {
+      return [
+        SizedBox(
+          height: 260,
+          child: ErrorStateView(
+            errorMessage: bookProvider.leaderboardError!,
+            onRetry: () => bookProvider.refreshLeaderboard(period: 'monthly'),
+          ),
+        ),
+      ];
+    }
+    if (competitors.isEmpty) {
+      return [
+        EmptyStateView(
+          icon: Icons.leaderboard_outlined,
+          title:
+              l10n?.t('leaderboard.empty_title') ??
+              'Одоогоор байр эзэлсэн уншигч алга',
+          message:
+              l10n?.t('leaderboard.empty_desc') ??
+              'Уншсан минутаа бүртгүүлж, эхний оноогоо аваарай.',
+        ),
+      ];
+    }
+    return competitors
+        .map(
+          (competitor) => _buildCompetitorTile(
+            competitor: competitor,
+            colorScheme: colorScheme,
+            l10n: l10n,
+          ),
+        )
+        .toList();
   }
 
   Widget _buildLeagueHeader({
@@ -248,10 +303,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          item.badge,
-          style: const TextStyle(fontSize: 24),
-        ),
+        Text(item.badge, style: const TextStyle(fontSize: 24)),
         const SizedBox(height: 4),
         SizedBox(
           width: 80,
@@ -277,8 +329,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
           height: height,
           decoration: BoxDecoration(
             color: medalColor.withValues(alpha: 0.2),
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(12)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             border: Border.all(color: medalColor.withValues(alpha: 0.5)),
           ),
           child: Center(

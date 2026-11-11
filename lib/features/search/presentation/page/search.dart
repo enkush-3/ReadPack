@@ -14,10 +14,7 @@ import 'package:readpack/shared/widgets/skeleton_loader.dart';
 class SearchPage extends StatefulWidget {
   final ValueChanged<int>? onNavigateTab;
 
-  const SearchPage({
-    super.key,
-    this.onNavigateTab,
-  });
+  const SearchPage({super.key, this.onNavigateTab});
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -56,8 +53,10 @@ class _SearchPageState extends State<SearchPage> {
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
                 child: SearchHeader(
                   userName: bookProvider.userProfile.isGuest
-                      ? (AppLocalizations.of(context)?.t('profile.guest_user') ??
-                          bookProvider.userProfile.name)
+                      ? (AppLocalizations.of(
+                              context,
+                            )?.t('profile.guest_user') ??
+                            bookProvider.userProfile.name)
                       : bookProvider.userProfile.name,
                   onAvatarTap: () => widget.onNavigateTab?.call(3),
                   currentFilters: FilterData(
@@ -76,7 +75,10 @@ class _SearchPageState extends State<SearchPage> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -88,7 +90,8 @@ class _SearchPageState extends State<SearchPage> {
                         },
                         child: InputField(
                           controller: _searchController,
-                          hint: AppLocalizations.of(context)?.t('hint.search') ??
+                          hint:
+                              AppLocalizations.of(context)?.t('hint.search') ??
                               'Ном, зохиолч хайх...',
                           icon: Icons.search_rounded,
                           borderRadius: 26,
@@ -120,11 +123,15 @@ class _SearchPageState extends State<SearchPage> {
               // Did-you-mean Suggestion Banner
               if (bookProvider.searchSuggestion != null)
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 4,
+                  ),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: colorScheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
@@ -134,15 +141,21 @@ class _SearchPageState extends State<SearchPage> {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.auto_fix_high_rounded,
-                            size: 18, color: colorScheme.primary),
+                        Icon(
+                          Icons.auto_fix_high_rounded,
+                          size: 18,
+                          color: colorScheme.primary,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text.rich(
                             TextSpan(
-                              text: '${l10n?.t('search.did_you_mean') ?? 'Та үүнийг хайсан уу'}: ',
+                              text:
+                                  '${l10n?.t('search.did_you_mean') ?? 'Та үүнийг хайсан уу'}: ',
                               style: TextStyle(
-                                  fontSize: 12, color: colorScheme.onSurface),
+                                fontSize: 12,
+                                color: colorScheme.onSurface,
+                              ),
                               children: [
                                 TextSpan(
                                   text: bookProvider.searchSuggestion!,
@@ -160,12 +173,15 @@ class _SearchPageState extends State<SearchPage> {
                           onTap: () {
                             _searchController.text =
                                 bookProvider.searchSuggestion!;
-                            bookProvider
-                                .setSearchQuery(bookProvider.searchSuggestion!);
+                            bookProvider.setSearchQuery(
+                              bookProvider.searchSuggestion!,
+                            );
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: colorScheme.primary,
                               borderRadius: BorderRadius.circular(6),
@@ -185,53 +201,62 @@ class _SearchPageState extends State<SearchPage> {
                   ),
                 ),
 
-              // Category Quick Pills
+              // Category filters keep a single row while mood is grouped into
+              // one accessible control below.
               SizedBox(
-                height: 38,
+                height: 48,
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   children: [
-                    _buildQuickPill('all', l10n?.t('common.all') ?? 'Бүгд', bookProvider, colorScheme),
-                    _buildQuickPill('book.categories.history', l10n?.t('book.categories.history') ?? 'Түүх',
-                        bookProvider, colorScheme),
-                    _buildQuickPill('book.categories.business', l10n?.t('book.categories.business') ?? 'Бизнес',
-                        bookProvider, colorScheme),
-                    _buildQuickPill('book.categories.science',
-                        l10n?.t('book.categories.science') ?? 'Шинжлэх ухаан', bookProvider, colorScheme),
-                    _buildQuickPill('book.categories.romance', l10n?.t('book.categories.romance') ?? 'Роман',
-                        bookProvider, colorScheme),
-                    _buildQuickPill('book.categories.adventure', l10n?.t('book.categories.adventure') ?? 'Адал явдал',
-                        bookProvider, colorScheme),
+                    _buildQuickPill(
+                      'all',
+                      l10n?.t('common.all') ?? 'Бүгд',
+                      bookProvider,
+                      colorScheme,
+                    ),
+                    _buildQuickPill(
+                      'book.categories.history',
+                      l10n?.t('book.categories.history') ?? 'Түүх',
+                      bookProvider,
+                      colorScheme,
+                    ),
+                    _buildQuickPill(
+                      'book.categories.business',
+                      l10n?.t('book.categories.business') ?? 'Бизнес',
+                      bookProvider,
+                      colorScheme,
+                    ),
+                    _buildQuickPill(
+                      'book.categories.science',
+                      l10n?.t('book.categories.science') ?? 'Шинжлэх ухаан',
+                      bookProvider,
+                      colorScheme,
+                    ),
+                    _buildQuickPill(
+                      'book.categories.romance',
+                      l10n?.t('book.categories.romance') ?? 'Роман',
+                      bookProvider,
+                      colorScheme,
+                    ),
+                    _buildQuickPill(
+                      'book.categories.adventure',
+                      l10n?.t('book.categories.adventure') ?? 'Адал явдал',
+                      bookProvider,
+                      colorScheme,
+                    ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 6),
-
-              // Mood & Pace Filter Bar (Mode D / Critique Requirement)
-              SizedBox(
-                height: 34,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  children: [
-                    _buildMoodPill(
-                        'all', l10n?.t('search.mood_all') ?? '🌟 Бүх хэмнэл', bookProvider, colorScheme),
-                    _buildMoodPill(
-                        'inspiring', l10n?.t('search.mood_inspiring') ?? '⚡ Урам зориг', bookProvider, colorScheme),
-                    _buildMoodPill('philosophical', l10n?.t('search.mood_philosophical') ?? '🧠 Гүн ухаан',
-                        bookProvider, colorScheme),
-                    _buildMoodPill(
-                        'light_reading', l10n?.t('search.mood_light') ?? '📖 Хөнгөн', bookProvider, colorScheme),
-                    _buildMoodPill('deep_focus', l10n?.t('search.mood_focus') ?? '🎯 Гүн төвлөрөл',
-                        bookProvider, colorScheme),
-                  ],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _buildMoodFilterButton(bookProvider, colorScheme),
                 ),
               ),
-              const SizedBox(height: 8),
               // Search History (shown only when search input is focused and empty)
               if (_isSearchFocused &&
                   _searchController.text.isEmpty &&
@@ -252,9 +277,7 @@ class _SearchPageState extends State<SearchPage> {
                   },
                 ),
               // Main content area
-              Expanded(
-                child: _buildSearchContent(bookProvider),
-              ),
+              Expanded(child: _buildSearchContent(bookProvider)),
             ],
           ),
         ),
@@ -267,10 +290,10 @@ class _SearchPageState extends State<SearchPage> {
       return GridView.builder(
         padding: const EdgeInsets.all(24),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
+          crossAxisCount: 2,
           mainAxisSpacing: 16,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.52,
+          crossAxisSpacing: 16,
+          childAspectRatio: 0.54,
         ),
         itemCount: 6,
         itemBuilder: (_, __) => const BookCardSkeleton(),
@@ -278,9 +301,11 @@ class _SearchPageState extends State<SearchPage> {
     }
 
     if (provider.errorMessage != null) {
-      return ErrorStateView(
-        errorMessage: provider.errorMessage!,
-        onRetry: () => provider.refresh(),
+      return SingleChildScrollView(
+        child: ErrorStateView(
+          errorMessage: provider.errorMessage!,
+          onRetry: () => provider.refresh(),
+        ),
       );
     }
 
@@ -310,75 +335,117 @@ class _SearchPageState extends State<SearchPage> {
         ? bookProvider.searchCategories.isEmpty
         : bookProvider.searchCategories.contains(key);
 
-    return GestureDetector(
-      onTap: () {
-        if (key == 'all') {
-          bookProvider.applyFilters(categories: []);
-        } else {
-          bookProvider.applyFilters(categories: [key]);
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        showCheckmark: false,
+        visualDensity: VisualDensity.standard,
+        label: Text(displayLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
+        selected: isSelected,
+        onSelected: (_) {
+          if (key == 'all') {
+            bookProvider.applyFilters(categories: []);
+          } else {
+            bookProvider.applyFilters(categories: [key]);
+          }
+        },
+        selectedColor: colorScheme.secondaryContainer,
+        labelStyle: TextStyle(
           color: isSelected
-              ? colorScheme.primary
-              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(18),
+              ? colorScheme.onSecondaryContainer
+              : colorScheme.onSurfaceVariant,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
         ),
-        child: Center(
-          child: Text(
-            displayLabel,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected
-                  ? colorScheme.onPrimary
-                  : colorScheme.onSurface.withValues(alpha: 0.75),
-            ),
-          ),
-        ),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
     );
   }
 
-  Widget _buildMoodPill(
-    String moodKey,
-    String label,
+  Widget _buildMoodFilterButton(
     BookProvider provider,
     ColorScheme colorScheme,
   ) {
-    final isSelected = provider.selectedMood == moodKey;
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: GestureDetector(
-        onTap: () => provider.setSelectedMood(moodKey),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? colorScheme.primary
-                : colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.outlineVariant.withValues(alpha: 0.2),
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected
-                    ? colorScheme.onPrimary
-                    : colorScheme.onSurface.withValues(alpha: 0.75),
+    final l10n = AppLocalizations.of(context);
+    final moodLabels = <String, String>{
+      'all': l10n?.t('search.mood_all') ?? 'Бүх хэмнэл',
+      'inspiring': l10n?.t('search.mood_inspiring') ?? 'Урам зориг',
+      'philosophical': l10n?.t('search.mood_philosophical') ?? 'Гүн ухаан',
+      'light_reading': l10n?.t('search.mood_light') ?? 'Хөнгөн уншлага',
+      'deep_focus': l10n?.t('search.mood_focus') ?? 'Гүн төвлөрөл',
+    };
+    final currentLabel =
+        moodLabels[provider.selectedMood] ?? moodLabels['all']!;
+    final hasSelectedMood = provider.selectedMood != 'all';
+
+    return OutlinedButton.icon(
+      onPressed: () => _showMoodPicker(provider, moodLabels),
+      icon: const Icon(Icons.tune_rounded),
+      label: Text(
+        '${l10n?.t('search.mood_filter') ?? 'Унших хэмнэл'}: $currentLabel',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(48, 48),
+        foregroundColor: hasSelectedMood
+            ? colorScheme.primary
+            : colorScheme.onSurfaceVariant,
+        side: BorderSide(
+          color: hasSelectedMood
+              ? colorScheme.primary
+              : colorScheme.outlineVariant,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  Future<void> _showMoodPicker(
+    BookProvider provider,
+    Map<String, String> moodLabels,
+  ) async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n?.t('search.mood_filter') ?? 'Унших хэмнэл',
+                style: Theme.of(sheetContext).textTheme.titleLarge,
               ),
-            ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: moodLabels.entries.map((entry) {
+                  final isSelected = provider.selectedMood == entry.key;
+                  return ChoiceChip(
+                    label: Text(entry.value),
+                    selected: isSelected,
+                    showCheckmark: false,
+                    selectedColor: colorScheme.secondaryContainer,
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? colorScheme.onSecondaryContainer
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                    onSelected: (_) {
+                      provider.setSelectedMood(entry.key);
+                      Navigator.of(sheetContext).pop();
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
           ),
         ),
       ),

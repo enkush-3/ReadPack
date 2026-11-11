@@ -26,7 +26,6 @@ class SearchHeader extends StatelessWidget {
         : 'U';
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         AnimatedPressable(
           onTap: onAvatarTap,
@@ -62,48 +61,54 @@ class SearchHeader extends StatelessWidget {
             ),
           ),
         ),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l10n?.t('book.search') ?? 'Хайх',
-              style: TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.primary,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n?.t('book.search') ?? 'Хайх',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Serif',
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.primary,
+                ),
               ),
-            ),
-            Text(
-              l10n?.t('book.find') ?? 'Дуртай номоо олоорой',
-              style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
+              Text(
+                l10n?.t('book.find') ?? 'Дуртай номоо олоорой',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        AnimatedPressable(
-          onTap: () async {
-            final result = await FilterBottomSheet.show(
-              context,
-              currentFilters ?? FilterData.defaults(),
-            );
-            if (result != null) {
-              onFilterApplied?.call(result);
-            }
-          },
-          child: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.tune_rounded,
-              color: colorScheme.primary,
-              size: 20,
+        const SizedBox(width: 12),
+        Tooltip(
+          message: l10n?.t('filter.title') ?? 'Filters',
+          child: IconButton.filledTonal(
+            onPressed: () async {
+              final result = await FilterBottomSheet.show(
+                context,
+                currentFilters ?? FilterData.defaults(),
+              );
+              if (result != null) {
+                onFilterApplied?.call(result);
+              }
+            },
+            icon: const Icon(Icons.tune_rounded),
+            style: IconButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              foregroundColor: colorScheme.onSecondaryContainer,
+              backgroundColor: colorScheme.secondaryContainer,
             ),
           ),
         ),

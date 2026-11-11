@@ -6,16 +6,18 @@ import 'package:readpack/core/providers/theme_provider.dart';
 import 'package:readpack/features/reader/presentation/page/reader_page.dart';
 import 'package:readpack/models/book.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/secure_storage_mock.dart';
+
+late BookProvider _provider;
 
 Widget createTestReader(Book book) {
+  _provider = BookProvider();
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ChangeNotifierProvider(create: (_) => BookProvider()),
+      ChangeNotifierProvider<BookProvider>.value(value: _provider),
     ],
-    child: MaterialApp(
-      home: ReaderPage(book: book),
-    ),
+    child: MaterialApp(home: ReaderPage(book: book)),
   );
 }
 
@@ -24,6 +26,7 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    mockSecureStorage();
   });
 
   const emptyBook = Book(
@@ -39,31 +42,45 @@ void main() {
   );
 
   group('ReaderPage Empty Chapters Edge Case', () {
-    testWidgets('Renders safely with zero chapters without throwing RangeError', (tester) async {
+    testWidgets(
+      'Renders safely with zero chapters without throwing RangeError',
+      (tester) async {
+        await tester.pumpWidget(createTestReader(emptyBook));
+        addTearDown(_provider.dispose);
+        await tester.runAsync(() => _provider.initialized);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Empty Chapters Book'), findsOneWidget);
+        expect(find.text('Unknown Author'), findsOneWidget);
+        expect(find.text('Агуулга'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Tapping bookmark icon on empty chapters book does not throw RangeError',
+      (tester) async {
+        await tester.pumpWidget(createTestReader(emptyBook));
+        addTearDown(_provider.dispose);
+        await tester.runAsync(() => _provider.initialized);
+        await tester.pumpAndSettle();
+
+        final bookmarkBtn = find.byIcon(Icons.bookmark_add_rounded);
+        expect(bookmarkBtn, findsOneWidget);
+
+        await tester.tap(bookmarkBtn);
+        await tester.pumpAndSettle();
+
+        // Bookmark sheet opens safely
+        expect(find.text('Ишлэл & Тэмдэглэл хадгалах'), findsOneWidget);
+      },
+    );
+
+    testWidgets('Table of contents sheet handles zero chapters safely', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestReader(emptyBook));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Empty Chapters Book'), findsOneWidget);
-      expect(find.text('Unknown Author'), findsOneWidget);
-      expect(find.text('Агуулга'), findsOneWidget);
-    });
-
-    testWidgets('Tapping bookmark icon on empty chapters book does not throw RangeError', (tester) async {
-      await tester.pumpWidget(createTestReader(emptyBook));
-      await tester.pumpAndSettle();
-
-      final bookmarkBtn = find.byIcon(Icons.bookmark_add_rounded);
-      expect(bookmarkBtn, findsOneWidget);
-
-      await tester.tap(bookmarkBtn);
-      await tester.pumpAndSettle();
-
-      // Bookmark sheet opens safely
-      expect(find.text('Ишлэл & Тэмдэглэл хадгалах'), findsOneWidget);
-    });
-
-    testWidgets('Table of contents sheet handles zero chapters safely', (tester) async {
-      await tester.pumpWidget(createTestReader(emptyBook));
+      addTearDown(_provider.dispose);
+      await tester.runAsync(() => _provider.initialized);
       await tester.pumpAndSettle();
 
       final tocBtn = find.byIcon(Icons.format_list_bulleted_rounded);

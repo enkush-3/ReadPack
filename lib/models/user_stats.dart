@@ -54,6 +54,7 @@ class ReadingAchievement {
 }
 
 class UserProfile {
+  final String userId;
   final String name;
   final String email;
   final String username;
@@ -82,10 +83,11 @@ class UserProfile {
   final bool remindersEnabled;
 
   const UserProfile({
-    this.name = 'Enkush',
-    this.email = 'enkush@readpack.app',
-    this.username = '@enkush',
-    this.phoneNumber = '+976 99112233',
+    this.userId = '',
+    this.name = 'Зочин',
+    this.email = '',
+    this.username = '@guest',
+    this.phoneNumber = '',
     this.avatarUrl = '',
     this.streakDays = 0,
     this.dailyGoalMinutes = 30,
@@ -93,12 +95,12 @@ class UserProfile {
     this.totalBooksRead = 0,
     this.totalHoursRead = 0,
     this.readingSpeedWpm = 200,
-    this.isGuest = false,
+    this.isGuest = true,
     this.streakFreezeAvailable = true,
     this.notificationsEnabled = true,
     this.recommendationsEnabled = true,
     this.xp = 0,
-    this.weeklyLeague = 'Bronze League',
+    this.weeklyLeague = '',
     this.favoriteGenres = const ['Бизнес', 'Хувь хүний хөгжил', 'Сэтгэл зүй'],
     this.yearlyGoalBooks = 24,
     this.onboardingCompleted = true,
@@ -151,6 +153,7 @@ class UserProfile {
   factory UserProfile.freshUser({
     required String name,
     required String email,
+    String? userId,
     String? username,
     String? phoneNumber,
   }) {
@@ -158,6 +161,7 @@ class UserProfile {
         ? (username.startsWith('@') ? username : '@$username')
         : '@${email.split('@').first.toLowerCase()}';
     return UserProfile(
+      userId: userId ?? '',
       name: name.trim().isNotEmpty ? name.trim() : 'Шинэ уншигч',
       email: email.trim(),
       username: cleanUsername,
@@ -174,7 +178,7 @@ class UserProfile {
       notificationsEnabled: true,
       recommendationsEnabled: true,
       xp: 0,
-      weeklyLeague: 'Bronze League',
+      weeklyLeague: '',
       favoriteGenres: const ['Бизнес', 'Хувь хүний хөгжил'],
       yearlyGoalBooks: 12,
       onboardingCompleted: true,
@@ -227,8 +231,7 @@ class UserProfile {
 
   int get bestStreakDays => streakDays;
 
-  int get totalWeeklyMinutes =>
-      weeklyMinutes.fold<int>(0, (sum, m) => sum + m);
+  int get totalWeeklyMinutes => weeklyMinutes.fold<int>(0, (sum, m) => sum + m);
 
   int get _totalTimeOfDayMinutes =>
       timeOfDayMinutes.values.fold<int>(0, (sum, m) => sum + m);
@@ -305,6 +308,7 @@ class UserProfile {
           .clamp(0.0, 1.0);
 
   UserProfile copyWith({
+    String? userId,
     String? name,
     String? email,
     String? username,
@@ -333,6 +337,7 @@ class UserProfile {
     bool? remindersEnabled,
   }) {
     return UserProfile(
+      userId: userId ?? this.userId,
       name: name ?? this.name,
       email: email ?? this.email,
       username: username ?? this.username,
@@ -347,8 +352,7 @@ class UserProfile {
       isGuest: isGuest ?? this.isGuest,
       streakFreezeAvailable:
           streakFreezeAvailable ?? this.streakFreezeAvailable,
-      notificationsEnabled:
-          notificationsEnabled ?? this.notificationsEnabled,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       recommendationsEnabled:
           recommendationsEnabled ?? this.recommendationsEnabled,
       achievements: achievements ?? this.achievements,
@@ -366,6 +370,7 @@ class UserProfile {
   }
 
   Map<String, dynamic> toJson() => {
+    'userId': userId,
     'name': name,
     'email': email,
     'username': username,
@@ -395,10 +400,11 @@ class UserProfile {
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-    name: json['name'] as String? ?? 'Enkush',
-    email: json['email'] as String? ?? 'enkush@readpack.app',
-    username: json['username'] as String? ?? '@enkush',
-    phoneNumber: json['phoneNumber'] as String? ?? '+976 99112233',
+    userId: json['userId'] as String? ?? '',
+    name: json['name'] as String? ?? 'Зочин',
+    email: json['email'] as String? ?? '',
+    username: json['username'] as String? ?? '@guest',
+    phoneNumber: json['phoneNumber'] as String? ?? '',
     avatarUrl: json['avatarUrl'] as String? ?? '',
     streakDays: json['streakDays'] as int? ?? 0,
     dailyGoalMinutes: json['dailyGoalMinutes'] as int? ?? 30,
@@ -406,35 +412,35 @@ class UserProfile {
     totalBooksRead: json['totalBooksRead'] as int? ?? 0,
     totalHoursRead: json['totalHoursRead'] as int? ?? 0,
     readingSpeedWpm: json['readingSpeedWpm'] as int? ?? 200,
-    isGuest: json['isGuest'] as bool? ?? false,
+    isGuest: json['isGuest'] as bool? ?? true,
     streakFreezeAvailable: json['streakFreezeAvailable'] as bool? ?? true,
     notificationsEnabled: json['notificationsEnabled'] as bool? ?? true,
     recommendationsEnabled: json['recommendationsEnabled'] as bool? ?? true,
-    achievements: (json['achievements'] as List<dynamic>?)
+    achievements:
+        (json['achievements'] as List<dynamic>?)
             ?.map((a) => ReadingAchievement.fromJson(a as Map<String, dynamic>))
             .toList() ??
         const [],
     xp: json['xp'] as int? ?? 0,
-    weeklyLeague: json['weeklyLeague'] as String? ?? 'Bronze League',
-    favoriteGenres: (json['favoriteGenres'] as List<dynamic>?)
+    weeklyLeague: json['weeklyLeague'] as String? ?? '',
+    favoriteGenres:
+        (json['favoriteGenres'] as List<dynamic>?)
             ?.map((e) => e.toString())
             .toList() ??
         const ['Бизнес', 'Хувь хүний хөгжил', 'Сэтгэл зүй'],
     yearlyGoalBooks: json['yearlyGoalBooks'] as int? ?? 24,
     onboardingCompleted: json['onboardingCompleted'] as bool? ?? true,
     lastStreakDate: json['lastStreakDate'] as String? ?? '',
-    weeklyMinutes: (json['weeklyMinutes'] as List<dynamic>?)
+    weeklyMinutes:
+        (json['weeklyMinutes'] as List<dynamic>?)
             ?.map((e) => (e as num).toInt())
             .toList() ??
         const [0, 0, 0, 0, 0, 0, 0],
-    timeOfDayMinutes: (json['timeOfDayMinutes'] as Map<String, dynamic>?)
-            ?.map((k, v) => MapEntry(k, (v as num).toInt())) ??
-        const {
-          'morning': 0,
-          'afternoon': 0,
-          'evening': 0,
-          'night': 0,
-        },
+    timeOfDayMinutes:
+        (json['timeOfDayMinutes'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, (v as num).toInt()),
+        ) ??
+        const {'morning': 0, 'afternoon': 0, 'evening': 0, 'night': 0},
     reminderHour: json['reminderHour'] as int? ?? 20,
     remindersEnabled: json['remindersEnabled'] as bool? ?? true,
   );

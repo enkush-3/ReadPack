@@ -4,15 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/providers/theme_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/auth/presentation/page/auth.dart';
+import 'package:readpack/features/auth/presentation/page/verification_page.dart';
+import 'package:readpack/data/services/book_api_service.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/linktext.dart';
 import 'package:readpack/shared/widgets/submitbutton.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/secure_storage_mock.dart';
 
 late Map<String, dynamic> _mnMap;
 late Map<String, dynamic> _enMap;
@@ -55,9 +60,23 @@ Widget createAuthTestWidget({
       ],
       routes: {
         Routes.appshell: (_) => const Scaffold(body: Text('AppShellScreen')),
-        Routes.onboarding: (_) => const Scaffold(body: Text('OnboardingScreen')),
+        Routes.onboarding: (_) =>
+            const Scaffold(body: Text('OnboardingScreen')),
       },
-      home: const AuthPage(),
+      onGenerateRoute: (settings) {
+        if (settings.name == Routes.verify) {
+          return MaterialPageRoute<void>(
+            builder: (_) => VerificationPage(
+              arguments: settings.arguments as Map<String, dynamic>?,
+            ),
+          );
+        }
+        return null;
+      },
+      home: const MediaQuery(
+        data: MediaQueryData(disableAnimations: true),
+        child: AuthPage(),
+      ),
     ),
   );
 }
@@ -74,17 +93,36 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    mockSecureStorage();
   });
 
   group('AuthPage and Onboarding Entrypoint Tests', () {
-    testWidgets('AuthPage registration navigates to Onboarding before home page',
-        (tester) async {
+    testWidgets('AuthPage registration requests OTP before onboarding', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+      final mockClient = MockClient((request) async {
+        expect(request.url.path, '/api/v1/auth/signup');
+        return http.Response(
+          jsonEncode({
+            'challengeId': 'challenge_123',
+            'expiresAt': DateTime.now()
+                .add(const Duration(minutes: 10))
+                .toIso8601String(),
+          }),
+          202,
+        );
+      });
+      final bookProvider = BookProvider(
+        apiService: BookApiService(client: mockClient),
+      );
+      addTearDown(bookProvider.dispose);
+      await tester.runAsync(
+        () => Future.delayed(const Duration(milliseconds: 100)),
+      );
 
       await tester.pumpWidget(createAuthTestWidget(bookProvider: bookProvider));
       await tester.pumpAndSettle();
@@ -102,6 +140,7 @@ void main() {
       await tester.enterText(textFields.at(0), 'Шинэ Уншигч');
       await tester.enterText(textFields.at(1), 'newreader@readpack.app');
       await tester.enterText(textFields.at(2), 'password123');
+      await tester.enterText(textFields.at(3), 'password123');
       await tester.pumpAndSettle();
 
       // Submit
@@ -111,60 +150,76 @@ void main() {
       await tester.pump(const Duration(milliseconds: 600));
       await tester.pumpAndSettle();
 
-      expect(find.text('OnboardingScreen'), findsOneWidget);
+      expect(find.byType(VerificationPage), findsOneWidget);
     });
 
-    testWidgets('AuthPage skip button logs in as guest and navigates to AppShell',
-        (tester) async {
+    testWidgets(
+      'AuthPage skip button logs in as guest and navigates to AppShell',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 1200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final bookProvider = BookProvider();
+        addTearDown(bookProvider.dispose);
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+
+        await tester.pumpWidget(
+          createAuthTestWidget(bookProvider: bookProvider),
+        );
+        await tester.pumpAndSettle();
+
+        final skipButton = find.text('Алгасах');
+        expect(skipButton, findsOneWidget);
+
+        await tester.tap(skipButton);
+        await tester.pumpAndSettle();
+
+        expect(find.text('AppShellScreen'), findsOneWidget);
+        expect(bookProvider.userProfile.isGuest, isTrue);
+      },
+    );
+
+    testWidgets(
+      'AuthPage renders cleanly on narrow 360px mobile screen without overflow even at 2.0x text scale',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        final bookProvider = BookProvider();
+        addTearDown(bookProvider.dispose);
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+
+        await tester.pumpWidget(
+          MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
+            child: createAuthTestWidget(bookProvider: bookProvider),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('Алгасах'), findsOneWidget);
+      },
+    );
+
+    testWidgets('AuthPage provider failure does not create a local account', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
       final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-
-      await tester.pumpWidget(createAuthTestWidget(bookProvider: bookProvider));
-      await tester.pumpAndSettle();
-
-      final skipButton = find.text('Алгасах');
-      expect(skipButton, findsOneWidget);
-
-      await tester.tap(skipButton);
-      await tester.pumpAndSettle();
-
-      expect(find.text('AppShellScreen'), findsOneWidget);
-      expect(bookProvider.userProfile.isGuest, isTrue);
-    });
-
-    testWidgets('AuthPage renders cleanly on narrow 360px mobile screen without overflow even at 2.0x text scale',
-        (tester) async {
-      tester.view.physicalSize = const Size(360, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-
-      await tester.pumpWidget(
-        MediaQuery(
-          data: const MediaQueryData(textScaler: TextScaler.linear(2.0)),
-          child: createAuthTestWidget(bookProvider: bookProvider),
-        ),
+      addTearDown(bookProvider.dispose);
+      await tester.runAsync(
+        () => Future.delayed(const Duration(milliseconds: 100)),
       );
-      await tester.pumpAndSettle();
-
-      expect(tester.takeException(), isNull);
-      expect(find.text('Алгасах'), findsOneWidget);
-    });
-
-    testWidgets('AuthPage Google button authenticates user (isGuest == false) instead of guest mode',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 1200);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
       bookProvider.loginAsGuest();
       expect(bookProvider.userProfile.isGuest, isTrue);
 
@@ -176,7 +231,7 @@ void main() {
       await tester.tap(googleBtn);
       await tester.pumpAndSettle();
 
-      expect(bookProvider.userProfile.isGuest, isFalse);
+      expect(bookProvider.userProfile.isGuest, isTrue);
     });
   });
 }

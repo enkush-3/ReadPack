@@ -1,3 +1,19 @@
+plugins {
+    id("com.android.application")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+if (file("google-services.json").isFile) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
+val facebookAppId = providers.gradleProperty("FACEBOOK_APP_ID")
+    .orElse(providers.environmentVariable("FACEBOOK_APP_ID").orElse(""))
+    .get()
+val facebookClientToken = providers.gradleProperty("FACEBOOK_CLIENT_TOKEN")
+    .orElse(providers.environmentVariable("FACEBOOK_CLIENT_TOKEN").orElse(""))
+    .get()
+
 android {
     namespace = "com.example.readpact"
     compileSdk = flutter.compileSdkVersion
@@ -15,6 +31,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        resValue("string", "facebook_app_id", facebookAppId)
+        resValue("string", "facebook_client_token", facebookClientToken)
+        resValue("string", "fb_login_protocol_scheme", "fb$facebookAppId")
     }
 
 }
@@ -27,9 +46,4 @@ kotlin {
 
 flutter {
     source = "../.."
-}
-
-plugins {
-    id("com.android.application")
-    id("dev.flutter.flutter-gradle-plugin")
 }

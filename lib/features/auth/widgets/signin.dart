@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
+import 'package:readpack/data/services/social_auth_service.dart';
+import 'package:readpack/data/services/contact_normalizer.dart';
+import 'package:readpack/features/auth/auth_error_message.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/iconbutton.dart';
@@ -12,10 +15,7 @@ import 'package:readpack/shared/widgets/submitbutton.dart';
 class SignInPage extends StatefulWidget {
   final VoidCallback onSwitchToSignUp;
 
-  const SignInPage({
-    super.key,
-    required this.onSwitchToSignUp,
-  });
+  const SignInPage({super.key, required this.onSwitchToSignUp});
 
   @override
   State<SignInPage> createState() => _SignInPageState();
@@ -27,6 +27,7 @@ class _SignInPageState extends State<SignInPage> {
   bool _isLoading = false;
   String? _emailError;
   String? _passwordError;
+  String? _formError;
 
   @override
   void dispose() {
@@ -38,9 +39,11 @@ class _SignInPageState extends State<SignInPage> {
   void _showForgotPasswordDialog() {
     final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
-    final resetEmailController =
-        TextEditingController(text: _emailController.text.trim());
+    final resetEmailController = TextEditingController(
+      text: _emailController.text.trim(),
+    );
     String? errorMsg;
+    bool isLoading = false;
 
     showDialog(
       context: context,
@@ -65,7 +68,7 @@ class _SignInPageState extends State<SignInPage> {
             children: [
               Text(
                 l10n?.t('auth.reset_password_desc') ??
-                    'Имэйл хаягаа оруулна уу. Бид нууц үг сэргээх холбоос илгээх болно.',
+                    'Бүртгэлтэй имэйл эсвэл утасны дугаараа оруулна уу.',
                 style: TextStyle(
                   fontSize: 13,
                   color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -74,7 +77,8 @@ class _SignInPageState extends State<SignInPage> {
               const SizedBox(height: 16),
               InputField(
                 controller: resetEmailController,
-                hint: l10n?.t('auth.email_hint') ?? 'Имэйл хаягаа оруулна уу',
+                hint:
+                    l10n?.t('auth.contact_hint') ?? 'Имэйл эсвэл утасны дугаар',
                 icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
                 errorText: errorMsg,
@@ -87,28 +91,62 @@ class _SignInPageState extends State<SignInPage> {
               child: Text(l10n?.t('common.cancel') ?? 'Цуцлах'),
             ),
             FilledButton(
-              onPressed: () {
-                final mail = resetEmailController.text.trim();
-                if (mail.isEmpty || !mail.contains('@')) {
-                  setDialogState(() {
-                    errorMsg = l10n?.t('validation.email_invalid') ??
-                        'Имэйл хаягаа зөв оруулна уу';
-                  });
-                  return;
-                }
-                Navigator.of(dialogCtx).pop();
-                Navigator.of(context).pushNamed(
-                  Routes.verify,
-                  arguments: {
-                    'purpose': 'forgot_password',
-                    'target': mail,
-                    'isPhone': !mail.contains('@'),
-                  },
-                );
-              },
-              child: Text(
-                l10n?.t('auth.send_reset_link') ?? 'Холбоос илгээх',
-              ),
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      final contact = resetEmailController.text.trim();
+                      final isEmail = contact.contains('@');
+                      if (contact.isEmpty ||
+                          (isEmail && !contact.contains('.')) ||
+                          (!isEmail &&
+                              contact.replaceAll(RegExp(r'\D'), '').length <
+                                  8)) {
+                        setDialogState(() {
+                          errorMsg =
+                              l10n?.t('validation.email_invalid') ??
+                              'Имэйл эсвэл утасны дугаараа зөв оруулна уу';
+                        });
+                        return;
+                      }
+                      setDialogState(() {
+                        isLoading = true;
+                        errorMsg = null;
+                      });
+                      try {
+                        final challenge = await context
+                            .read<BookProvider>()
+                            .requestPasswordReset(
+                              contact: isEmail
+                                  ? contact
+                                  : normalizePhoneNumber(contact),
+                              contactType: isEmail ? 'email' : 'phone',
+                            );
+                        if (!mounted || !dialogCtx.mounted) return;
+                        Navigator.of(dialogCtx).pop();
+                        Navigator.of(context).pushNamed(
+                          Routes.verify,
+                          arguments: {
+                            'purpose': 'forgot_password',
+                            'target': contact,
+                            'isPhone': !isEmail,
+                            'challengeId': challenge.id,
+                            'contactType': isEmail ? 'email' : 'phone',
+                          },
+                        );
+                      } catch (error) {
+                        setDialogState(() {
+                          isLoading = false;
+                          errorMsg = authErrorMessage(error, l10n);
+                        });
+                      }
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(l10n?.t('auth.send_reset_link') ?? 'Код авах'),
             ),
           ],
         ),
@@ -127,37 +165,57 @@ class _SignInPageState extends State<SignInPage> {
 
     final l10n = AppLocalizations.of(context);
     bool isValid = true;
-    if (email.isEmpty || !email.contains('@')) {
-      setState(() => _emailError =
-          l10n?.t('validation.email_invalid') ?? 'Имэйл хаягаа зөв оруулна уу');
+    final isEmail = email.contains('@');
+    if (email.isEmpty ||
+        (isEmail && !email.contains('.')) ||
+        (!isEmail && email.replaceAll(RegExp(r'\D'), '').length < 8)) {
+      setState(
+        () => _emailError =
+            l10n?.t('validation.email_invalid') ??
+            'Имэйл эсвэл утасны дугаараа зөв оруулна уу',
+      );
       isValid = false;
     }
-    if (password.length < 6) {
-      setState(() => _passwordError = l10n?.t('validation.password_too_short') ??
-          'Нууц үг хамгийн багадаа 6 тэмдэгт байна');
+    if (password.length < 8) {
+      setState(
+        () => _passwordError =
+            l10n?.t('validation.password_too_short') ??
+            'Нууц үг хамгийн багадаа 6 тэмдэгт байна',
+      );
       isValid = false;
     }
 
     if (!isValid) return;
 
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    if (mounted) {
-      setState(() => _isLoading = false);
-      final localPart = email.split('@').first;
-      final derivedName = localPart.isEmpty
-          ? 'Enkush'
-          : '${localPart[0].toUpperCase()}${localPart.substring(1)}';
-      context.read<BookProvider>().loginWithEmail(email, derivedName);
+    setState(() {
+      _isLoading = true;
+      _formError = null;
+    });
+    try {
+      await context.read<BookProvider>().signInWithPassword(
+        contact: isEmail ? email : normalizePhoneNumber(email),
+        contactType: isEmail ? 'email' : 'phone',
+        password: password,
+      );
+      if (!mounted) return;
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       } else {
-        Navigator.of(context).pushReplacementNamed(
-          Routes.appshell,
-          arguments: 0,
+        Navigator.of(
+          context,
+        ).pushReplacementNamed(Routes.appshell, arguments: 0);
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _formError = authErrorMessage(
+            error,
+            AppLocalizations.of(context),
+          ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -170,15 +228,36 @@ class _SignInPageState extends State<SignInPage> {
     }
   }
 
-  void _loginWithSocial(String providerName) {
-    final email = _emailController.text.trim().contains('@')
-        ? _emailController.text.trim()
-        : '${providerName.toLowerCase()}@readpack.app';
-    context.read<BookProvider>().loginWithEmail(email, '$providerName Уншигч');
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
-    } else {
-      Navigator.of(context).pushReplacementNamed(Routes.appshell, arguments: 0);
+  Future<void> _loginWithSocial(String providerName) async {
+    final l10n = AppLocalizations.of(context);
+    setState(() {
+      _isLoading = true;
+      _formError = null;
+    });
+    try {
+      final provider = providerName.toLowerCase();
+      final token = provider == 'google'
+          ? await SocialAuthService.signInWithGoogle()
+          : await SocialAuthService.signInWithFacebook();
+      if (token == null || !mounted) return;
+      await context.read<BookProvider>().signInWithProvider(
+        provider: provider,
+        token: token,
+      );
+      if (!mounted) return;
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        Navigator.of(
+          context,
+        ).pushReplacementNamed(Routes.appshell, arguments: 0);
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _formError = authErrorMessage(error, l10n));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -188,11 +267,11 @@ class _SignInPageState extends State<SignInPage> {
     final l10n = AppLocalizations.of(context);
 
     final signinText = l10n?.t('auth.signin') ?? 'Нэвтрэх';
-    final emailHint = l10n?.t('auth.email_hint') ?? 'Имэйл хаягаа оруулна уу';
+    final emailHint =
+        l10n?.t('auth.contact_hint') ?? 'Имэйл эсвэл утасны дугаар';
     final passwordHint =
         l10n?.t('auth.password_hint') ?? 'Нууц үгээ оруулна уу';
-    final noAccountText =
-        l10n?.t('auth.no_account') ?? 'Бүртгэлгүй юу?';
+    final noAccountText = l10n?.t('auth.no_account') ?? 'Бүртгэлгүй юу?';
     final signupText = l10n?.t('auth.signup') ?? 'Бүртгүүлэх';
 
     return Column(
@@ -221,7 +300,7 @@ class _SignInPageState extends State<SignInPage> {
           controller: _emailController,
           hint: emailHint,
           icon: Icons.email_outlined,
-          keyboardType: TextInputType.emailAddress,
+          keyboardType: TextInputType.text,
           errorText: _emailError,
         ),
         const SizedBox(height: 16),
@@ -253,6 +332,13 @@ class _SignInPageState extends State<SignInPage> {
           ),
         ),
         const SizedBox(height: 18),
+        if (_formError != null) ...[
+          Text(
+            _formError!,
+            style: TextStyle(color: colorScheme.error, fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+        ],
         SubmitButton(
           label: signinText,
           isLoading: _isLoading,
@@ -299,6 +385,12 @@ class _SignInPageState extends State<SignInPage> {
           logolink: 'assets/public/logos/google.png',
           label: 'Google',
           action: () => _loginWithSocial('Google'),
+        ),
+        const SizedBox(height: 12),
+        SocialAuthButton(
+          logolink: 'assets/public/logos/facebook.png',
+          label: 'Facebook',
+          action: () => _loginWithSocial('Facebook'),
         ),
         const SizedBox(height: 24),
         LinkText(

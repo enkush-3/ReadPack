@@ -5,271 +5,290 @@ const { URL } = require('url');
 const { MongoStore } = require('./services/mongoStore');
 const { BookCatalogService } = require('./services/bookCatalogService');
 const { UserTreeService } = require('./services/userTreeService');
+const { AuthError, AuthService, safeUserTree } = require('./services/authService');
 
-/**
- * Creates the ReadPack Express.js API Application (with automatic native HTTP
- * adapter fallback if `node_modules/express` is not yet installed).
- */
+const API_PREFIX = '/api/v1';
+const MAX_REQUEST_BYTES = 1024 * 1024;
+
 async function createReadPackApp({
   storageFilePath,
   mongoUri,
   forceFallback = false,
   externalFetcher,
+  env = process.env,
+  authOptions = {},
 } = {}) {
   const store = new MongoStore({ storageFilePath });
   await store.init({ mongoUri, forceFallback });
+  const bookCatalogService = new BookCatalogService({ store, externalFetcher });
+  const userTreeService = new UserTreeService({ store, bookCatalogService });
+  const authService = new AuthService({ ...authOptions, store, userTreeService, env });
+  const allowedOrigins = parseOrigins(env.ALLOWED_ORIGINS);
+  const requestWindows = new Map();
 
-  const bookCatalogService = new BookCatalogService({
-    store,
-    externalFetcher,
-  });
-  const userTreeService = new UserTreeService({
+  async function requestListener(req, res) {
+    applyCors(req, res, allowedOrigins);
+    if (req.method === 'OPTIONS') {
+      if (!isAllowedOrigin(req.headers.origin, allowedOrigins)) {
+        return sendJson(res, 403, errorBody('origin_not_allowed', 'Request origin is not allowed.'));
+      }
+      res.statusCode = 204;
+      return res.end();
+    }
+
+    try {
+      const { pathname, searchParams } = new URL(req.url, 'http://localhost');
+      const body = await readJsonBody(req);
+      enforceAuthRequestLimit(req, pathname, requestWindows);
+      const response = await dispatchRequest({
+        req,
+        pathname,
+        searchParams,
+        body,
+        store,
+        bookCatalogService,
+        userTreeService,
+        authService,
+      });
+      if (!response) return sendJson(res, 404, errorBody('route_not_found', 'Route not found.'));
+      return sendJson(res, response.status || 200, response.body);
+    } catch (error) {
+      const status = error instanceof AuthError ? error.statusCode : Number(error.statusCode || 500);
+      const code = error instanceof AuthError ? error.code : error.code || (status === 500 ? 'internal_error' : 'bad_request');
+      const message = status === 500 ? 'Request could not be completed.' : error.message;
+      return sendJson(res, status, errorBody(code, message));
+    }
+  }
+
+  return {
+    app: requestListener,
     store,
     bookCatalogService,
-  });
+    userTreeService,
+    authService,
+    createServer: () => http.createServer(requestListener),
+  };
+}
 
-  // Shared route handlers (Express (req, res) signature)
-  const handlers = {
-    async health(req, res) {
-      const books = await store.getAllBooks();
-      return sendJson(res, 200, {
+async function dispatchRequest({
+  req,
+  pathname,
+  searchParams,
+  body,
+  store,
+  bookCatalogService,
+  userTreeService,
+  authService,
+}) {
+  const method = req.method;
+  if (method === 'GET' && pathname === `${API_PREFIX}/health`) {
+    const books = await store.getAllBooks();
+    return {
+      body: {
         status: 'ok',
         engine: 'express_mongodb_tree',
         storageMode: store.mode,
         centralBooksCount: books.length,
-      });
-    },
-
-    async searchBooks(req, res, queryObj) {
-      try {
-        const q = queryObj.q ?? queryObj.search ?? '';
-        const result = await bookCatalogService.searchBooks(q);
-        return sendJson(res, 200, result);
-      } catch (err) {
-        return sendJson(res, 500, { error: err.message });
-      }
-    },
-
-    async syncBook(req, res, body) {
-      try {
-        const bookPayload = body?.book || body;
-        const savedBook = await bookCatalogService.syncBookToCentralCatalog(
-          bookPayload
-        );
-        return sendJson(res, 201, {
-          status: 'synced_to_central_db',
-          book: savedBook,
-        });
-      } catch (err) {
-        return sendJson(res, 400, { error: err.message });
-      }
-    },
-
-    async authLogin(req, res, body) {
-      try {
-        const userAccountTree = await userTreeService.loginOrRegister({
-          email: body?.email,
-          name: body?.name || body?.displayName,
-          password: body?.password,
-          provider: body?.provider || 'email',
-        });
-        return sendJson(res, 200, {
-          status: 'authenticated',
-          userAccountTree,
-        });
-      } catch (err) {
-        return sendJson(res, 400, { error: err.message });
-      }
-    },
-
-    async getUserTree(req, res, userId) {
-      try {
-        const tree = await userTreeService.getUserTree(userId);
-        if (!tree) {
-          return sendJson(res, 404, { error: 'User account tree not found' });
-        }
-        return sendJson(res, 200, { userAccountTree: tree });
-      } catch (err) {
-        return sendJson(res, 500, { error: err.message });
-      }
-    },
-
-    async updateUserTree(req, res, userId, body) {
-      try {
-        const tree = await userTreeService.updatePreferencesAndProfile(
-          userId,
-          body
-        );
-        return sendJson(res, 200, {
-          status: 'updated',
-          userAccountTree: tree,
-        });
-      } catch (err) {
-        return sendJson(res, 400, { error: err.message });
-      }
-    },
-
-    async syncUserReading(req, res, userId, body) {
-      try {
-        const result = await userTreeService.syncReadingNode(userId, body);
-        return sendJson(res, 201, {
-          status: 'synced',
-          source: 'central_db',
-          centralBook: result.centralBook,
-          userAccountTree: result.userAccountTree,
-        });
-      } catch (err) {
-        return sendJson(res, 400, { error: err.message });
-      }
-    },
-  };
-
-  // Try loading Express if installed in node_modules
-  try {
-    const express = require('express');
-    const app = express();
-    app.use(express.json({ limit: '2mb' }));
-    app.use((req, res, next) => {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader(
-        'Access-Control-Allow-Methods',
-        'GET,POST,PUT,PATCH,DELETE,OPTIONS'
-      );
-      res.setHeader(
-        'Access-Control-Allow-Headers',
-        'Content-Type, Authorization'
-      );
-      if (req.method === 'OPTIONS') return res.sendStatus(204);
-      next();
+      },
+    };
+  }
+  if (method === 'GET' && pathname === `${API_PREFIX}/books/search`) {
+    const searchResult = await bookCatalogService.searchBooks(searchParams.get('q') || searchParams.get('search') || '');
+    return { body: searchResult };
+  }
+  if (method === 'POST' && pathname === `${API_PREFIX}/books/sync`) {
+    await requireAccess(req, authService);
+    const savedBook = await bookCatalogService.syncBookToCentralCatalog(body.book || body);
+    return { status: 201, body: { status: 'synced_to_central_db', book: savedBook } };
+  }
+  if (method === 'GET' && pathname === `${API_PREFIX}/leaderboard`) {
+    return { body: { entries: await authService.getLeaderboard(searchParams.get('period') || 'weekly') } };
+  }
+  if (pathname.startsWith(`${API_PREFIX}/auth/`)) {
+    return dispatchAuthRequest(method, pathname.slice(`${API_PREFIX}/auth`.length), req, body, authService);
+  }
+  if (method === 'POST' && pathname === `${API_PREFIX}/internal/notifications/send`) {
+    const result = await authService.sendNotification({
+      serviceToken: req.headers['x-service-token'],
+      userId: body.userId,
+      title: body.title,
+      body: body.body,
+      data: body.data,
     });
+    return { body: result };
+  }
 
-    app.get('/api/v1/health', (req, res) => handlers.health(req, res));
-    app.get('/api/v1/books/search', (req, res) =>
-      handlers.searchBooks(req, res, req.query || {})
-    );
-    app.post('/api/v1/books/sync', (req, res) =>
-      handlers.syncBook(req, res, req.body || {})
-    );
-    app.post('/api/v1/auth/login', (req, res) =>
-      handlers.authLogin(req, res, req.body || {})
-    );
-    app.get('/api/v1/users/:userId/tree', (req, res) =>
-      handlers.getUserTree(req, res, decodeURIComponent(req.params.userId))
-    );
-    app.put('/api/v1/users/:userId/tree', (req, res) =>
-      handlers.updateUserTree(
-        req,
-        res,
-        decodeURIComponent(req.params.userId),
-        req.body || {}
-      )
-    );
-    app.post('/api/v1/users/:userId/reading', (req, res) =>
-      handlers.syncUserReading(
-        req,
-        res,
-        decodeURIComponent(req.params.userId),
-        req.body || {}
-      )
-    );
+  const userRoute = pathname.match(/^\/api\/v1\/users\/([^/]+)\/(tree|reading|reading\/events|devices)$/);
+  if (!userRoute) return null;
+  const userId = decodePathSegment(userRoute[1]);
+  const resource = userRoute[2];
+  const session = await requireAccess(req, authService);
+  if (session.userId !== userId) {
+    throw new AuthError(403, 'user_mismatch', 'The requested account does not match the access token.');
+  }
 
+  if (resource === 'tree' && method === 'GET') {
+    const tree = await userTreeService.getUserTree(userId);
+    if (!tree) throw new AuthError(404, 'user_not_found', 'User account was not found.');
     return {
-      app,
-      store,
-      bookCatalogService,
-      userTreeService,
-      createServer: () => http.createServer(app),
+      body: {
+        userAccountTree: safeUserTree(tree),
+        readingStats: await authService.getReadingStats(userId),
+      },
     };
+  }
+  if (resource === 'tree' && method === 'PUT') {
+    const tree = await userTreeService.updatePreferencesAndProfile(userId, body);
+    return { body: { status: 'updated', userAccountTree: safeUserTree(tree) } };
+  }
+  if (resource === 'reading/events' && method === 'POST') {
+    const result = await authService.syncReadingEvent(userId, body);
+    return { status: result.duplicate ? 200 : 201, body: result };
+  }
+  if (resource === 'reading' && method === 'POST') {
+    if (body.eventId !== undefined) {
+      throw new AuthError(400, 'event_endpoint_required', 'Reading events must use the /reading/events endpoint.');
+    }
+    const result = await userTreeService.syncReadingNode(userId, body);
+    return {
+      body: {
+        status: 'synced',
+        centralBook: result.centralBook,
+        userAccountTree: safeUserTree(result.userAccountTree),
+      },
+    };
+  }
+  if (resource === 'devices' && method === 'POST') {
+    return { body: await authService.registerDevice(userId, body) };
+  }
+  if (resource === 'devices' && method === 'DELETE') {
+    return { body: await authService.removeDevice(userId, body.token) };
+  }
+  return null;
+}
+
+async function dispatchAuthRequest(method, route, req, body, authService) {
+  if (method === 'POST' && route === '/signup') {
+    return { status: 202, body: await authService.signUp(body) };
+  }
+  if (method === 'POST' && route === '/otp/resend') {
+    return { status: 202, body: await authService.resendOtp(body) };
+  }
+  if (method === 'POST' && route === '/otp/verify') {
+    return { body: await authService.verifyOtp(body) };
+  }
+  if (method === 'POST' && route === '/login') {
+    return { body: await authService.login(body) };
+  }
+  if (method === 'POST' && route === '/refresh') {
+    return { body: await authService.refreshSession(body.refreshToken) };
+  }
+  if (method === 'POST' && route === '/logout') {
+    const session = await requireAccess(req, authService);
+    return { body: await authService.logout(session.userId, body.refreshToken) };
+  }
+  if (method === 'POST' && route === '/oauth/google') {
+    return { body: await authService.oauthSignIn('google', body.idToken) };
+  }
+  if (method === 'POST' && route === '/oauth/facebook') {
+    return { body: await authService.oauthSignIn('facebook', body.accessToken) };
+  }
+  if (method === 'POST' && route === '/password/forgot') {
+    return { status: 202, body: await authService.requestPasswordReset(body) };
+  }
+  if (method === 'POST' && route === '/password/reset') {
+    return { body: await authService.resetPassword(body) };
+  }
+  return null;
+}
+
+async function requireAccess(req, authService) {
+  return authService.authenticateAccessToken(req.headers.authorization);
+}
+
+function parseOrigins(value) {
+  const configured = String(value || '').split(',').map((origin) => origin.trim()).filter(Boolean);
+  return new Set(configured.length > 0 ? configured : ['http://localhost:3000', 'http://localhost:5000']);
+}
+
+function enforceAuthRequestLimit(req, pathname, windows) {
+  if (!pathname.startsWith(`${API_PREFIX}/auth/`)) return;
+  const windowMs = 15 * 60 * 1000;
+  const key = `${req.socket.remoteAddress || 'unknown'}:${pathname}`;
+  const now = Date.now();
+  const previous = windows.get(key) || { count: 0, resetAt: now + windowMs };
+  if (previous.resetAt <= now) {
+    windows.set(key, { count: 1, resetAt: now + windowMs });
+    return;
+  }
+  const limit = pathname.endsWith('/login') ? 20 : 30;
+  if (previous.count >= limit) {
+    throw new AuthError(429, 'rate_limited', 'Please wait before trying again.');
+  }
+  windows.set(key, { ...previous, count: previous.count + 1 });
+}
+
+function isAllowedOrigin(origin, origins) {
+  return !origin || origins.has(origin);
+}
+
+function applyCors(req, res, allowedOrigins) {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.has(origin)) res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Service-Token');
+}
+
+function decodePathSegment(value) {
+  try {
+    return decodeURIComponent(value);
   } catch (_) {
-    // Express-compatible HTTP router when running without node_modules installed
-    const requestListener = async (req, res) => {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader(
-        'Access-Control-Allow-Methods',
-        'GET,POST,PUT,PATCH,DELETE,OPTIONS'
-      );
-      res.setHeader(
-        'Access-Control-Allow-Headers',
-        'Content-Type, Authorization'
-      );
-      if (req.method === 'OPTIONS') {
-        res.statusCode = 204;
-        return res.end();
-      }
-
-      const parsedUrl = new URL(req.url, 'http://localhost');
-      const pathname = parsedUrl.pathname;
-      const queryObj = Object.fromEntries(parsedUrl.searchParams.entries());
-      const body = await readJsonBody(req);
-
-      if (req.method === 'GET' && pathname === '/api/v1/health') {
-        return handlers.health(req, res);
-      }
-      if (req.method === 'GET' && pathname === '/api/v1/books/search') {
-        return handlers.searchBooks(req, res, queryObj);
-      }
-      if (req.method === 'POST' && pathname === '/api/v1/books/sync') {
-        return handlers.syncBook(req, res, body);
-      }
-      if (req.method === 'POST' && pathname === '/api/v1/auth/login') {
-        return handlers.authLogin(req, res, body);
-      }
-
-      const treeMatch = pathname.match(/^\/api\/v1\/users\/([^/]+)\/tree$/);
-      if (treeMatch) {
-        const userId = decodeURIComponent(treeMatch[1]);
-        if (req.method === 'GET') return handlers.getUserTree(req, res, userId);
-        if (req.method === 'PUT')
-          return handlers.updateUserTree(req, res, userId, body);
-      }
-
-      const readingMatch = pathname.match(
-        /^\/api\/v1\/users\/([^/]+)\/reading$/
-      );
-      if (readingMatch && req.method === 'POST') {
-        const userId = decodeURIComponent(readingMatch[1]);
-        return handlers.syncUserReading(req, res, userId, body);
-      }
-
-      return sendJson(res, 404, { error: `Route not found: ${pathname}` });
-    };
-
-    return {
-      app: requestListener,
-      store,
-      bookCatalogService,
-      userTreeService,
-      createServer: () => http.createServer(requestListener),
-    };
+    throw new AuthError(400, 'invalid_path', 'Path parameter is invalid.');
   }
 }
 
 function sendJson(res, statusCode, payload) {
-  if (typeof res.status === 'function' && typeof res.json === 'function') {
-    return res.status(statusCode).json(payload);
-  }
+  if (res.writableEnded) return;
   res.statusCode = statusCode;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.end(JSON.stringify(payload));
 }
 
-function readJsonBody(req) {
-  return new Promise((resolve) => {
-    if (req.method === 'GET' || req.method === 'HEAD') return resolve({});
-    let raw = '';
-    req.on('data', (chunk) => {
-      raw += chunk;
-    });
-    req.on('end', () => {
-      if (!raw) return resolve({});
-      try {
-        resolve(JSON.parse(raw));
-      } catch (_) {
-        resolve({});
-      }
-    });
-    req.on('error', () => resolve({}));
-  });
+function errorBody(code, message) {
+  return { error: code, message };
+}
+
+async function readJsonBody(req) {
+  if (req.method === 'GET' || req.method === 'HEAD') return {};
+  const contentLength = Number(req.headers['content-length'] || 0);
+  if (contentLength > MAX_REQUEST_BYTES) {
+    const error = new Error('Request body is too large.');
+    error.statusCode = 413;
+    error.code = 'payload_too_large';
+    throw error;
+  }
+  let raw = '';
+  for await (const chunk of req) {
+    raw += chunk;
+    if (Buffer.byteLength(raw) > MAX_REQUEST_BYTES) {
+      const error = new Error('Request body is too large.');
+      error.statusCode = 413;
+      error.code = 'payload_too_large';
+      throw error;
+    }
+  }
+  if (!raw) return {};
+  try {
+    const body = JSON.parse(raw);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Object body required');
+    return body;
+  } catch (_) {
+    const error = new Error('Request body must be a valid JSON object.');
+    error.statusCode = 400;
+    error.code = 'invalid_json';
+    throw error;
+  }
 }
 
 module.exports = { createReadPackApp };

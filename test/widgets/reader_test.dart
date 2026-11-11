@@ -6,16 +6,18 @@ import 'package:readpack/core/providers/theme_provider.dart';
 import 'package:readpack/features/reader/presentation/page/reader_page.dart';
 import 'package:readpack/models/book.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/secure_storage_mock.dart';
+
+late BookProvider _provider;
 
 Widget createTestReader(Book book) {
+  _provider = BookProvider();
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ChangeNotifierProvider(create: (_) => BookProvider()),
+      ChangeNotifierProvider<BookProvider>.value(value: _provider),
     ],
-    child: MaterialApp(
-      home: ReaderPage(book: book),
-    ),
+    child: MaterialApp(home: ReaderPage(book: book)),
   );
 }
 
@@ -24,6 +26,7 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    mockSecureStorage();
   });
 
   const testBook = Book(
@@ -56,6 +59,8 @@ void main() {
   group('ReaderPage Widget Tests', () {
     testWidgets('Renders book title, author, and chapter text', (tester) async {
       await tester.pumpWidget(createTestReader(testBook));
+      addTearDown(_provider.dispose);
+      await tester.runAsync(() => _provider.initialized);
       await tester.pumpAndSettle();
 
       expect(find.text('1984'), findsOneWidget);
@@ -63,13 +68,18 @@ void main() {
       expect(find.text('Part 1: The Clock Strikes Thirteen'), findsOneWidget);
       expect(
         find.text(
-            'It was a bright cold day in April, and the clocks were striking thirteen.'),
+          'It was a bright cold day in April, and the clocks were striking thirteen.',
+        ),
         findsOneWidget,
       );
     });
 
-    testWidgets('Appearance bottom sheet opens upon tapping typography icon', (tester) async {
+    testWidgets('Appearance bottom sheet opens upon tapping typography icon', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestReader(testBook));
+      addTearDown(_provider.dispose);
+      await tester.runAsync(() => _provider.initialized);
       await tester.pumpAndSettle();
 
       final textFormatBtn = find.byIcon(Icons.text_format_rounded);
@@ -84,8 +94,12 @@ void main() {
       expect(find.text('Сепиа'), findsOneWidget);
     });
 
-    testWidgets('Audio mode toggle displays audio playback control bar', (tester) async {
+    testWidgets('Audio mode toggle displays audio playback control bar', (
+      tester,
+    ) async {
       await tester.pumpWidget(createTestReader(testBook));
+      addTearDown(_provider.dispose);
+      await tester.runAsync(() => _provider.initialized);
       await tester.pumpAndSettle();
 
       final audioBtn = find.byIcon(Icons.headphones_outlined);

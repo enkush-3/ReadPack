@@ -34,18 +34,12 @@ class BookDataLoader {
     var books = BookRepository.getInitialBooks();
     var bookmarks = DefaultProviderData.defaultBookmarks();
     var notifications = DefaultProviderData.defaultNotifications();
-    var recentSearches = [
-      'Atomic Habits',
-      '1984',
-      'Clear Thinking',
-      'Sapiens',
-    ];
+    var recentSearches = ['Atomic Habits', '1984', 'Clear Thinking', 'Sapiens'];
     var userProfile = UserProfile.freshUser(
-      name: 'Enkush',
-      email: 'enkush@readpack.app',
-      username: '@enkush',
-      phoneNumber: '+976 99112233',
-    );
+      name: 'Зочин',
+      email: '',
+      username: '@guest',
+    ).copyWith(isGuest: true);
     var collections = <BookCollection>[];
     var downloadedBookIds = <String>{};
 
@@ -54,14 +48,16 @@ class BookDataLoader {
         prefs.getStringList(BookProviderPersistence.keySavedBooks) ?? [];
     final favIds =
         prefs.getStringList(BookProviderPersistence.keyFavorites) ?? [];
-    final searches =
-        prefs.getStringList(BookProviderPersistence.keyRecentSearches);
+    final searches = prefs.getStringList(
+      BookProviderPersistence.keyRecentSearches,
+    );
     if (searches != null && searches.isNotEmpty) {
       recentSearches = searches;
     }
 
-    final progressJson =
-        prefs.getString(BookProviderPersistence.keyReadingProgress);
+    final progressJson = prefs.getString(
+      BookProviderPersistence.keyReadingProgress,
+    );
     Map<String, dynamic> progressMap = {};
     if (progressJson != null) {
       progressMap = jsonDecode(progressJson) as Map<String, dynamic>;
@@ -74,43 +70,52 @@ class BookDataLoader {
       progressMap: progressMap,
     );
 
-    final bookmarksJson =
-        prefs.getStringList(BookProviderPersistence.keyBookmarks);
+    final bookmarksJson = prefs.getStringList(
+      BookProviderPersistence.keyBookmarks,
+    );
     if (bookmarksJson != null && bookmarksJson.isNotEmpty) {
       bookmarks = bookmarksJson
           .map((b) => Bookmark.fromJson(jsonDecode(b) as Map<String, dynamic>))
           .toList();
     }
 
-    final profileJson =
-        prefs.getString(BookProviderPersistence.keyUserProfile);
+    final profileJson = prefs.getString(BookProviderPersistence.keyUserProfile);
     if (profileJson != null) {
       userProfile = UserProfile.fromJson(
-          jsonDecode(profileJson) as Map<String, dynamic>);
+        jsonDecode(profileJson) as Map<String, dynamic>,
+      );
     }
 
-    final notifsJson =
-        prefs.getStringList(BookProviderPersistence.keyNotifications);
+    final notifsJson = prefs.getStringList(
+      BookProviderPersistence.keyNotifications,
+    );
     if (notifsJson != null && notifsJson.isNotEmpty) {
       notifications = notifsJson
-          .map((n) =>
-              NotificationItem.fromJson(jsonDecode(n) as Map<String, dynamic>))
+          .map(
+            (n) => NotificationItem.fromJson(
+              jsonDecode(n) as Map<String, dynamic>,
+            ),
+          )
           .toList();
     }
 
-    final collectionsJson =
-        prefs.getStringList(BookProviderPersistence.keyCollections);
+    final collectionsJson = prefs.getStringList(
+      BookProviderPersistence.keyCollections,
+    );
     if (collectionsJson != null && collectionsJson.isNotEmpty) {
       collections = collectionsJson
-          .map((c) =>
-              BookCollection.fromJson(jsonDecode(c) as Map<String, dynamic>))
+          .map(
+            (c) =>
+                BookCollection.fromJson(jsonDecode(c) as Map<String, dynamic>),
+          )
           .toList();
     } else {
       collections = DefaultProviderData.defaultCollections();
     }
 
-    final downloadedList =
-        prefs.getStringList(BookProviderPersistence.keyDownloadedBooks);
+    final downloadedList = prefs.getStringList(
+      BookProviderPersistence.keyDownloadedBooks,
+    );
     if (downloadedList != null) {
       downloadedBookIds = downloadedList.toSet();
     }

@@ -4,6 +4,12 @@
 *.pyc
 *.swp
 .DS_Store
+.env
+.env.*
+!.env.example
+ios/Flutter/RunnerSecrets.xcconfig
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
 .atom/
 .build/
 .buildlog/

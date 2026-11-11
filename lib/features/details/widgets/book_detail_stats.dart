@@ -8,11 +8,7 @@ class BookDetailStats extends StatelessWidget {
   final Book book;
   final AppLocalizations? l10n;
 
-  const BookDetailStats({
-    super.key,
-    required this.book,
-    this.l10n,
-  });
+  const BookDetailStats({super.key, required this.book, this.l10n});
 
   Widget _buildStatItem({
     required IconData icon,
@@ -22,18 +18,24 @@ class BookDetailStats extends StatelessWidget {
     required ColorScheme colorScheme,
   }) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 16, color: iconColor),
             const SizedBox(width: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
           ],
@@ -41,10 +43,10 @@ class BookDetailStats extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            color: colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
         ),
       ],
     );
@@ -54,54 +56,52 @@ class BookDetailStats extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.3),
-        ),
+    final stats = <Widget>[
+      _buildStatItem(
+        icon: Icons.star_rounded,
+        iconColor: Colors.amber,
+        value: book.rating.toStringAsFixed(1),
+        label:
+            '${book.reviewsCount} ${l10n?.t('reviews.ratings_count') ?? 'үнэлгээ'}',
+        colorScheme: colorScheme,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem(
-            icon: Icons.star_rounded,
-            iconColor: Colors.amber,
-            value: book.rating.toStringAsFixed(1),
-            label:
-                '${book.reviewsCount} ${l10n?.t('reviews.ratings_count') ?? 'үнэлгээ'}',
-            colorScheme: colorScheme,
-          ),
-          Container(
-            height: 30,
-            width: 1,
-            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-          ),
-          _buildStatItem(
-            icon: Icons.auto_stories_rounded,
-            iconColor: colorScheme.primary,
-            value: '${book.pages}',
-            label: l10n?.t('book.pages') ?? 'Хуудас',
-            colorScheme: colorScheme,
-          ),
-          if (book.hasAudio) ...[
-            Container(
-              height: 30,
-              width: 1,
-              color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-            ),
-            _buildStatItem(
-              icon: Icons.access_time_rounded,
-              iconColor: colorScheme.secondary,
-              value:
-                  '${book.audioDurationMinutes > 0 ? book.audioDurationMinutes : book.readTimeMinutes} ${l10n?.t('common.minutes_short') ?? 'м'}',
-              label: l10n?.t('book.duration') ?? 'Хугацаа',
-              colorScheme: colorScheme,
-            ),
-          ],
-        ],
+      _buildStatItem(
+        icon: Icons.auto_stories_rounded,
+        iconColor: colorScheme.primary,
+        value: '${book.pages}',
+        label: l10n?.t('book.pages') ?? 'Хуудас',
+        colorScheme: colorScheme,
+      ),
+      if (book.hasAudio)
+        _buildStatItem(
+          icon: Icons.access_time_rounded,
+          iconColor: colorScheme.secondary,
+          value:
+              '${book.audioDurationMinutes > 0 ? book.audioDurationMinutes : book.readTimeMinutes} ${l10n?.t('common.minutes_short') ?? 'м'}',
+          label: l10n?.t('book.duration') ?? 'Хугацаа',
+          colorScheme: colorScheme,
+        ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth = (constraints.maxWidth - 12) / 2;
+          return Wrap(
+            alignment: WrapAlignment.spaceEvenly,
+            spacing: 12,
+            runSpacing: 12,
+            children: stats
+                .map((stat) => SizedBox(width: itemWidth, child: stat))
+                .toList(),
+          );
+        },
       ),
     );
   }
@@ -169,12 +169,16 @@ class BookDetailActionButtons extends StatelessWidget {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    readButtonLabel,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onPrimary,
+                  Flexible(
+                    child: Text(
+                      readButtonLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onPrimary,
+                      ),
                     ),
                   ),
                 ],
@@ -193,8 +197,9 @@ class BookDetailActionButtons extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: showAudioPlayer
                       ? colorScheme.primary.withValues(alpha: 0.15)
-                      : colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.35),
+                      : colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.35,
+                        ),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: showAudioPlayer

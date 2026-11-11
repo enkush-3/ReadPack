@@ -14,6 +14,7 @@ import 'package:readpack/features/home/widgets/continue_reading_card.dart';
 import 'package:readpack/features/settings/presentation/page/settings_page.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/secure_storage_mock.dart';
 
 late Map<String, dynamic> _mnMap;
 late Map<String, dynamic> _enMap;
@@ -62,7 +63,10 @@ Widget createTestWidget({
         Routes.onboarding: (_) => const Scaffold(body: Text('Onboarding')),
         Routes.auth: (_) => const Scaffold(body: Text('Auth')),
       },
-      home: child,
+      home: MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: child,
+      ),
     ),
   );
 }
@@ -79,11 +83,13 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    mockSecureStorage();
   });
 
   group('UX Overhaul and Verification Tests', () {
-    testWidgets('VerificationPage renders 6 OTP boxes and timer',
-        (tester) async {
+    testWidgets('VerificationPage renders 6 OTP boxes and timer', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         createTestWidget(
           child: const VerificationPage(
@@ -105,103 +111,118 @@ void main() {
     });
 
     testWidgets(
-        'AppShell hides ContinueReadingCard for guest and shows for logged-in user with reading progress',
-        (tester) async {
-      final guestProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      guestProvider.loginAsGuest();
+      'Home flow hides ContinueReadingCard for guest and shows it for logged-in readers',
+      (tester) async {
+        final guestProvider = BookProvider();
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        guestProvider.loginAsGuest();
 
-      // Test Guest: ContinueReadingCard must NOT be shown
-      await tester.pumpWidget(
-        createTestWidget(
-          child: const AppShell(),
-          bookProvider: guestProvider,
-        ),
-      );
-      await tester.pumpAndSettle();
+        // Test Guest: ContinueReadingCard must NOT be shown
+        await tester.pumpWidget(
+          createTestWidget(
+            child: const AppShell(),
+            bookProvider: guestProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.byType(ContinueReadingCard), findsNothing);
+        expect(find.byType(ContinueReadingCard), findsNothing);
 
-      // Test Logged in user with reading progress:
-      final userProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      userProvider.loginWithEmail('user@test.com', 'Test User');
-      // Simulate reading progress on first book
-      userProvider.updateReadingProgress(
-        userProvider.books.first.id,
-        20,
-        0.35,
-        1,
-      );
+        // Test Logged in user with reading progress:
+        final userProvider = BookProvider();
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        userProvider.loginWithEmail('user@test.com', 'Test User');
+        // Simulate reading progress on first book
+        userProvider.updateReadingProgress(
+          userProvider.books.first.id,
+          20,
+          0.35,
+          1,
+        );
 
-      await tester.pumpWidget(
-        createTestWidget(
-          child: const AppShell(),
-          bookProvider: userProvider,
-        ),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createTestWidget(child: const AppShell(), bookProvider: userProvider),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.byType(ContinueReadingCard), findsOneWidget);
-      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+        expect(find.byType(ContinueReadingCard), findsOneWidget);
+        expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+        expect(
+          find.ancestor(
+            of: find.byType(ContinueReadingCard),
+            matching: find.byType(CustomScrollView),
+          ),
+          findsOneWidget,
+        );
 
-      // Tap close button and verify it dismisses the card
-      await tester.tap(find.byIcon(Icons.close_rounded));
-      await tester.pumpAndSettle();
-      expect(find.byType(ContinueReadingCard), findsNothing);
-    });
-
-    testWidgets(
-        'SettingsPage renders merged profile card with edit icon and bottom logout button, without downloaded books tile',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 2400);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final userProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      userProvider.loginWithEmail('user@test.com', 'Test User');
-
-      await tester.pumpWidget(
-        createTestWidget(
-          child: const SettingsPage(),
-          bookProvider: userProvider,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Merged card details
-      expect(find.text('Test User'), findsOneWidget);
-      expect(find.text('Бүртгэлтэй'), findsOneWidget);
-      expect(find.byIcon(Icons.edit_outlined), findsAtLeastNWidgets(1));
-      expect(find.text('Мэдээлэл засах'), findsNothing);
-
-      // Downloaded books tile was removed per user request
-      expect(find.text('Татсан номууд'), findsNothing);
-
-      // Logout button at the bottom
-      expect(find.text('Гарах (Logout)'), findsOneWidget);
-    });
+        // Tap close button and verify it dismisses the card
+        await tester.tap(find.byIcon(Icons.close_rounded));
+        await tester.pumpAndSettle();
+        expect(find.byType(ContinueReadingCard), findsNothing);
+      },
+    );
 
     testWidgets(
-        'SettingsPage guest mode shows login button and hides 2026 challenge',
-        (tester) async {
-      final guestProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
-      guestProvider.loginAsGuest();
+      'SettingsPage renders merged profile card with edit icon and bottom logout button, without downloaded books tile',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 2400);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      await tester.pumpWidget(
-        createTestWidget(
-          child: const SettingsPage(),
-          bookProvider: guestProvider,
-        ),
-      );
-      await tester.pumpAndSettle();
+        final userProvider = BookProvider();
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        userProvider.loginWithEmail('user@test.com', 'Test User');
 
-      expect(find.text('Зочин уншигч'), findsOneWidget);
-      expect(find.text('Нэвтрэх / Бүртгүүлэх'), findsOneWidget);
-      expect(find.text('2026'), findsNothing);
-      expect(find.byIcon(Icons.emoji_events_rounded), findsNothing);
-    });
+        await tester.pumpWidget(
+          createTestWidget(
+            child: const SettingsPage(),
+            bookProvider: userProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Merged card details
+        expect(find.text('Test User'), findsOneWidget);
+        expect(find.text('Бүртгэлтэй'), findsOneWidget);
+        expect(find.byIcon(Icons.edit_outlined), findsAtLeastNWidgets(1));
+        expect(find.text('Мэдээлэл засах'), findsNothing);
+
+        // Downloaded books tile was removed per user request
+        expect(find.text('Татсан номууд'), findsNothing);
+
+        // Logout button at the bottom
+        expect(find.text('Гарах (Logout)'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'SettingsPage guest mode shows login button and hides 2026 challenge',
+      (tester) async {
+        final guestProvider = BookProvider();
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        guestProvider.loginAsGuest();
+
+        await tester.pumpWidget(
+          createTestWidget(
+            child: const SettingsPage(),
+            bookProvider: guestProvider,
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Зочин уншигч'), findsOneWidget);
+        expect(find.text('Нэвтрэх / Бүртгүүлэх'), findsOneWidget);
+        expect(find.text('2026'), findsNothing);
+        expect(find.byIcon(Icons.emoji_events_rounded), findsNothing);
+      },
+    );
   });
 }

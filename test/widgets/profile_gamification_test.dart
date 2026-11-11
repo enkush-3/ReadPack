@@ -11,6 +11,7 @@ import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/profile/presentation/page/profile_page.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/secure_storage_mock.dart';
 
 late Map<String, dynamic> _mnMap;
 late Map<String, dynamic> _enMap;
@@ -33,9 +34,7 @@ class TestAppLocalizationsDelegate
   bool shouldReload(TestAppLocalizationsDelegate old) => false;
 }
 
-Widget createProfileTestWidget({
-  required BookProvider bookProvider,
-}) {
+Widget createProfileTestWidget({required BookProvider bookProvider}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<ThemeProvider>.value(value: ThemeProvider()),
@@ -51,11 +50,15 @@ Widget createProfileTestWidget({
         GlobalCupertinoLocalizations.delegate,
       ],
       routes: {
-        Routes.onboarding: (_) => const Scaffold(body: Text('OnboardingScreen')),
+        Routes.onboarding: (_) =>
+            const Scaffold(body: Text('OnboardingScreen')),
         Routes.auth: (_) => const Scaffold(body: Text('AuthScreen')),
         Routes.settings: (_) => const Scaffold(body: Text('SettingsScreen')),
       },
-      home: const Scaffold(body: ProfilePage()),
+      home: const MediaQuery(
+        data: MediaQueryData(disableAnimations: true),
+        child: Scaffold(body: ProfilePage()),
+      ),
     ),
   );
 }
@@ -72,41 +75,53 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    mockSecureStorage();
   });
 
   group('Profile Gamification & Habits Tests', () {
-    testWidgets('ProfilePage renders XP level, Weekly League, and Reading Habits',
-        (tester) async {
-      tester.view.physicalSize = const Size(800, 2000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
+    testWidgets(
+      'ProfilePage renders XP level, Weekly League, and Reading Habits',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 2000);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
 
-      final bookProvider = BookProvider();
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 100)));
+        final bookProvider = BookProvider();
+        addTearDown(bookProvider.dispose);
+        await tester.runAsync(
+          () => Future.delayed(const Duration(milliseconds: 100)),
+        );
+        bookProvider.loginWithEmail('reader@test.com', 'Reader');
 
-      await tester.pumpWidget(createProfileTestWidget(bookProvider: bookProvider));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          createProfileTestWidget(bookProvider: bookProvider),
+        );
+        await tester.pumpAndSettle();
 
-      // Check XP & Level progression card
-      expect(find.text('Түвшин ба Цол'), findsOneWidget);
-      expect(find.text('${bookProvider.userProfile.xp} XP'), findsAtLeastNWidgets(1));
+        // Check XP & Level progression card
+        expect(find.text('Түвшин ба Цол'), findsOneWidget);
+        expect(
+          find.text('${bookProvider.userProfile.xp} XP'),
+          findsAtLeastNWidgets(1),
+        );
 
-      // Check Weekly League & Leaderboard
-      expect(find.textContaining('Лидерборд'), findsOneWidget);
-      expect(find.textContaining('Алмазан Лиг'), findsOneWidget);
+        // Check Weekly League & Leaderboard
+      expect(find.text('Сарын Лидерборд'), findsOneWidget);
+        expect(find.textContaining('Сарын Лидерборд'), findsOneWidget);
 
-      // Check Reading Habit insights & heat-map
-      expect(find.text('Уншлагын цагийн хуваарь'), findsOneWidget);
-      expect(find.textContaining('20:00 - 22:30'), findsOneWidget);
+        // Check Reading Habit insights & heat-map
+        expect(find.text('Уншлагын цагийн хуваарь'), findsOneWidget);
+        expect(find.textContaining('20:00 - 22:30'), findsOneWidget);
 
-      // Check Settings button navigates to Settings
-      final settingsBtn = find.byIcon(Icons.settings_outlined);
-      expect(settingsBtn, findsOneWidget);
-      await tester.tap(settingsBtn);
-      await tester.pumpAndSettle();
+        // Check Settings button navigates to Settings
+        final settingsBtn = find.byIcon(Icons.settings_outlined);
+        expect(settingsBtn, findsOneWidget);
+        await tester.tap(settingsBtn);
+        await tester.pumpAndSettle();
 
-      // Navigated to settings
-      expect(find.text('SettingsScreen'), findsOneWidget);
-    });
+        // Navigated to settings
+        expect(find.text('SettingsScreen'), findsOneWidget);
+      },
+    );
   });
 }

@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
 import 'package:readpack/models/bookmark.dart';
+import 'package:readpack/models/user_stats.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -16,6 +18,17 @@ void main() {
     setUp(() async {
       provider = BookProvider();
       await Future.delayed(const Duration(milliseconds: 50));
+    });
+
+    test('does not invent weekly reading minutes for an empty history', () {
+      final profile = UserProfile.freshUser(
+        name: 'Reader',
+        email: 'reader@example.com',
+      ).copyWith(weeklyMinutes: const []);
+
+      final updated = BookGamificationManager.addReadingMinutes(profile, 1);
+
+      expect(updated.weeklyMinutes.reduce((a, b) => a + b), 1);
     });
 
     test('Initializes with default collections and grants XP on creation', () {
@@ -38,11 +51,15 @@ void main() {
       final book = provider.books.first;
 
       provider.addBookToCollection(initialCollection.id, book.id);
-      final updatedColl = provider.collections.firstWhere((c) => c.id == initialCollection.id);
+      final updatedColl = provider.collections.firstWhere(
+        (c) => c.id == initialCollection.id,
+      );
       expect(updatedColl.bookIds.contains(book.id), isTrue);
 
       provider.removeBookFromCollection(initialCollection.id, book.id);
-      final removedColl = provider.collections.firstWhere((c) => c.id == initialCollection.id);
+      final removedColl = provider.collections.firstWhere(
+        (c) => c.id == initialCollection.id,
+      );
       expect(removedColl.bookIds.contains(book.id), isFalse);
     });
 
@@ -52,7 +69,9 @@ void main() {
         'Удахгүй устгана',
         icon: '🗑️',
       );
-      final created = provider.collections.firstWhere((c) => c.name == 'Түр зуурын цуглуулга');
+      final created = provider.collections.firstWhere(
+        (c) => c.name == 'Түр зуурын цуглуулга',
+      );
       provider.deleteCollection(created.id);
 
       expect(provider.collections.any((c) => c.id == created.id), isFalse);
@@ -83,7 +102,9 @@ void main() {
 
       provider.toggleReviewHelpful(book.id, review.id);
       var updatedBook = provider.books.firstWhere((b) => b.id == book.id);
-      var updatedReview = updatedBook.reviews.firstWhere((r) => r.id == review.id);
+      var updatedReview = updatedBook.reviews.firstWhere(
+        (r) => r.id == review.id,
+      );
       expect(updatedReview.helpfulCount, initialHelpful + 1);
       expect(updatedReview.isHelpful, isTrue);
 
@@ -95,10 +116,15 @@ void main() {
     });
 
     test('In-book chapter search finds matching chapter snippets', () {
-      final bookWithChapters = provider.books.firstWhere((b) => b.chapters.isNotEmpty);
+      final bookWithChapters = provider.books.firstWhere(
+        (b) => b.chapters.isNotEmpty,
+      );
       final queryWord = bookWithChapters.chapters.first.title.split(' ').first;
 
-      final matches = provider.getChapterMatchesForBook(bookWithChapters.id, queryWord);
+      final matches = provider.getChapterMatchesForBook(
+        bookWithChapters.id,
+        queryWord,
+      );
       expect(matches.isNotEmpty, isTrue);
       expect(matches.first['chapterTitle'], contains(queryWord));
     });
@@ -111,29 +137,42 @@ void main() {
       expect(provider.userLevelTitle, contains('Lv. 4'));
     });
 
-    test('Fuzzy search matches misspelled titles and authors (Сапенс and Stve)', () {
-      provider.setSearchQuery('Сапенс');
-      final suggestion1 = provider.searchSuggestion;
-      expect(suggestion1, isNotNull);
-      expect(suggestion1, contains('Сапиенс'));
+    test(
+      'Fuzzy search matches misspelled titles and authors (Сапенс and Stve)',
+      () {
+        provider.setSearchQuery('Сапенс');
+        final suggestion1 = provider.searchSuggestion;
+        expect(suggestion1, isNotNull);
+        expect(suggestion1, contains('Сапиенс'));
 
-      final results1 = provider.searchResults;
-      expect(results1.any((b) => b.id == 'book_sapiens' || b.title.contains('Sapiens')), isTrue);
+        final results1 = provider.searchResults;
+        expect(
+          results1.any(
+            (b) => b.id == 'book_sapiens' || b.title.contains('Sapiens'),
+          ),
+          isTrue,
+        );
 
-      provider.setSearchQuery('Stve');
-      final suggestion2 = provider.searchSuggestion;
-      expect(suggestion2, isNotNull);
-      expect(suggestion2!.toLowerCase(), anyOf(contains('steve'), contains('stephen')));
+        provider.setSearchQuery('Stve');
+        final suggestion2 = provider.searchSuggestion;
+        expect(suggestion2, isNotNull);
+        expect(
+          suggestion2!.toLowerCase(),
+          anyOf(contains('steve'), contains('stephen')),
+        );
 
-      final results2 = provider.searchResults;
-      expect(
-        results2.any((b) =>
-            b.title.toLowerCase().contains('steve') ||
-            b.author.toLowerCase().contains('stephen') ||
-            b.author.toLowerCase().contains('steven')),
-        isTrue,
-      );
-    });
+        final results2 = provider.searchResults;
+        expect(
+          results2.any(
+            (b) =>
+                b.title.toLowerCase().contains('steve') ||
+                b.author.toLowerCase().contains('stephen') ||
+                b.author.toLowerCase().contains('steven'),
+          ),
+          isTrue,
+        );
+      },
+    );
 
     test('addReadingMinutes grants XP and daily goal bonus', () {
       final initialXp = provider.userProfile.xp;
@@ -145,24 +184,44 @@ void main() {
       expect(provider.userProfile.minutesReadToday, initialMinutes + 2);
 
       // Now add minutes to reach past 30-min goal (crosses 30-min goal)
-      final neededToCrossGoal = (provider.userProfile.dailyGoalMinutes - provider.userProfile.minutesReadToday) + 1;
+      final neededToCrossGoal =
+          (provider.userProfile.dailyGoalMinutes -
+              provider.userProfile.minutesReadToday) +
+          1;
       provider.addReadingMinutes(neededToCrossGoal);
-      expect(provider.userProfile.xp, initialXp + 10 + (neededToCrossGoal * 5) + 50);
-      expect(provider.userProfile.minutesReadToday, initialMinutes + 2 + neededToCrossGoal);
+      expect(
+        provider.userProfile.xp,
+        initialXp + 10 + (neededToCrossGoal * 5) + 50,
+      );
+      expect(
+        provider.userProfile.minutesReadToday,
+        initialMinutes + 2 + neededToCrossGoal,
+      );
     });
 
-    test('totalDownloadedStorageMb correctly calculates sum of downloaded book sizes', () {
-      final initialStorage = provider.totalDownloadedStorageMb;
+    test(
+      'totalDownloadedStorageMb correctly calculates sum of downloaded book sizes',
+      () {
+        final initialStorage = provider.totalDownloadedStorageMb;
 
-      final nonDownloadedBook = provider.books.firstWhere((b) => !provider.isBookDownloaded(b.id));
+        final nonDownloadedBook = provider.books.firstWhere(
+          (b) => !provider.isBookDownloaded(b.id),
+        );
 
-      provider.toggleDownloadBook(nonDownloadedBook.id);
-      final addedSize = provider.getDownloadedSizeMb(nonDownloadedBook.id);
-      expect(provider.totalDownloadedStorageMb, closeTo(initialStorage + addedSize, 0.01));
+        provider.toggleDownloadBook(nonDownloadedBook.id);
+        final addedSize = provider.getDownloadedSizeMb(nonDownloadedBook.id);
+        expect(
+          provider.totalDownloadedStorageMb,
+          closeTo(initialStorage + addedSize, 0.01),
+        );
 
-      provider.toggleDownloadBook(nonDownloadedBook.id);
-      expect(provider.totalDownloadedStorageMb, closeTo(initialStorage, 0.01));
-    });
+        provider.toggleDownloadBook(nonDownloadedBook.id);
+        expect(
+          provider.totalDownloadedStorageMb,
+          closeTo(initialStorage, 0.01),
+        );
+      },
+    );
 
     test('UserLevelTitle reaches Lv. 5 Мэргэн уншигч at 5000+ XP', () {
       provider.addXp(5500);

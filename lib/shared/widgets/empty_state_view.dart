@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/animated_button.dart';
 
 class EmptyStateView extends StatelessWidget {
   final IconData icon;
@@ -32,56 +32,37 @@ class EmptyStateView extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.08),
+                color: colorScheme.primaryContainer,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
                 size: 40,
-                color: colorScheme.primary,
+                color: colorScheme.onPrimaryContainer,
               ),
             ),
             const SizedBox(height: 24),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Serif',
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-                height: 1.5,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
-              AnimatedPressable(
-                onTap: onAction,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    actionLabel!,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
+              AnimatedButton(
+                onPressed: onAction,
+                semanticLabel: actionLabel,
+                child: Text(actionLabel!),
               ),
             ],
           ],

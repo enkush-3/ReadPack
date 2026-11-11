@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:readpack/core/providers/book_provider.dart';
-import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/home/presentation/page/home.dart';
-import 'package:readpack/features/home/widgets/continue_reading_card.dart';
 import 'package:readpack/features/library/presentation/page/saved_page.dart';
 import 'package:readpack/features/profile/presentation/page/profile_page.dart';
 import 'package:readpack/features/search/presentation/page/search.dart';
@@ -12,10 +8,7 @@ import 'package:readpack/features/shared/widgets/bottomnavbar.dart';
 class AppShell extends StatefulWidget {
   final int initialIndex;
 
-  const AppShell({
-    super.key,
-    this.initialIndex = 0,
-  });
+  const AppShell({super.key, this.initialIndex = 0});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -26,7 +19,6 @@ class _AppShellState extends State<AppShell>
   late int _selectedIndex;
   int _previousIndex = 0;
   late AnimationController _tabAnimController;
-  bool _isContinueDismissed = false;
 
   @override
   void initState() {
@@ -79,58 +71,20 @@ class _AppShellState extends State<AppShell>
         body: AnimatedBuilder(
           animation: _tabAnimController,
           builder: (context, child) {
-            final curved = Curves.easeOutCubic.transform(_tabAnimController.value);
+            final curved = Curves.easeOutCubic.transform(
+              _tabAnimController.value,
+            );
             final dx = (1.0 - curved) * 18.0 * direction;
             return Opacity(
               opacity: 0.35 + (0.65 * curved),
-              child: Transform.translate(
-                offset: Offset(dx, 0),
-                child: child,
-              ),
+              child: Transform.translate(offset: Offset(dx, 0), child: child),
             );
           },
-          child: IndexedStack(
-            index: _selectedIndex,
-            children: pages,
-          ),
+          child: IndexedStack(index: _selectedIndex, children: pages),
         ),
-        bottomNavigationBar: Consumer<BookProvider>(
-          builder: (context, bookProvider, _) {
-            final isGuest = bookProvider.userProfile.isGuest;
-            final continueBooks = bookProvider.continueReadingBooks;
-            final showContinue =
-                !isGuest && !_isContinueDismissed && continueBooks.isNotEmpty;
-
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (showContinue)
-                  ContinueReadingCard(
-                    book: continueBooks.first,
-                    isFullWidth: true,
-                    onClose: () {
-                      setState(() {
-                        _isContinueDismissed = true;
-                      });
-                    },
-                    onTap: () {
-                      final book = continueBooks.first;
-                      Navigator.of(context).pushNamed(
-                        Routes.reader,
-                        arguments: {
-                          'book': book,
-                          'initialChapterIndex': book.currentChapterIndex,
-                        },
-                      );
-                    },
-                  ),
-                BottomNavBar(
-                  selectedIndex: _selectedIndex,
-                  onTap: _onNavTap,
-                ),
-              ],
-            );
-          },
+        bottomNavigationBar: BottomNavBar(
+          selectedIndex: _selectedIndex,
+          onTap: _onNavTap,
         ),
       ),
     );

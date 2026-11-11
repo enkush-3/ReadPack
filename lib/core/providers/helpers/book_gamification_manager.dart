@@ -19,6 +19,19 @@ class LeaderboardCompetitor {
     this.isCurrentUser = false,
   });
 
+  factory LeaderboardCompetitor.fromJson(
+    Map<String, dynamic> json, {
+    bool isCurrentUser = false,
+  }) => LeaderboardCompetitor(
+    rank: (json['rank'] as num?)?.toInt() ?? 0,
+    name: json['name'] as String? ?? 'ReadPack Reader',
+    xp: (json['xp'] as num?)?.toInt() ?? 0,
+    streak: (json['streak'] as num?)?.toInt() ?? 0,
+    booksRead: (json['booksRead'] as num?)?.toInt() ?? 0,
+    avatarEmoji: '📚',
+    isCurrentUser: isCurrentUser,
+  );
+
   bool get isUser => isCurrentUser;
 
   String get badge {
@@ -52,7 +65,7 @@ class BookGamificationManager {
     final updatedWeekly = List<int>.from(
       profile.weeklyMinutes.length == 7
           ? profile.weeklyMinutes
-          : const [35, 45, 25, 40, 50, 60, 30],
+          : const [0, 0, 0, 0, 0, 0, 0],
     );
     updatedWeekly[weekdayIdx] = updatedWeekly[weekdayIdx] + minutes;
 
@@ -61,8 +74,8 @@ class BookGamificationManager {
     final slotKey = hour >= 6 && hour < 12
         ? 'morning'
         : (hour >= 12 && hour < 18
-            ? 'afternoon'
-            : (hour >= 18 && hour < 23 ? 'evening' : 'night'));
+              ? 'afternoon'
+              : (hour >= 18 && hour < 23 ? 'evening' : 'night'));
     final updatedTimeOfDay = Map<String, int>.from(profile.timeOfDayMinutes);
     updatedTimeOfDay[slotKey] = (updatedTimeOfDay[slotKey] ?? 0) + minutes;
 
@@ -92,105 +105,7 @@ class BookGamificationManager {
     UserProfile profile, {
     String? displayUserName,
   }) {
-    final userName = displayUserName ?? profile.name;
-    final raw = <LeaderboardCompetitor>[
-      const LeaderboardCompetitor(
-        rank: 1,
-        name: 'Номин-Эрдэнэ',
-        xp: 1890,
-        streak: 19,
-        booksRead: 6,
-        avatarEmoji: '👑',
-      ),
-      const LeaderboardCompetitor(
-        rank: 2,
-        name: 'Төмөрөө Б.',
-        xp: 1820,
-        streak: 15,
-        booksRead: 5,
-        avatarEmoji: '🚀',
-      ),
-      LeaderboardCompetitor(
-        rank: 3,
-        name: userName,
-        xp: profile.xp,
-        streak: profile.streakDays,
-        booksRead: profile.totalBooksRead,
-        avatarEmoji: '⚡',
-        isCurrentUser: true,
-      ),
-      const LeaderboardCompetitor(
-        rank: 4,
-        name: 'Ану-Үжин Г.',
-        xp: 1610,
-        streak: 14,
-        booksRead: 5,
-        avatarEmoji: '🔥',
-      ),
-      const LeaderboardCompetitor(
-        rank: 5,
-        name: 'Билгүүн Т.',
-        xp: 1540,
-        streak: 12,
-        booksRead: 4,
-        avatarEmoji: '📚',
-      ),
-      const LeaderboardCompetitor(
-        rank: 6,
-        name: 'Тэмүүлэн Д.',
-        xp: 1420,
-        streak: 10,
-        booksRead: 4,
-        avatarEmoji: '🌟',
-      ),
-      const LeaderboardCompetitor(
-        rank: 7,
-        name: 'Мишээл Э.',
-        xp: 1280,
-        streak: 9,
-        booksRead: 3,
-        avatarEmoji: '🦊',
-      ),
-      const LeaderboardCompetitor(
-        rank: 8,
-        name: 'Гантулга О.',
-        xp: 1150,
-        streak: 7,
-        booksRead: 3,
-        avatarEmoji: '🎯',
-      ),
-      const LeaderboardCompetitor(
-        rank: 9,
-        name: 'Сарнай Ч.',
-        xp: 980,
-        streak: 5,
-        booksRead: 2,
-        avatarEmoji: '🌸',
-      ),
-      const LeaderboardCompetitor(
-        rank: 10,
-        name: 'Ананд Х.',
-        xp: 840,
-        streak: 4,
-        booksRead: 2,
-        avatarEmoji: '🦉',
-      ),
-    ];
-
-    raw.sort((a, b) => b.xp.compareTo(a.xp));
-
-    return List.generate(raw.length, (i) {
-      final item = raw[i];
-      return LeaderboardCompetitor(
-        rank: i + 1,
-        name: item.name,
-        xp: item.xp,
-        streak: item.streak,
-        booksRead: item.booksRead,
-        avatarEmoji: item.avatarEmoji,
-        isCurrentUser: item.isCurrentUser,
-      );
-    });
+    return const [];
   }
 
   static String computeLocalizedLevelTitle(
@@ -198,8 +113,7 @@ class BookGamificationManager {
     String? Function(String key)? translate,
   ) {
     if (xp < 500) {
-      return translate?.call('profile.level_1_title') ??
-          'Эхлэн уншигч (Lv. 1)';
+      return translate?.call('profile.level_1_title') ?? 'Эхлэн уншигч (Lv. 1)';
     }
     if (xp < 1500) {
       return translate?.call('profile.level_2_title') ??
@@ -213,31 +127,29 @@ class BookGamificationManager {
       return translate?.call('profile.level_4_title') ??
           'Мэргэшсэн уншигч (Lv. 4)';
     }
-    return translate?.call('profile.level_5_title') ??
-        'Мэргэн уншигч (Lv. 5)';
+    return translate?.call('profile.level_5_title') ?? 'Мэргэн уншигч (Lv. 5)';
   }
 
   static UserProfile loginAsGuest(UserProfile profile) {
     return UserProfile.freshUser(
       name: 'Зочин',
-      email: 'guest@readpack.app',
+      email: '',
       username: '@guest',
-    ).copyWith(
-      isGuest: true,
-      streakDays: 0,
-      minutesReadToday: 0,
-      xp: 0,
-    );
+    ).copyWith(isGuest: true, streakDays: 0, minutesReadToday: 0, xp: 0);
   }
 
   static UserProfile loginWithEmail(
-      UserProfile profile, String email, String name,
-      {String? username, String? phoneNumber}) {
+    UserProfile profile,
+    String email,
+    String name, {
+    String? username,
+    String? phoneNumber,
+  }) {
     final cleanUsername = (username != null && username.isNotEmpty)
         ? (username.startsWith('@') ? username : '@$username')
         : (profile.username.isNotEmpty
-            ? profile.username
-            : '@${email.split('@').first.toLowerCase()}');
+              ? profile.username
+              : '@${email.split('@').first.toLowerCase()}');
     return UserProfile.freshUser(
       name: name.isNotEmpty ? name : 'Уншигч',
       email: email,
@@ -263,14 +175,9 @@ class BookGamificationManager {
   static UserProfile logout() {
     return UserProfile.freshUser(
       name: 'Зочин',
-      email: 'guest@readpack.app',
+      email: '',
       username: '@guest',
-    ).copyWith(
-      isGuest: true,
-      streakDays: 0,
-      minutesReadToday: 0,
-      xp: 0,
-    );
+    ).copyWith(isGuest: true, streakDays: 0, minutesReadToday: 0, xp: 0);
   }
 
   static int computeUserLevel(int xp) {

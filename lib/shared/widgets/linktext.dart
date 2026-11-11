@@ -16,15 +16,18 @@ class LinkText extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Center(
-      child: GestureDetector(
-        onTap: onTap,
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          minimumSize: const Size(48, 48),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
         child: RichText(
           text: TextSpan(
             text: normalText,
-            style: TextStyle(
-              fontSize: 14,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
             children: [
               TextSpan(
                 text: actionText,
@@ -33,7 +36,7 @@ class LinkText extends StatelessWidget {
                   color: colorScheme.primary,
                   fontWeight: FontWeight.w600,
                   decoration: TextDecoration.underline,
-                )
+                ),
               ),
             ],
           ),

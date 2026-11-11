@@ -14,10 +14,7 @@ import 'package:readpack/models/book.dart';
 class BookDetailPage extends StatefulWidget {
   final Book book;
 
-  const BookDetailPage({
-    super.key,
-    required this.book,
-  });
+  const BookDetailPage({super.key, required this.book});
 
   @override
   State<BookDetailPage> createState() => _BookDetailPageState();
@@ -34,52 +31,37 @@ class _BookDetailPageState extends State<BookDetailPage> {
       l10n?.t('book.tabs.similar') ?? 'Ижил төстэй',
     ];
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 16),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: List.generate(tabs.length, (index) {
-          final isSelected = _selectedTabIndex == index;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedTabIndex = index),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: isSelected ? colorScheme.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: colorScheme.primary.withValues(alpha: 0.25),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: Text(
-                    tabs[index],
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
-                      color: isSelected
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
+    return SizedBox(
+      height: 80,
+      child: Container(
+        color: colorScheme.surface,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: List.generate(tabs.length, (index) {
+              final isSelected = _selectedTabIndex == index;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(tabs[index], maxLines: 1),
+                  selected: isSelected,
+                  showCheckmark: false,
+                  selectedColor: colorScheme.secondaryContainer,
+                  labelStyle: TextStyle(
+                    color: isSelected
+                        ? colorScheme.onSecondaryContainer
+                        : colorScheme.onSurfaceVariant,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
+                  side: BorderSide(color: colorScheme.outlineVariant),
+                  onSelected: (_) => setState(() => _selectedTabIndex = index),
                 ),
-              ),
-            ),
-          );
-        }),
+              );
+            }),
+          ),
+        ),
       ),
     );
   }
@@ -108,7 +90,7 @@ class _BookDetailPageState extends State<BookDetailPage> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -146,10 +128,13 @@ class _BookDetailPageState extends State<BookDetailPage> {
                         children: currentBook.tags.map((tag) {
                           return Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color:
-                                  colorScheme.primary.withValues(alpha: 0.08),
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.08,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -172,45 +157,75 @@ class _BookDetailPageState extends State<BookDetailPage> {
                     book: currentBook,
                     showAudioPlayer: false,
                     onToggleAudio: () {
-                      if (!currentBook.hasAudio) return;
+                      if (!currentBook.chapters.any(
+                        (chapter) => chapter.content.trim().isNotEmpty,
+                      )) {
+                        return;
+                      }
                       Navigator.of(context).pushNamed(
                         Routes.reader,
                         arguments: {
                           'book': currentBook,
-                          'initialChapterIndex': currentBook.currentChapterIndex,
+                          'initialChapterIndex':
+                              currentBook.currentChapterIndex,
                           'openAudioInitially': true,
                         },
                       );
                     },
                     l10n: l10n,
                   ),
-                  _buildTabBar(colorScheme, l10n),
-                  if (_selectedTabIndex == 0)
-                    BookDetailOverviewTab(
-                      currentBook: currentBook,
-                      l10n: l10n,
-                    ),
-                  if (_selectedTabIndex == 1)
-                    BookDetailChaptersTab(
-                      currentBook: currentBook,
-                      l10n: l10n,
-                    ),
-                  if (_selectedTabIndex == 2)
-                    BookDetailReviewsTab(
-                      currentBook: currentBook,
-                      l10n: l10n,
-                    ),
-                  if (_selectedTabIndex == 3)
-                    BookDetailSimilarTab(
-                      currentBook: currentBook,
-                      l10n: l10n,
-                    ),
                 ],
               ),
+            ),
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _PinnedDetailTabsDelegate(
+              child: _buildTabBar(colorScheme, l10n),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+              child: switch (_selectedTabIndex) {
+                1 => BookDetailChaptersTab(
+                  currentBook: currentBook,
+                  l10n: l10n,
+                ),
+                2 => BookDetailReviewsTab(currentBook: currentBook, l10n: l10n),
+                3 => BookDetailSimilarTab(currentBook: currentBook, l10n: l10n),
+                _ => BookDetailOverviewTab(
+                  currentBook: currentBook,
+                  l10n: l10n,
+                ),
+              },
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class _PinnedDetailTabsDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  const _PinnedDetailTabsDelegate({required this.child});
+
+  @override
+  double get minExtent => 80;
+
+  @override
+  double get maxExtent => 80;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => child;
+
+  @override
+  bool shouldRebuild(covariant _PinnedDetailTabsDelegate oldDelegate) =>
+      child != oldDelegate.child;
 }

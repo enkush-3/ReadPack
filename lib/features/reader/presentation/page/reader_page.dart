@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/providers/theme_provider.dart';
@@ -48,7 +50,9 @@ class _ReaderPageState extends State<ReaderPage>
   double _audioCurrentSeconds = 0.0;
   double _audioTotalSeconds = 300.0;
   double _audioSpeed = 1.0;
-  Timer? _audioPlaybackTimer;
+  final FlutterTts _tts = FlutterTts();
+  int _audioCharacterPosition = 0;
+  Timer? _ttsSeekDebounce;
   int? _sleepTimerMinutes;
   Timer? _sleepCountdownTimer;
 
@@ -63,8 +67,9 @@ class _ReaderPageState extends State<ReaderPage>
     _currentChapterIndex = chaptersCount == 0
         ? 0
         : (widget.initialChapterIndex > 0
-            ? widget.initialChapterIndex
-            : widget.book.currentChapterIndex).clamp(0, chaptersCount - 1);
+                  ? widget.initialChapterIndex
+                  : widget.book.currentChapterIndex)
+              .clamp(0, chaptersCount - 1);
 
     _scrollProgress = widget.book.progress;
     _lastReportedProgress = widget.book.progress;
@@ -72,11 +77,11 @@ class _ReaderPageState extends State<ReaderPage>
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     _pageController = PageController();
-    _sessionTracker = ReaderSessionTracker(context);
+    _sessionTracker = ReaderSessionTracker(context, bookId: widget.book.id);
 
     _initChapterAudio();
 
-    if (widget.openAudioInitially && widget.book.hasAudio) {
+    if (widget.openAudioInitially && _canReadAloud) {
       _startAudio();
     }
 
@@ -88,7 +93,8 @@ class _ReaderPageState extends State<ReaderPage>
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _pageController.dispose();
-    _audioPlaybackTimer?.cancel();
+    _ttsSeekDebounce?.cancel();
+    _tts.stop();
     _sleepCountdownTimer?.cancel();
     _sessionTracker.dispose();
     super.dispose();
@@ -97,43 +103,81 @@ class _ReaderPageState extends State<ReaderPage>
   void _initChapterAudio() {
     if (widget.book.chapters.isEmpty) return;
     final currentCh = widget.book.chapters[_currentChapterIndex];
+    final wordCount = currentCh.content
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .length;
     setState(() {
-      _audioTotalSeconds = (currentCh.estimatedMinutes * 60).toDouble();
-      if (_audioTotalSeconds <= 0) _audioTotalSeconds = 240.0;
+      _audioTotalSeconds = math
+          .max(1, (wordCount / 180 * 60).round())
+          .toDouble();
       _audioCurrentSeconds = 0.0;
+      _audioCharacterPosition = 0;
     });
   }
 
-  void _startAudio() {
-    if (!widget.book.hasAudio) return;
-    _audioPlaybackTimer?.cancel();
+  bool get _canReadAloud =>
+      widget.book.chapters.any((chapter) => chapter.content.trim().isNotEmpty);
+
+  Future<void> _startAudio() async {
+    if (!_canReadAloud || widget.book.chapters.isEmpty) return;
     setState(() => _isAudioPlaying = true);
     if (_isTesting) return;
 
-    _audioPlaybackTimer =
-        Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      if (!mounted) return;
-      if (!_isAudioPlaying) {
-        timer.cancel();
-        return;
-      }
+    final currentChapter = widget.book.chapters[_currentChapterIndex];
+    final text = currentChapter.content;
+    var start = _audioCharacterPosition.clamp(0, text.length).toInt();
+    if (start >= text.length) {
       setState(() {
-        _audioCurrentSeconds += 0.5 * _audioSpeed;
-        if (_audioCurrentSeconds >= _audioTotalSeconds) {
-          _audioCurrentSeconds = 0.0;
-          _isAudioPlaying = false;
-          timer.cancel();
-          if (_currentChapterIndex < widget.book.chapters.length - 1) {
-            _goToChapter(_currentChapterIndex + 1);
-            _startAudio();
-          }
+        _audioCurrentSeconds = 0;
+        _audioCharacterPosition = 0;
+      });
+      start = 0;
+    }
+
+    try {
+      final locale = Localizations.localeOf(context).languageCode;
+      await _tts.setLanguage(locale == 'mn' ? 'mn-MN' : 'en-US');
+      await _tts.setSpeechRate(_audioSpeed);
+      final baseOffset = start;
+      _tts.setProgressHandler((spokenText, startOffset, endOffset, word) {
+        if (!mounted) return;
+        final position = (baseOffset + endOffset).clamp(0, text.length).toInt();
+        setState(() {
+          _audioCharacterPosition = position;
+          _audioCurrentSeconds =
+              _audioTotalSeconds * position / math.max(1, text.length);
+        });
+        _syncAudioWithText();
+      });
+      _tts.setCompletionHandler(() {
+        if (!mounted) return;
+        if (_currentChapterIndex < widget.book.chapters.length - 1) {
+          _goToChapter(_currentChapterIndex + 1);
+        } else {
+          setState(() => _isAudioPlaying = false);
         }
       });
-    });
+      _tts.setErrorHandler((message) {
+        if (!mounted) return;
+        setState(() => _isAudioPlaying = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Text to speech could not start: $message')),
+        );
+      });
+      await _tts.speak(text.substring(start));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isAudioPlaying = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Text to speech is unavailable: $error')),
+      );
+    }
   }
 
-  void _pauseAudio() {
-    _audioPlaybackTimer?.cancel();
+  Future<void> _pauseAudio() async {
+    if (!_isTesting) await _tts.stop();
+    if (!mounted) return;
     setState(() => _isAudioPlaying = false);
   }
 
@@ -141,24 +185,22 @@ class _ReaderPageState extends State<ReaderPage>
     if (widget.book.chapters.isEmpty) return;
     final currentChapter = widget.book.chapters[_currentChapterIndex];
     final paragraphs = currentChapter.content.split('\n\n');
-    final paragraphSentences = paragraphs
-        .map((p) {
-          final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(p);
-          final list = matches
-              .map((m) => m.group(0) ?? '')
-              .where((s) => s.trim().isNotEmpty)
-              .toList();
-          return list.isEmpty ? [p] : list;
-        })
-        .toList();
+    final paragraphSentences = paragraphs.map((p) {
+      final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(p);
+      final list = matches
+          .map((m) => m.group(0) ?? '')
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
+      return list.isEmpty ? [p] : list;
+    }).toList();
     final totalSentences = paragraphSentences.fold<int>(
       0,
       (sum, list) => sum + list.length,
     );
     final globalSentenceIndex = (_audioTotalSeconds > 0 && totalSentences > 0)
         ? ((_audioCurrentSeconds / _audioTotalSeconds) * totalSentences)
-            .floor()
-            .clamp(0, totalSentences - 1)
+              .floor()
+              .clamp(0, totalSentences - 1)
         : 0;
 
     int activeAudioParagraph = 0;
@@ -189,10 +231,27 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _seekAudio(double seconds) {
+    final wasPlaying = _isAudioPlaying;
+    final progress = _audioTotalSeconds <= 0
+        ? 0.0
+        : (seconds / _audioTotalSeconds).clamp(0.0, 1.0);
+    final currentText = widget.book.chapters.isEmpty
+        ? ''
+        : widget.book.chapters[_currentChapterIndex].content;
     setState(() {
-      _audioCurrentSeconds = seconds.clamp(0.0, _audioTotalSeconds);
+      _audioCurrentSeconds = progress * _audioTotalSeconds;
+      _audioCharacterPosition = (progress * currentText.length).round();
+      if (wasPlaying) _isAudioPlaying = false;
     });
     _syncAudioWithText();
+    if (wasPlaying) {
+      _ttsSeekDebounce?.cancel();
+      _tts.stop().then((_) {
+        _ttsSeekDebounce = Timer(const Duration(milliseconds: 250), () {
+          if (mounted) _startAudio();
+        });
+      });
+    }
   }
 
   void _setSleepTimer(int? minutes) {
@@ -229,12 +288,15 @@ class _ReaderPageState extends State<ReaderPage>
         final options = [
           {
             'title': l10n?.t('audio_ext.sleep_off') ?? 'Унтраах (Off)',
-            'val': null
+            'val': null,
           },
           {'title': l10n?.t('audio_ext.sleep_15') ?? '15 минут', 'val': 15},
           {'title': l10n?.t('audio_ext.sleep_30') ?? '30 минут', 'val': 30},
           {'title': l10n?.t('audio_ext.sleep_45') ?? '45 минут', 'val': 45},
-          {'title': '60 ${l10n?.t('common.minutes_short') ?? 'минут'}', 'val': 60},
+          {
+            'title': '60 ${l10n?.t('common.minutes_short') ?? 'минут'}',
+            'val': 60,
+          },
         ];
         return Container(
           decoration: BoxDecoration(
@@ -261,8 +323,11 @@ class _ReaderPageState extends State<ReaderPage>
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Icon(Icons.bedtime_rounded,
-                          size: 20, color: Theme.of(context).colorScheme.primary),
+                      Icon(
+                        Icons.bedtime_rounded,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         l10n?.t('audio_ext.sleep_timer') ??
@@ -284,16 +349,19 @@ class _ReaderPageState extends State<ReaderPage>
                       title: Text(
                         opt['title'] as String,
                         style: TextStyle(
-                          fontWeight:
-                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                           color: isSelected
                               ? Theme.of(context).colorScheme.primary
                               : Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       trailing: isSelected
-                          ? Icon(Icons.check_rounded,
-                              color: Theme.of(context).colorScheme.primary)
+                          ? Icon(
+                              Icons.check_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                            )
                           : null,
                       onTap: () {
                         Navigator.of(ctx).pop();
@@ -326,14 +394,17 @@ class _ReaderPageState extends State<ReaderPage>
     if (!_scrollController.hasClients) return;
     final maxScroll = _scrollController.position.maxScrollExtent;
     final curScroll = _scrollController.offset;
-    final totalChapters =
-        widget.book.chapters.isEmpty ? 1 : widget.book.chapters.length;
+    final totalChapters = widget.book.chapters.isEmpty
+        ? 1
+        : widget.book.chapters.length;
 
     if (maxScroll <= 0) return;
     final chapterFraction = (curScroll / maxScroll).clamp(0.0, 1.0);
     final overallProgress =
-        ((_currentChapterIndex + chapterFraction) / totalChapters)
-            .clamp(0.0, 1.0);
+        ((_currentChapterIndex + chapterFraction) / totalChapters).clamp(
+          0.0,
+          1.0,
+        );
 
     setState(() {
       _scrollProgress = overallProgress;
@@ -341,35 +412,41 @@ class _ReaderPageState extends State<ReaderPage>
 
     if ((overallProgress - _lastReportedProgress).abs() > 0.04) {
       _lastReportedProgress = overallProgress;
-      final estimatedPage = (overallProgress * widget.book.pages)
-          .toInt()
-          .clamp(1, widget.book.pages);
+      final estimatedPage = (overallProgress * widget.book.pages).toInt().clamp(
+        1,
+        widget.book.pages,
+      );
       context.read<BookProvider>().updateReadingPosition(
-            widget.book.id,
-            currentPage: estimatedPage,
-            progress: overallProgress,
-            currentChapterIndex: _currentChapterIndex,
-          );
+        widget.book.id,
+        currentPage: estimatedPage,
+        progress: overallProgress,
+        currentChapterIndex: _currentChapterIndex,
+      );
     }
   }
 
   void _reportPaginatedProgress([int? pageIndex, int? totalPages]) {
     final curPage = pageIndex ?? _currentPageInChapter;
-    final totalP = totalPages ??
+    final totalP =
+        totalPages ??
         (widget.book.chapters.isEmpty
             ? 1
             : ReaderThemeHelpers.paginateChapter(
-                    widget.book.chapters[_currentChapterIndex].content)
-                .length);
-    final totalChapters =
-        widget.book.chapters.isEmpty ? 1 : widget.book.chapters.length;
+                widget.book.chapters[_currentChapterIndex].content,
+              ).length);
+    final totalChapters = widget.book.chapters.isEmpty
+        ? 1
+        : widget.book.chapters.length;
     final chapterFraction = totalP > 0 ? ((curPage + 1) / totalP) : 0.0;
     final overallProgress =
-        ((_currentChapterIndex + chapterFraction) / totalChapters)
-            .clamp(0.0, 1.0);
-    final estimatedPage = (overallProgress * widget.book.pages)
-        .toInt()
-        .clamp(1, widget.book.pages);
+        ((_currentChapterIndex + chapterFraction) / totalChapters).clamp(
+          0.0,
+          1.0,
+        );
+    final estimatedPage = (overallProgress * widget.book.pages).toInt().clamp(
+      1,
+      widget.book.pages,
+    );
 
     setState(() {
       _scrollProgress = overallProgress;
@@ -378,25 +455,27 @@ class _ReaderPageState extends State<ReaderPage>
     if ((overallProgress - _lastReportedProgress).abs() > 0.02) {
       _lastReportedProgress = overallProgress;
       context.read<BookProvider>().updateReadingPosition(
-            widget.book.id,
-            currentPage: estimatedPage,
-            progress: overallProgress,
-            currentChapterIndex: _currentChapterIndex,
-          );
+        widget.book.id,
+        currentPage: estimatedPage,
+        progress: overallProgress,
+        currentChapterIndex: _currentChapterIndex,
+      );
     }
   }
 
   void _goToChapter(int index, {int initialPage = 0}) {
     if (widget.book.chapters.isEmpty) return;
     final wasPlaying = _isAudioPlaying;
-    _audioPlaybackTimer?.cancel();
+    final stopped = _isTesting ? Future<void>.value() : _tts.stop();
     setState(() {
       _currentChapterIndex = index.clamp(0, widget.book.chapters.length - 1);
       _currentPageInChapter = initialPage;
     });
     _initChapterAudio();
     if (wasPlaying) {
-      _startAudio();
+      stopped.then((_) {
+        if (mounted) _startAudio();
+      });
     }
     if (_scrollController.hasClients) {
       _scrollController.jumpTo(0);
@@ -441,10 +520,14 @@ class _ReaderPageState extends State<ReaderPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context);
 
-    final readerBg =
-        ReaderThemeHelpers.getReaderBg(themeProvider.readerTheme, isDark);
-    final readerTextColor =
-        ReaderThemeHelpers.getReaderTextColor(themeProvider.readerTheme, isDark);
+    final readerBg = ReaderThemeHelpers.getReaderBg(
+      themeProvider.readerTheme,
+      isDark,
+    );
+    final readerTextColor = ReaderThemeHelpers.getReaderTextColor(
+      themeProvider.readerTheme,
+      isDark,
+    );
 
     final chapters = widget.book.chapters;
     final hasChapters = chapters.isNotEmpty;
@@ -453,30 +536,29 @@ class _ReaderPageState extends State<ReaderPage>
         : BookChapter(
             id: 'c0',
             title: l10n?.t('reader.chapters') ?? 'Агуулга',
-            content: l10n?.t('common.loading') ??
+            content:
+                l10n?.t('common.loading') ??
                 'Номын агуулга ачаалагдаж байна...',
             estimatedMinutes: 5,
           );
 
     final paragraphs = currentChapter.content.split('\n\n');
-    final paragraphSentences = paragraphs
-        .map((p) {
-          final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(p);
-          final list = matches
-              .map((m) => m.group(0) ?? '')
-              .where((s) => s.trim().isNotEmpty)
-              .toList();
-          return list.isEmpty ? [p] : list;
-        })
-        .toList();
+    final paragraphSentences = paragraphs.map((p) {
+      final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(p);
+      final list = matches
+          .map((m) => m.group(0) ?? '')
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
+      return list.isEmpty ? [p] : list;
+    }).toList();
     final totalSentences = paragraphSentences.fold<int>(
       0,
       (sum, list) => sum + list.length,
     );
     final globalSentenceIndex = (_audioTotalSeconds > 0 && totalSentences > 0)
         ? ((_audioCurrentSeconds / _audioTotalSeconds) * totalSentences)
-            .floor()
-            .clamp(0, totalSentences - 1)
+              .floor()
+              .clamp(0, totalSentences - 1)
         : 0;
 
     int activeAudioParagraph = 0;
@@ -514,8 +596,9 @@ class _ReaderPageState extends State<ReaderPage>
                   setState(() => _currentPageInChapter = idx);
                   _reportPaginatedProgress(
                     idx,
-                    ReaderThemeHelpers.paginateChapter(currentChapter.content)
-                        .length,
+                    ReaderThemeHelpers.paginateChapter(
+                      currentChapter.content,
+                    ).length,
                   );
                 },
                 onGoToChapter: (idx) => _goToChapter(idx),
@@ -551,7 +634,7 @@ class _ReaderPageState extends State<ReaderPage>
               onOpenToc: _showTableOfContents,
               onOpenAppearance: _showAppearanceSheet,
               onToggleAudio: () {
-                if (!widget.book.hasAudio) return;
+                if (!_canReadAloud) return;
                 if (_isAudioPlaying) {
                   _pauseAudio();
                 } else {
@@ -561,8 +644,11 @@ class _ReaderPageState extends State<ReaderPage>
               onAddBookmark: () {
                 String quote;
                 if (themeProvider.isPaginated) {
-                  final pages = ReaderThemeHelpers.paginateChapter(currentChapter.content);
-                  final curPageText = (pages.isNotEmpty && _currentPageInChapter < pages.length)
+                  final pages = ReaderThemeHelpers.paginateChapter(
+                    currentChapter.content,
+                  );
+                  final curPageText =
+                      (pages.isNotEmpty && _currentPageInChapter < pages.length)
                       ? pages[_currentPageInChapter]
                       : currentChapter.content;
                   final pageParas = curPageText
@@ -583,8 +669,7 @@ class _ReaderPageState extends State<ReaderPage>
                 _showHighlightModal(quote);
               },
             ),
-            if (widget.book.hasAudio &&
-                (_isAudioPlaying || _audioCurrentSeconds > 0))
+            if (_canReadAloud && (_isAudioPlaying || _audioCurrentSeconds > 0))
               ReaderAudioBar(
                 currentChapter: currentChapter,
                 isAudioPlaying: _isAudioPlaying,
@@ -613,12 +698,16 @@ class _ReaderPageState extends State<ReaderPage>
                       _audioSpeed = 1.0;
                     }
                   });
+                  if (_isAudioPlaying) _seekAudio(_audioCurrentSeconds);
                 },
                 sleepTimerMinutes: _sleepTimerMinutes,
                 onOpenSleepTimer: _showSleepTimerSheet,
                 onClose: () {
                   _pauseAudio();
-                  setState(() => _audioCurrentSeconds = 0);
+                  setState(() {
+                    _audioCurrentSeconds = 0;
+                    _audioCharacterPosition = 0;
+                  });
                 },
                 l10n: l10n,
               ),

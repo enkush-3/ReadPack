@@ -20,7 +20,7 @@ class Categories extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 24, bottom: 8),
       child: SizedBox(
-        height: 42,
+        height: 48,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -32,14 +32,18 @@ class Categories extends StatelessWidget {
               onTap: () => onChanged(index),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                constraints: const BoxConstraints(minHeight: 48),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? colorScheme.primary
-                      : colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(20),
+                      : colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.35,
+                        ),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isSelected
                         ? colorScheme.primary
@@ -51,8 +55,9 @@ class Categories extends StatelessWidget {
                     categories[index],
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w500,
                       color: isSelected
                           ? colorScheme.onPrimary
                           : colorScheme.onSurface,

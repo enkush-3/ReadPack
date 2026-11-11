@@ -7,7 +7,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.os.Build
 import android.widget.RemoteViews
 
 class QuoteWidgetProvider : AppWidgetProvider() {
@@ -41,16 +43,19 @@ class QuoteWidgetProvider : AppWidgetProvider() {
 
             val rawQuote = prefs.getString("flutter.widget_quote_text", null)
                 ?: prefs.getString("flutter.phone_widget_quote_text", null)
-                ?: "Ном уншдаг хүн үхэхээсээ өмнө мянган амьдралаар амьдардаг."
-            val cleanQuote = rawQuote.trim().removeSurrounding("\"").removeSurrounding("“", "”")
-            val quoteText = "“$cleanQuote”"
+            val cleanQuote = rawQuote
+                ?.trim()
+                ?.removeSurrounding("\"")
+                ?.removeSurrounding("“", "”")
+                .orEmpty()
+            val quoteText = cleanQuote.takeIf { it.isNotBlank() }?.let { "“$it”" }
 
             val author = prefs.getString("flutter.widget_quote_author", null)
                 ?: prefs.getString("flutter.phone_widget_author", null)
-                ?: "Жорж Р.Р. Мартин"
+                ?: ""
             val book = prefs.getString("flutter.widget_quote_book", null)
                 ?: prefs.getString("flutter.phone_widget_book", null)
-                ?: "ReadPack"
+                ?: ""
 
             val sourceMode = prefs.getString("flutter.widget_quote_source", null)
                 ?: prefs.getString("flutter.phone_widget_source", "daily")
@@ -66,34 +71,64 @@ class QuoteWidgetProvider : AppWidgetProvider() {
             }
 
             val views = RemoteViews(context.packageName, R.layout.widget_quote)
+            val languageCode = prefs.getString("flutter.widget_quote_language", null)
+                ?: prefs.getString("flutter.readpack_locale", "mn")
+                ?: "mn"
+            val lightSurface = prefs.getInt("flutter.widget_quote_color_surface", Color.parseColor("#FFFBFE"))
+            val darkSurface = prefs.getInt("flutter.widget_quote_color_surfaceContainer", Color.parseColor("#1D1B20"))
+            val primaryColor = prefs.getInt("flutter.widget_quote_color_primary", Color.parseColor("#6750A4"))
+            val onSurfaceColor = prefs.getInt(
+                "flutter.widget_quote_color_onSurface",
+                if (useDark) Color.parseColor("#E6E1E5") else Color.parseColor("#1D1B20")
+            )
+            val secondaryColor = prefs.getInt(
+                "flutter.widget_quote_color_secondary",
+                if (useDark) Color.parseColor("#CAC4D0") else Color.parseColor("#49454F")
+            )
 
             // Apply background & colors according to Light / Dark theme
             if (useDark) {
                 views.setInt(R.id.widget_root, "setBackgroundResource", R.drawable.widget_bg_dark)
-                views.setTextColor(R.id.widget_badge, Color.parseColor("#FBBF24"))
-                views.setTextColor(R.id.widget_app_label, Color.parseColor("#94A3B8"))
-                views.setTextColor(R.id.widget_quote_text, Color.parseColor("#F8FAFC"))
-                views.setTextColor(R.id.widget_author, Color.parseColor("#CBD5E1"))
+                views.setTextColor(R.id.widget_badge, primaryColor)
             } else {
                 views.setInt(R.id.widget_root, "setBackgroundResource", R.drawable.widget_bg_light)
-                views.setTextColor(R.id.widget_badge, Color.parseColor("#9A6B26"))
-                views.setTextColor(R.id.widget_app_label, Color.parseColor("#64748B"))
-                views.setTextColor(R.id.widget_quote_text, Color.parseColor("#1E293B"))
-                views.setTextColor(R.id.widget_author, Color.parseColor("#475569"))
+                views.setTextColor(R.id.widget_badge, primaryColor)
             }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val surfaceColor = if (useDark) darkSurface else lightSurface
+                views.setColorStateList(
+                    R.id.widget_root,
+                    "setBackgroundTintList",
+                    ColorStateList.valueOf(surfaceColor)
+                )
+            }
+            views.setTextColor(R.id.widget_app_label, secondaryColor)
+            views.setTextColor(R.id.widget_quote_text, onSurfaceColor)
+            views.setTextColor(R.id.widget_author, secondaryColor)
 
             val badgeText = if (sourceMode == "saved" || sourceMode == "custom") {
-                "📌 ХАДГАЛСАН ИШЛЭЛ"
+                if (languageCode == "en") "📌 SAVED QUOTE" else "📌 ХАДГАЛСАН ИШЛЭЛ"
             } else {
-                "📖 ӨДРИЙН ЭШЛЭЛ"
+                if (languageCode == "en") "📖 DAILY QUOTE" else "📖 ӨДРИЙН ЭШЛЭЛ"
             }
             views.setTextViewText(R.id.widget_badge, badgeText)
-            views.setTextViewText(R.id.widget_quote_text, quoteText)
+            views.setTextViewText(
+                R.id.widget_quote_text,
+                quoteText ?: if (languageCode == "en") {
+                    "Open ReadPack and choose a quote for this widget."
+                } else {
+                    "ReadPack-ийг нээгээд виджетэд ишлэл сонгоно уу."
+                }
+            )
 
-            val footerText = if (book.isNotEmpty() && book != author) {
+            val footerText = if (quoteText == null) {
+                if (languageCode == "en") "Tap to choose a quote" else "Ишлэл сонгохын тулд товшино уу"
+            } else if (book.isNotEmpty() && book != author) {
                 "— $author · $book"
-            } else {
+            } else if (author.isNotEmpty()) {
                 "— $author"
+            } else {
+                ""
             }
             views.setTextViewText(R.id.widget_author, footerText)
 

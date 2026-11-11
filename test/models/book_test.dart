@@ -88,6 +88,7 @@ void main() {
         category: 'Non-fiction',
         pages: 250,
         readTimeMinutes: 180,
+        audioUrl: 'https://example.org/book.mp3',
         hasAudio: true,
         audioDurationMinutes: 18,
       );
@@ -101,6 +102,23 @@ void main() {
       final updated = book.copyWith(hasAudio: false, audioDurationMinutes: 0);
       expect(updated.hasAudio, isFalse);
       expect(updated.audioDurationMinutes, 0);
+    });
+
+    test('legacy hasAudio flags without a real URL are ignored', () {
+      final book = Book.fromJson({
+        'id': 'legacy_audio',
+        'title': 'Legacy flag',
+        'author': 'Reader',
+        'rating': 4.0,
+        'category': 'Fiction',
+        'pages': 100,
+        'readTimeMinutes': 60,
+        'hasAudio': true,
+        'audioDurationMinutes': 60,
+      });
+
+      expect(book.hasAudio, isFalse);
+      expect(book.audioDurationMinutes, 0);
     });
   });
 
@@ -133,10 +151,10 @@ void main() {
   group('UserProfile Model', () {
     test('UserProfile defaults and copyWith work properly', () {
       const profile = UserProfile();
-      expect(profile.name, 'Enkush');
+      expect(profile.name, 'Зочин');
       expect(profile.streakDays, 0);
       expect(profile.dailyGoalMinutes, 30);
-      expect(profile.isGuest, isFalse);
+      expect(profile.isGuest, isTrue);
       expect(profile.streakFreezeAvailable, isTrue);
       expect(profile.notificationsEnabled, isTrue);
       expect(profile.recommendationsEnabled, isTrue);
@@ -158,29 +176,32 @@ void main() {
       expect(updated.streakFreezeAvailable, isFalse);
     });
 
-    test('UserProfile json serialization preserves guest and preference flags', () {
-      const profile = UserProfile(
-        name: 'Зочин',
-        email: 'guest@readpack.app',
-        isGuest: true,
-        streakDays: 3,
-        dailyGoalMinutes: 45,
-        streakFreezeAvailable: false,
-        notificationsEnabled: false,
-        recommendationsEnabled: true,
-      );
+    test(
+      'UserProfile json serialization preserves guest and preference flags',
+      () {
+        const profile = UserProfile(
+          name: 'Зочин',
+          email: 'guest@readpack.app',
+          isGuest: true,
+          streakDays: 3,
+          dailyGoalMinutes: 45,
+          streakFreezeAvailable: false,
+          notificationsEnabled: false,
+          recommendationsEnabled: true,
+        );
 
-      final json = profile.toJson();
-      final fromJson = UserProfile.fromJson(json);
+        final json = profile.toJson();
+        final fromJson = UserProfile.fromJson(json);
 
-      expect(fromJson.name, 'Зочин');
-      expect(fromJson.email, 'guest@readpack.app');
-      expect(fromJson.isGuest, isTrue);
-      expect(fromJson.streakDays, 3);
-      expect(fromJson.dailyGoalMinutes, 45);
-      expect(fromJson.streakFreezeAvailable, isFalse);
-      expect(fromJson.notificationsEnabled, isFalse);
-      expect(fromJson.recommendationsEnabled, isTrue);
-    });
+        expect(fromJson.name, 'Зочин');
+        expect(fromJson.email, 'guest@readpack.app');
+        expect(fromJson.isGuest, isTrue);
+        expect(fromJson.streakDays, 3);
+        expect(fromJson.dailyGoalMinutes, 45);
+        expect(fromJson.streakFreezeAvailable, isFalse);
+        expect(fromJson.notificationsEnabled, isFalse);
+        expect(fromJson.recommendationsEnabled, isTrue);
+      },
+    );
   });
 }

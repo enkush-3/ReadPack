@@ -5,15 +5,19 @@ import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/providers/theme_provider.dart';
 import 'package:readpack/features/notifications/presentation/page/notifications_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/secure_storage_mock.dart';
 
-Widget createTestNotifications() {
+Widget createTestNotifications({required BookProvider bookProvider}) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ChangeNotifierProvider(create: (_) => BookProvider()),
+      ChangeNotifierProvider<BookProvider>.value(value: bookProvider),
     ],
     child: const MaterialApp(
-      home: NotificationsPage(),
+      home: MediaQuery(
+        data: MediaQueryData(disableAnimations: true),
+        child: NotificationsPage(),
+      ),
     ),
   );
 }
@@ -23,11 +27,15 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    mockSecureStorage();
   });
 
   group('NotificationsPage Widget Tests', () {
     testWidgets('Renders notifications header and list', (tester) async {
-      await tester.pumpWidget(createTestNotifications());
+      final provider = BookProvider();
+      addTearDown(provider.dispose);
+      await tester.runAsync(() => provider.initialized);
+      await tester.pumpWidget(createTestNotifications(bookProvider: provider));
       await tester.pumpAndSettle();
 
       expect(find.text('Мэдэгдэл'), findsOneWidget);
@@ -37,8 +45,13 @@ void main() {
       expect(find.text('Шинэ ном нэмэгдлээ'), findsOneWidget);
     });
 
-    testWidgets('Switching to unread and archived tabs filters items', (tester) async {
-      await tester.pumpWidget(createTestNotifications());
+    testWidgets('Switching to unread and archived tabs filters items', (
+      tester,
+    ) async {
+      final provider = BookProvider();
+      addTearDown(provider.dispose);
+      await tester.runAsync(() => provider.initialized);
+      await tester.pumpWidget(createTestNotifications(bookProvider: provider));
       await tester.pumpAndSettle();
 
       final unreadTab = find.textContaining('Уншаагүй');
@@ -59,7 +72,10 @@ void main() {
     });
 
     testWidgets('Tapping mark all as read updates all items', (tester) async {
-      await tester.pumpWidget(createTestNotifications());
+      final provider = BookProvider();
+      addTearDown(provider.dispose);
+      await tester.runAsync(() => provider.initialized);
+      await tester.pumpWidget(createTestNotifications(bookProvider: provider));
       await tester.pumpAndSettle();
 
       final markAllBtn = find.text('Бүгдийг унших');

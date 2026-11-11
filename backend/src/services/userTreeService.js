@@ -1,295 +1,271 @@
 'use strict';
 
-const {
-  createDefaultUserAccountTree,
-  computeLevel,
-  computeLevelTitle,
-  hashPassword,
-} = require('../models/UserAccountTree');
+const { computeLevel, computeLevelTitle } = require('../models/UserAccountTree');
 
-/**
- * Service managing the MongoDB Hierarchical User Account Tree (`UserAccountTree`)
- * and synchronizing user reading progress, shelves, highlights, notes, and gamification
- * with the Central Books Catalog.
- */
 class UserTreeService {
   constructor({ store, bookCatalogService }) {
     this.store = store;
     this.bookCatalogService = bookCatalogService;
   }
 
-  async loginOrRegister({ email, name, password = 'readpack123', provider = 'email' }) {
-    const cleanEmail = String(email || '').trim().toLowerCase();
-    if (!cleanEmail || !cleanEmail.includes('@')) {
-      throw new Error('Valid email is required');
-    }
-
-    let userTree = await this.store.findUserTree(cleanEmail);
-    if (!userTree) {
-      userTree = createDefaultUserAccountTree({
-        email: cleanEmail,
-        displayName: name || cleanEmail.split('@')[0],
-        password,
-        provider,
-      });
-    } else {
-      userTree.authNode = {
-        ...userTree.authNode,
-        provider: provider || userTree.authNode?.provider || 'email',
-        lastLoginAt: new Date().toISOString(),
-      };
-      if (name && name.trim()) {
-        userTree.profileNode.displayName = name.trim();
-      }
-    }
-
-    return await this.store.saveUserTree(userTree);
+  getUserTree(userId) {
+    return this.store.findUserTree(userId);
   }
 
-  async getUserTree(userIdOrEmail) {
-    let userTree = await this.store.findUserTree(userIdOrEmail);
-    if (!userTree && String(userIdOrEmail).includes('@')) {
-      userTree = createDefaultUserAccountTree({
-        email: userIdOrEmail,
-        displayName: String(userIdOrEmail).split('@')[0],
-      });
-      userTree = await this.store.saveUserTree(userTree);
+  async updatePreferencesAndProfile(userId, payload = {}) {
+    if (payload.xpDelta !== undefined || payload.gamificationTree !== undefined) {
+      throw serviceError(400, 'server_managed_fields', 'Gamification fields are managed by the server.');
     }
-    return userTree;
+    const tree = await this.#requireUserTree(userId);
+    this.#updateProfile(tree, payload);
+    this.#updatePreferences(tree, payload.preferencesNode || payload);
+    return this.store.saveUserTree(tree);
   }
 
-  async updatePreferencesAndProfile(userIdOrEmail, payload = {}) {
-    let userTree = await this.getUserTree(userIdOrEmail);
-    if (!userTree) {
-      throw new Error('User account tree not found');
+  async syncReadingNode(userId, payload = {}) {
+    const tree = await this.#requireUserTree(userId);
+    const centralBook = await this.#resolveBook(payload.book || payload.bookId);
+    const reading = normalizeReadingProgress(payload);
+    const shelf = getOrCreateShelf(tree, reading.shelfId);
+    const bookNode = findOrCreateBookNode(shelf, centralBook, reading);
+    bookNode.syncReadingEventIds = bookNode.syncReadingEventIds || [];
+    if (reading.eventId && bookNode.syncReadingEventIds.includes(reading.eventId)) {
+      return { centralBook, userAccountTree: tree };
     }
+    updateBookNode(bookNode, reading, centralBook);
+    attachHighlight(bookNode, reading.highlight, reading.currentChapter);
+    attachNote(bookNode, reading.note);
+    if (reading.eventId) bookNode.syncReadingEventIds.push(reading.eventId);
+    updateCompletedBooks(tree, centralBook.id, reading, bookNode);
 
-    if (payload.displayName || payload.name) {
-      userTree.profileNode.displayName = String(
-        payload.displayName || payload.name
-      ).trim();
+    const userAccountTree = await this.store.saveUserTree(tree);
+    return { centralBook, userAccountTree };
+  }
+
+  async applyReadingRewards(userId, event) {
+    const tree = await this.#requireUserTree(userId);
+    const xpNode = tree.gamificationTree.xpNode;
+    xpNode.xpEvents = xpNode.xpEvents || [];
+    const previousEvent = xpNode.xpEvents.find((item) => item.eventId === event.eventId);
+    if (previousEvent) return { tree, earnedXp: previousEvent.xp, duplicate: true };
+
+    const earnedXp = event.minutes * 5;
+    const createdAt = event.createdAt || new Date().toISOString();
+    xpNode.xpEvents.push({
+      eventId: event.eventId,
+      xp: earnedXp,
+      minutes: event.minutes,
+      createdAt,
+      payloadHash: event.payloadHash,
+    });
+    xpNode.totalXp = Number(xpNode.totalXp || 0) + earnedXp;
+    xpNode.level = computeLevel(xpNode.totalXp);
+    xpNode.title = computeLevelTitle(xpNode.totalXp);
+
+    if (event.minutes > 0) {
+      updateReadingStreak(
+        tree,
+        event.minutes,
+        createdAt,
+        event.timezoneOffsetMinutes || 0,
+      );
+    }
+    return { tree: await this.store.saveUserTree(tree), earnedXp, duplicate: false };
+  }
+
+  async #requireUserTree(userId) {
+    const tree = await this.store.findUserTree(userId);
+    if (!tree) throw serviceError(404, 'user_not_found', 'User account was not found.');
+    return tree;
+  }
+
+  async #resolveBook(book) {
+    if (book && typeof book === 'object') {
+      return this.bookCatalogService.syncBookToCentralCatalog(book);
+    }
+    if (typeof book !== 'string' || !book.trim()) {
+    throw serviceError(400, 'book_required', 'A book object or bookId is required.');
+    }
+    const books = await this.store.getAllBooks();
+    const found = books.find((item) => item.id === book.trim());
+    if (!found) throw serviceError(404, 'book_not_found', 'Book was not found.');
+    return found;
+  }
+
+  #updateProfile(tree, payload) {
+    const displayName = payload.displayName ?? payload.name;
+    if (displayName !== undefined) {
+      const normalized = String(displayName).trim();
+      if (!normalized || normalized.length > 80) throw serviceError(400, 'invalid_name', 'Name must be 1 to 80 characters.');
+      tree.profileNode.displayName = normalized;
     }
     if (payload.bio !== undefined) {
-      userTree.profileNode.bio = String(payload.bio);
+      const bio = String(payload.bio).trim();
+      if (bio.length > 300) throw serviceError(400, 'invalid_bio', 'Bio cannot exceed 300 characters.');
+      tree.profileNode.bio = bio;
     }
-    if (payload.preferencesNode || payload.dailyGoalMinutes || payload.yearlyBookGoal) {
-      const prefs = payload.preferencesNode || payload;
-      userTree.profileNode.preferencesNode = {
-        ...userTree.profileNode.preferencesNode,
-        ...(prefs.language ? { language: prefs.language } : {}),
-        ...(prefs.theme ? { theme: prefs.theme } : {}),
-        ...(prefs.dailyGoalMinutes !== undefined
-          ? { dailyGoalMinutes: Number(prefs.dailyGoalMinutes) }
-          : {}),
-        ...(prefs.yearlyBookGoal !== undefined
-          ? { yearlyBookGoal: Number(prefs.yearlyBookGoal) }
-          : {}),
-        ...(Array.isArray(prefs.favoriteGenres)
-          ? { favoriteGenres: prefs.favoriteGenres }
-          : {}),
-        ...(prefs.notificationsEnabled !== undefined
-          ? { notificationsEnabled: Boolean(prefs.notificationsEnabled) }
-          : {}),
-        ...(prefs.recommendationsEnabled !== undefined
-          ? { recommendationsEnabled: Boolean(prefs.recommendationsEnabled) }
-          : {}),
-      };
-    }
-
-    if (payload.xpDelta && Number(payload.xpDelta) > 0) {
-      const newXp =
-        Number(userTree.gamificationTree.xpNode.totalXp || 0) +
-        Number(payload.xpDelta);
-      userTree.gamificationTree.xpNode.totalXp = newXp;
-      userTree.gamificationTree.xpNode.level = computeLevel(newXp);
-      userTree.gamificationTree.xpNode.title = computeLevelTitle(newXp);
-    }
-
-    return await this.store.saveUserTree(userTree);
   }
 
-  /**
-   * Synchronizes a book interaction (reading progress, save to shelf, reading challenge,
-   * highlight, or note) into BOTH:
-   * 1. Central Books Collection (`books`) via On-Demand Upsert.
-   * 2. User's Hierarchical `readingTree` & `gamificationTree` in MongoDB.
-   */
-  async syncReadingNode(
-    userIdOrEmail,
-    {
-      book,
-      shelfId = 'currently_reading',
-      status = 'reading',
-      progress = 0.0,
-      currentChapter = 0,
-      currentPage = 0,
-      highlight = null,
-      note = null,
-      minutesRead = 0,
-    } = {}
-  ) {
-    let userTree = await this.getUserTree(userIdOrEmail);
-    if (!userTree) {
-      userTree = createDefaultUserAccountTree({
-        userId: String(userIdOrEmail).startsWith('usr_')
-          ? userIdOrEmail
-          : undefined,
-        email: String(userIdOrEmail).includes('@')
-          ? userIdOrEmail
-          : `${userIdOrEmail}@readpack.app`,
-        displayName: 'Уншигч',
-      });
+  #updatePreferences(tree, preferences) {
+    const allowedLanguages = ['mn', 'en'];
+    const allowedThemes = ['system', 'light', 'dark', 'sepia'];
+    const current = tree.profileNode.preferencesNode;
+    if (preferences.language !== undefined) {
+      if (!allowedLanguages.includes(preferences.language)) throw serviceError(400, 'invalid_language', 'Language must be mn or en.');
+      current.language = preferences.language;
     }
-
-    // Step 1: Upsert the book into the Central Books Catalog so future searches hit central_db!
-    let centralBook = null;
-    if (book && typeof book === 'object') {
-      centralBook = await this.bookCatalogService.syncBookToCentralCatalog(book);
-    } else if (typeof book === 'string') {
-      const all = await this.store.getAllBooks();
-      centralBook = all.find((b) => b.id === book) || {
-        id: book,
-        title: 'Synced Book',
-        author: 'Unknown Author',
-      };
-    } else {
-      throw new Error('Book object or bookId is required to sync reading node');
+    if (preferences.theme !== undefined) {
+      if (!allowedThemes.includes(preferences.theme)) throw serviceError(400, 'invalid_theme', 'Theme is invalid.');
+      current.theme = preferences.theme;
     }
-
-    // Step 2: Locate or create target shelf node in readingTree.shelves
-    if (!userTree.readingTree || !Array.isArray(userTree.readingTree.shelves)) {
-      userTree.readingTree = { shelves: [] };
+    setBoundedNumber(current, preferences, 'dailyGoalMinutes', 1, 720);
+    setBoundedNumber(current, preferences, 'yearlyBookGoal', 1, 500);
+    if (Array.isArray(preferences.favoriteGenres)) {
+      current.favoriteGenres = preferences.favoriteGenres.slice(0, 20).map(String);
     }
-    let shelf = userTree.readingTree.shelves.find((s) => s.shelfId === shelfId);
-    if (!shelf) {
-      shelf = {
-        shelfId,
-        name: shelfId,
-        childrenBooks: [],
-      };
-      userTree.readingTree.shelves.push(shelf);
-    }
+    setBoolean(current, preferences, 'notificationsEnabled');
+    setBoolean(current, preferences, 'recommendationsEnabled');
+  }
+}
 
-    // Step 3: Upsert child book node inside shelf.childrenBooks
-    const numericProgress = Number(progress ?? 0);
-    const effectiveStatus =
-      numericProgress >= 1.0 ? 'completed' : status || 'reading';
+function normalizeReadingProgress(payload) {
+  const progress = Number(payload.progress ?? 0);
+  if (!Number.isFinite(progress) || progress < 0 || progress > 1) {
+      throw serviceError(400, 'invalid_progress', 'Progress must be between 0 and 1.');
+  }
+  return {
+    shelfId: String(payload.shelfId || 'currently_reading').slice(0, 80),
+    status: ['reading', 'saved', 'completed', 'challenge'].includes(payload.status)
+      ? payload.status
+      : 'reading',
+    progress,
+    currentChapter: nonNegativeInteger(payload.currentChapter, 'currentChapter'),
+    currentPage: nonNegativeInteger(payload.currentPage, 'currentPage'),
+    highlight: payload.highlight,
+    note: payload.note,
+    eventId: payload.eventId ? String(payload.eventId) : null,
+  };
+}
 
-    let bookNode = shelf.childrenBooks.find((b) => b.bookId === centralBook.id);
-    if (!bookNode) {
-      bookNode = {
-        bookId: centralBook.id,
-        title: centralBook.title,
-        author: centralBook.author,
-        status: effectiveStatus,
-        progress: numericProgress,
-        currentChapter: Number(currentChapter || 0),
-        currentPage: Number(currentPage || 0),
-        updatedAt: new Date().toISOString(),
-        highlightsNodes: [],
-        notesNodes: [],
-      };
-      shelf.childrenBooks.push(bookNode);
-    } else {
-      bookNode.title = centralBook.title || bookNode.title;
-      bookNode.author = centralBook.author || bookNode.author;
-      bookNode.status = effectiveStatus || bookNode.status;
-      bookNode.progress =
-        progress !== undefined ? numericProgress : bookNode.progress;
-      bookNode.currentChapter =
-        currentChapter !== undefined
-          ? Number(currentChapter)
-          : bookNode.currentChapter;
-      bookNode.currentPage =
-        currentPage !== undefined ? Number(currentPage) : bookNode.currentPage;
-      bookNode.updatedAt = new Date().toISOString();
-    }
+function nonNegativeInteger(value, name) {
+  const number = Number(value || 0);
+  if (!Number.isInteger(number) || number < 0) throw serviceError(400, 'invalid_progress', `${name} must be a non-negative integer.`);
+  return number;
+}
 
-    // Attach highlight node if provided
-    if (highlight && highlight.text) {
-      bookNode.highlightsNodes.push({
-        highlightId: highlight.highlightId || `hl_${Date.now()}`,
-        chapterIndex: Number(highlight.chapterIndex || currentChapter || 0),
-        text: String(highlight.text),
-        color: highlight.color || 'yellow',
-        createdAt: new Date().toISOString(),
-      });
-    }
+function getOrCreateShelf(tree, shelfId) {
+  tree.readingTree.shelves = tree.readingTree.shelves || [];
+  let shelf = tree.readingTree.shelves.find((item) => item.shelfId === shelfId);
+  if (!shelf) {
+    shelf = { shelfId, name: shelfId, childrenBooks: [] };
+    tree.readingTree.shelves.push(shelf);
+  }
+  return shelf;
+}
 
-    // Attach note node if provided
-    if (note && note.content) {
-      bookNode.notesNodes.push({
-        noteId: note.noteId || `nt_${Date.now()}`,
-        content: String(note.content),
-        createdAt: new Date().toISOString(),
-      });
-    }
-
-    // Step 4: Update gamificationTree nodes
-    const earnedXp = Math.max(15, Number(minutesRead || 0) * 5);
-    const totalXp =
-      Number(userTree.gamificationTree.xpNode.totalXp || 0) + earnedXp;
-    userTree.gamificationTree.xpNode.totalXp = totalXp;
-    userTree.gamificationTree.xpNode.level = computeLevel(totalXp);
-    userTree.gamificationTree.xpNode.title = computeLevelTitle(totalXp);
-
-    if (minutesRead > 0) {
-      userTree.gamificationTree.streakNode.minutesReadToday =
-        Number(userTree.gamificationTree.streakNode.minutesReadToday || 0) +
-        Number(minutesRead);
-      const todayIso = new Date().toISOString().slice(0, 10);
-      if (
-        !userTree.gamificationTree.streakNode.historyDates.includes(todayIso)
-      ) {
-        userTree.gamificationTree.streakNode.historyDates.push(todayIso);
-        const nextStreak =
-          Number(userTree.gamificationTree.streakNode.currentStreak || 0) + 1;
-        userTree.gamificationTree.streakNode.currentStreak = nextStreak;
-        userTree.gamificationTree.streakNode.longestStreak = Math.max(
-          Number(userTree.gamificationTree.streakNode.longestStreak || 0),
-          nextStreak
-        );
-      }
-    }
-
-    if (
-      effectiveStatus === 'completed' ||
-      numericProgress >= 1.0 ||
-      shelfId === 'challenge_2026'
-    ) {
-      const completedIds =
-        userTree.gamificationTree.challengeNode.completedBookIds || [];
-      if (!completedIds.includes(centralBook.id)) {
-        completedIds.push(centralBook.id);
-      }
-      userTree.gamificationTree.challengeNode.completedBookIds = completedIds;
-
-      if (effectiveStatus === 'completed' && shelfId !== 'completed') {
-        let completedShelf = userTree.readingTree.shelves.find(
-          (s) => s.shelfId === 'completed'
-        );
-        if (!completedShelf) {
-          completedShelf = {
-            shelfId: 'completed',
-            name: 'Уншиж дууссан',
-            childrenBooks: [],
-          };
-          userTree.readingTree.shelves.push(completedShelf);
-        }
-        if (
-          !completedShelf.childrenBooks.some((b) => b.bookId === centralBook.id)
-        ) {
-          completedShelf.childrenBooks.push({ ...bookNode });
-        }
-      }
-    }
-
-    const savedTree = await this.store.saveUserTree(userTree);
-    return {
-      centralBook,
-      userAccountTree: savedTree,
+function findOrCreateBookNode(shelf, book, reading) {
+  let node = shelf.childrenBooks.find((item) => item.bookId === book.id);
+  if (!node) {
+    node = {
+      bookId: book.id,
+      title: book.title,
+      author: book.author,
+      status: reading.status,
+      progress: reading.progress,
+      currentChapter: reading.currentChapter,
+      currentPage: reading.currentPage,
+      updatedAt: new Date().toISOString(),
+      highlightsNodes: [],
+      notesNodes: [],
     };
+    shelf.childrenBooks.push(node);
   }
+  return node;
+}
+
+function updateBookNode(node, reading, book) {
+  node.title = book.title || node.title;
+  node.author = book.author || node.author;
+  node.status = reading.progress >= 1 ? 'completed' : reading.status;
+  node.progress = reading.progress;
+  node.currentChapter = reading.currentChapter;
+  node.currentPage = reading.currentPage;
+  node.updatedAt = new Date().toISOString();
+}
+
+function attachHighlight(bookNode, highlight, currentChapter) {
+  if (!highlight?.text) return;
+  bookNode.highlightsNodes.push({
+    highlightId: highlight.highlightId || `hl_${cryptoId()}`,
+    chapterIndex: Number(highlight.chapterIndex ?? currentChapter),
+    text: String(highlight.text).slice(0, 5000),
+    color: String(highlight.color || 'yellow'),
+    createdAt: new Date().toISOString(),
+  });
+}
+
+function attachNote(bookNode, note) {
+  if (!note?.content) return;
+  bookNode.notesNodes.push({
+    noteId: note.noteId || `nt_${cryptoId()}`,
+    content: String(note.content).slice(0, 5000),
+    createdAt: new Date().toISOString(),
+  });
+}
+
+function updateCompletedBooks(tree, bookId, reading, bookNode) {
+  const isComplete = reading.progress >= 1 || reading.status === 'completed' || reading.shelfId === 'challenge_2026';
+  if (!isComplete) return;
+  const challenge = tree.gamificationTree.challengeNode;
+  challenge.completedBookIds = challenge.completedBookIds || [];
+  if (!challenge.completedBookIds.includes(bookId)) challenge.completedBookIds.push(bookId);
+  if (bookNode.status !== 'completed' || reading.shelfId === 'completed') return;
+
+  const completedShelf = getOrCreateShelf(tree, 'completed');
+  if (!completedShelf.childrenBooks.some((item) => item.bookId === bookId)) {
+    completedShelf.childrenBooks.push(structuredClone(bookNode));
+  }
+}
+
+function updateReadingStreak(tree, minutes, createdAt, timezoneOffsetMinutes = 0) {
+  const streak = tree.gamificationTree.streakNode;
+  const dateKey = new Date(
+    new Date(createdAt).getTime() + timezoneOffsetMinutes * 60 * 1000,
+  ).toISOString().slice(0, 10);
+  const previousDate = streak.lastActiveDate;
+  if (previousDate !== dateKey) {
+    const yesterday = new Date(`${dateKey}T00:00:00.000Z`);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    streak.currentStreak = previousDate === yesterday.toISOString().slice(0, 10)
+      ? Number(streak.currentStreak || 0) + 1
+      : 1;
+    streak.longestStreak = Math.max(Number(streak.longestStreak || 0), streak.currentStreak);
+    streak.lastActiveDate = dateKey;
+    streak.historyDates = [...new Set([...(streak.historyDates || []), dateKey])];
+    streak.minutesReadToday = 0;
+  }
+  streak.minutesReadToday = Number(streak.minutesReadToday || 0) + minutes;
+}
+
+function setBoundedNumber(target, source, key, minimum, maximum) {
+  if (source[key] === undefined) return;
+  const value = Number(source[key]);
+  if (!Number.isInteger(value) || value < minimum || value > maximum) {
+    throw serviceError(400, 'invalid_preference', `${key} must be an integer from ${minimum} to ${maximum}.`);
+  }
+  target[key] = value;
+}
+
+function setBoolean(target, source, key) {
+  if (source[key] !== undefined) target[key] = Boolean(source[key]);
+}
+
+function cryptoId() {
+  return require('crypto').randomUUID();
+}
+
+function serviceError(statusCode, code, message) {
+  return Object.assign(new Error(message), { statusCode, code });
 }
 
 module.exports = { UserTreeService };

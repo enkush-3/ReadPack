@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:readpack/core/providers/helpers/book_data_loader.dart';
 import 'package:readpack/core/providers/helpers/book_filter_helper.dart';
@@ -8,7 +10,9 @@ import 'package:readpack/core/providers/helpers/default_provider_data.dart';
 import 'package:readpack/core/providers/helpers/search_matching_engine.dart';
 import 'package:readpack/core/providers/mixins/book_collection_mixin.dart';
 import 'package:readpack/data/book_repository.dart';
+import 'package:readpack/data/services/auth_api_service.dart';
 import 'package:readpack/data/services/book_api_service.dart';
+import 'package:readpack/data/services/notification_service.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/models/bookmark.dart';
 import 'package:readpack/models/notification_model.dart';
@@ -16,19 +20,27 @@ import 'package:readpack/models/user_stats.dart';
 
 class BookProvider extends ChangeNotifier with BookCollectionMixin {
   final BookApiService _apiService;
+  final NotificationService _notificationService = NotificationService();
+  late final AuthApiService _authApi;
 
   List<Book> _books = BookRepository.getInitialBooks();
   List<String> _recentSearches = [
-    'Atomic Habits', '1984', 'Clear Thinking', 'Sapiens',
+    'Atomic Habits',
+    '1984',
+    'Clear Thinking',
+    'Sapiens',
   ];
   List<Bookmark> _bookmarks = DefaultProviderData.defaultBookmarks();
   List<NotificationItem> _notifications =
       DefaultProviderData.defaultNotifications();
+  List<LeaderboardCompetitor> _leaderboardEntries = const [];
   UserProfile _userProfile = const UserProfile();
 
   bool _isLoading = false;
   bool _isFetchingRemote = false;
+  bool _isLeaderboardLoading = false;
   String? _errorMessage;
+  String? _leaderboardError;
 
   String _searchQuery = '';
   String _homeSelectedCategory = 'book.categories.all';
@@ -37,6 +49,8 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   String _sortBy = 'popular';
   String _librarySortBy = 'recent';
   String _selectedMood = 'all';
+  bool _isDisposed = false;
+  late final Future<void> _initialization;
 
   @override
   List<Book> get books => _books;
@@ -48,6 +62,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   UserProfile get userProfile => _userProfile;
   bool get isLoading => _isLoading;
+  Future<void> get initialized => _initialization;
   bool get isFetchingRemote => _isFetchingRemote;
   String? get errorMessage => _errorMessage;
   String get searchQuery => _searchQuery;
@@ -57,10 +72,20 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   String get sortBy => _sortBy;
   String get librarySortBy => _librarySortBy;
   String get selectedMood => _selectedMood;
+  List<LeaderboardCompetitor> get leaderboardEntries => _leaderboardEntries;
+  bool get isLeaderboardLoading => _isLeaderboardLoading;
+  String? get leaderboardError => _leaderboardError;
 
   BookProvider({BookApiService? apiService})
-      : _apiService = apiService ?? BookApiService() {
-    _initData();
+    : _apiService = apiService ?? BookApiService() {
+    _authApi = _apiService.authService;
+    _initialization = _initData();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 
   List<Book> get featuredBooks => _books.take(4).toList();
@@ -79,16 +104,17 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   String? get searchSuggestion =>
       SearchMatchingEngine.computeSearchSuggestion(_books, _searchQuery);
   List<Map<String, dynamic>> getChapterMatchesForBook(
-          String bookId, String query) =>
-      SearchMatchingEngine.findChapterMatches(_books, bookId, query);
+    String bookId,
+    String query,
+  ) => SearchMatchingEngine.findChapterMatches(_books, bookId, query);
   List<Book> get searchResults => SearchMatchingEngine.filterAndSortBooks(
-        books: _books,
-        query: _searchQuery,
-        categories: _searchCategories,
-        minRating: _minRating,
-        selectedMood: _selectedMood,
-        sortBy: _sortBy,
-      );
+    books: _books,
+    query: _searchQuery,
+    categories: _searchCategories,
+    minRating: _minRating,
+    selectedMood: _selectedMood,
+    sortBy: _sortBy,
+  );
 
   Future<void> _initData() async {
     _isLoading = true;
@@ -102,6 +128,30 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       _userProfile = state.userProfile;
       collections = state.collections;
       downloadedBookIds = state.downloadedBookIds;
+      var hasSession = false;
+      try {
+        hasSession = await _authApi.hasStoredSession();
+      } catch (_) {
+        await _authApi.clearSession().catchError((Object _) {});
+      }
+      if (!hasSession) {
+        _userProfile = BookGamificationManager.logout();
+      } else if (_userProfile.isGuest || _userProfile.userId.isEmpty) {
+        await _authApi.clearSession();
+        _userProfile = BookGamificationManager.logout();
+      } else {
+        try {
+          await _authApi.refreshSession();
+          final tree = await _authApi.getUserTree(_userProfile.userId);
+          _userProfile = _profileFromApiResponse(tree);
+        } on AuthApiException {
+          await _authApi.clearSession();
+          _userProfile = BookGamificationManager.logout();
+        }
+      }
+      if (!_userProfile.isGuest && _userProfile.notificationsEnabled) {
+        unawaited(_syncNotificationSettings());
+      }
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -112,12 +162,39 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   Future<void> refresh() async => fetchRemoteBooks();
 
+  Future<void> refreshLeaderboard({String period = 'monthly'}) async {
+    _isLeaderboardLoading = true;
+    _leaderboardError = null;
+    notifyListeners();
+    try {
+      final response = await _apiService.fetchLeaderboard(period: period);
+      final rawEntries = response['entries'] as List<dynamic>? ?? const [];
+      _leaderboardEntries = rawEntries
+          .whereType<Map<String, dynamic>>()
+          .map(
+            (entry) => LeaderboardCompetitor.fromJson(
+              entry,
+              isCurrentUser:
+                  entry['userId'] == _userProfile.userId &&
+                  _userProfile.userId.isNotEmpty,
+            ),
+          )
+          .toList();
+    } catch (error) {
+      _leaderboardError = error.toString();
+    } finally {
+      _isLeaderboardLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchRemoteBooks({String? query}) async {
     _isFetchingRemote = true;
     notifyListeners();
     try {
-      final remoteBooks =
-          await _apiService.fetchBooks(query: query ?? _searchQuery);
+      final remoteBooks = await _apiService.fetchBooks(
+        query: query ?? _searchQuery,
+      );
       if (remoteBooks.isNotEmpty) {
         final Map<String, Book> bookMap = {for (final b in _books) b.id: b};
         for (final r in remoteBooks) {
@@ -150,8 +227,13 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       notifyListeners();
       BookProviderPersistence.persistSavedBooks(_books);
       BookProviderPersistence.syncBookReadingNode(
-          _apiService, _userProfile, _books, bookId,
-          shelfId: 'saved', status: 'saved');
+        _apiService,
+        _userProfile,
+        _books,
+        bookId,
+        shelfId: 'saved',
+        status: 'saved',
+      );
     }
   }
 
@@ -162,39 +244,262 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     }
   }
 
-  void updateReadingPosition(String bookId,
-      {required int currentPage,
-      required double progress,
-      int? currentChapterIndex}) {
-    if (BookStateMutator.updatePosition(_books, bookId,
-        currentPage: currentPage,
-        progress: progress,
-        currentChapterIndex: currentChapterIndex)) {
+  void updateReadingPosition(
+    String bookId, {
+    required int currentPage,
+    required double progress,
+    int? currentChapterIndex,
+  }) {
+    if (BookStateMutator.updatePosition(
+      _books,
+      bookId,
+      currentPage: currentPage,
+      progress: progress,
+      currentChapterIndex: currentChapterIndex,
+    )) {
       notifyListeners();
       BookProviderPersistence.persistReadingProgress(_books);
       BookProviderPersistence.syncBookReadingNode(
-          _apiService, _userProfile, _books, bookId);
+        _apiService,
+        _userProfile,
+        _books,
+        bookId,
+      );
     }
   }
 
   void updateReadingProgress(
-      String bookId, int currentPage, double progress,
-      [int? currentChapterIndex]) {
-    _userProfile = BookStateMutator.updateProgressAndStats(_books, _userProfile,
-        bookId, currentPage, progress, currentChapterIndex);
+    String bookId,
+    int currentPage,
+    double progress, [
+    int? currentChapterIndex,
+  ]) {
+    _userProfile = BookStateMutator.updateProgressAndStats(
+      _books,
+      _userProfile,
+      bookId,
+      currentPage,
+      progress,
+      currentChapterIndex,
+    );
     notifyListeners();
     BookProviderPersistence.persistReadingProgress(_books);
     BookProviderPersistence.persistUserProfile(_userProfile);
     BookProviderPersistence.syncBookReadingNode(
-        _apiService, _userProfile, _books, bookId,
-        status: progress >= 1.0 ? 'completed' : 'reading');
+      _apiService,
+      _userProfile,
+      _books,
+      bookId,
+      status: progress >= 1.0 ? 'completed' : 'reading',
+    );
   }
 
-  void addReadingMinutes(int minutes) {
-    _userProfile =
-        BookGamificationManager.addReadingMinutes(_userProfile, minutes);
+  void addReadingMinutes(int minutes, {String? bookId}) {
+    if (minutes <= 0) return;
+    _userProfile = BookGamificationManager.addReadingMinutes(
+      _userProfile,
+      minutes,
+    );
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
+    if (_userProfile.isGuest || _userProfile.userId.isEmpty) return;
+
+    final userId = _userProfile.userId;
+    Book? readingBook;
+    for (final candidate in _books) {
+      if (candidate.id == bookId) {
+        readingBook = candidate;
+        break;
+      }
+    }
+    final eventId =
+        '${userId}_${DateTime.now().toUtc().microsecondsSinceEpoch}_$minutes';
+    _apiService
+        .recordReadingEvent(
+          userId: userId,
+          eventId: eventId,
+          minutesRead: minutes,
+          book: readingBook,
+          bookId: bookId,
+        )
+        .then((response) {
+          if (_isDisposed || response == null) return;
+          final tree = response['userAccountTree'];
+          if (tree is Map<String, dynamic>) {
+            _userProfile = _profileFromApiResponse(response);
+            notifyListeners();
+            BookProviderPersistence.persistUserProfile(_userProfile);
+          }
+        });
+  }
+
+  Future<AuthChallenge> beginSignUp({
+    required String name,
+    required String contact,
+    required String contactType,
+    required String password,
+  }) => _authApi.signUp(
+    name: name,
+    contact: contact,
+    contactType: contactType,
+    password: password,
+  );
+
+  Future<AuthChallenge> resendVerificationCode(String challengeId) =>
+      _authApi.resendOtp(challengeId);
+
+  Future<void> verifySignUp({
+    required String challengeId,
+    required String code,
+  }) async {
+    final result = await _authApi.verifyOtp(
+      challengeId: challengeId,
+      code: code,
+    );
+    _setAuthenticatedProfile(result.userAccountTree);
+  }
+
+  Future<void> signInWithPassword({
+    required String contact,
+    required String contactType,
+    required String password,
+  }) async {
+    final result = await _authApi.signIn(
+      contact: contact,
+      contactType: contactType,
+      password: password,
+    );
+    _setAuthenticatedProfile(result.userAccountTree);
+  }
+
+  Future<void> signInWithProvider({
+    required String provider,
+    required String token,
+  }) async {
+    final result = await _authApi.signInWithProvider(
+      provider: provider,
+      token: token,
+    );
+    _setAuthenticatedProfile(result.userAccountTree);
+  }
+
+  Future<AuthChallenge> requestPasswordReset({
+    required String contact,
+    required String contactType,
+  }) =>
+      _authApi.requestPasswordReset(contact: contact, contactType: contactType);
+
+  Future<void> resetPassword({
+    required String challengeId,
+    required String code,
+    required String newPassword,
+  }) => _authApi.resetPassword(
+    challengeId: challengeId,
+    code: code,
+    newPassword: newPassword,
+  );
+
+  void _setAuthenticatedProfile(Map<String, dynamic> response) {
+    _userProfile = _profileFromApiResponse(response);
+    notifyListeners();
+    BookProviderPersistence.persistUserProfile(_userProfile);
+    if (_userProfile.notificationsEnabled) {
+      unawaited(_syncNotificationSettings());
+    }
+  }
+
+  UserProfile _profileFromApiResponse(Map<String, dynamic> response) {
+    final tree =
+        response['userAccountTree'] as Map<String, dynamic>? ?? response;
+    final profile = _profileFromAccountTree(tree);
+    final readingStats = response['readingStats'] as Map<String, dynamic>?;
+    if (readingStats == null) return profile;
+    final weeklyMinutes = (readingStats['weeklyMinutes'] as List<dynamic>?)
+        ?.map((value) => (value as num).toInt())
+        .toList();
+    return profile.copyWith(
+      xp: (readingStats['totalXp'] as num?)?.toInt(),
+      streakDays: (readingStats['currentStreak'] as num?)?.toInt(),
+      minutesReadToday: (readingStats['minutesReadToday'] as num?)?.toInt(),
+      lastStreakDate: readingStats['lastActiveDate'] as String?,
+      weeklyMinutes: weeklyMinutes?.length == 7 ? weeklyMinutes : null,
+    );
+  }
+
+  Future<void> _syncNotificationSettings() async {
+    final profile = _userProfile;
+    if (!profile.notificationsEnabled) {
+      await _notificationService.cancelDailyReminder();
+      if (!profile.isGuest && profile.userId.isNotEmpty) {
+        await _notificationService.unregisterPushDevice(
+          authApi: _authApi,
+          userId: profile.userId,
+        );
+      }
+      return;
+    }
+
+    await _notificationService.initialize();
+
+    if (profile.remindersEnabled) {
+      await _notificationService.scheduleDailyReminder(
+        hour: profile.reminderHour,
+        enabled: true,
+      );
+    } else {
+      await _notificationService.cancelDailyReminder();
+    }
+
+    if (!profile.isGuest && profile.userId.isNotEmpty) {
+      await _notificationService.registerPushDevice(
+        authApi: _authApi,
+        userId: profile.userId,
+        isAuthenticated: true,
+      );
+    }
+  }
+
+  UserProfile _profileFromAccountTree(Map<String, dynamic> tree) {
+    final account = tree['user'] as Map<String, dynamic>? ?? tree;
+    final profileNode = account['profileNode'] as Map<String, dynamic>? ?? {};
+    final preferences =
+        profileNode['preferencesNode'] as Map<String, dynamic>? ?? {};
+    final gamification =
+        account['gamificationTree'] as Map<String, dynamic>? ?? {};
+    final xpNode = gamification['xpNode'] as Map<String, dynamic>? ?? {};
+    final streakNode =
+        gamification['streakNode'] as Map<String, dynamic>? ?? {};
+    final email = account['email'] as String? ?? '';
+    final phone = profileNode['phoneNumber'] as String? ?? '';
+    final userId =
+        account['userId'] as String? ?? account['_id'] as String? ?? '';
+    final name = profileNode['displayName'] as String? ?? 'Уншигч';
+
+    return UserProfile.freshUser(
+      name: name,
+      email: email,
+      userId: userId,
+      phoneNumber: phone,
+      username: email.isNotEmpty
+          ? '@${email.split('@').first.toLowerCase()}'
+          : '@${userId.isEmpty ? 'reader' : userId}',
+    ).copyWith(
+      avatarUrl: profileNode['avatarUrl'] as String? ?? '',
+      dailyGoalMinutes: (preferences['dailyGoalMinutes'] as num?)?.toInt(),
+      yearlyGoalBooks: (preferences['yearlyBookGoal'] as num?)?.toInt(),
+      favoriteGenres: (preferences['favoriteGenres'] as List<dynamic>?)
+          ?.whereType<String>()
+          .toList(),
+      notificationsEnabled: preferences['notificationsEnabled'] as bool?,
+      recommendationsEnabled: preferences['recommendationsEnabled'] as bool?,
+      xp: (xpNode['totalXp'] as num?)?.toInt(),
+      weeklyLeague: xpNode['weeklyLeague'] as String?,
+      streakDays: (streakNode['currentStreak'] as num?)?.toInt(),
+      minutesReadToday: (streakNode['minutesReadToday'] as num?)?.toInt(),
+      streakFreezeAvailable: streakNode['streakFreezeAvailable'] as bool?,
+      lastStreakDate: streakNode['lastActiveDate'] as String?,
+      isGuest: false,
+    );
   }
 
   void loginAsGuest() {
@@ -203,8 +508,12 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     BookProviderPersistence.persistUserProfile(_userProfile);
   }
 
-  void loginWithEmail(String email, String name,
-      {String? username, String? phoneNumber}) {
+  void loginWithEmail(
+    String email,
+    String name, {
+    String? username,
+    String? phoneNumber,
+  }) {
     _userProfile = BookGamificationManager.loginWithEmail(
       _userProfile,
       email,
@@ -214,7 +523,6 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     );
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
-    BookProviderPersistence.syncAuthTree(_apiService, _userProfile);
   }
 
   void registerNewUser({
@@ -231,30 +539,45 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     );
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
-    BookProviderPersistence.syncAuthTree(_apiService, _userProfile);
   }
 
   void logout() {
+    final previousProfile = _userProfile;
     _userProfile = BookGamificationManager.logout();
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
+    final unregister =
+        !previousProfile.isGuest && previousProfile.userId.isNotEmpty
+        ? _notificationService.unregisterPushDevice(
+            authApi: _authApi,
+            userId: previousProfile.userId,
+          )
+        : Future<NotificationServiceResult>.value(
+            const NotificationServiceResult(
+              NotificationServiceStatus.unauthenticated,
+            ),
+          );
+    unawaited(
+      unregister.then((_) => _authApi.logout()).catchError((Object _) {}),
+    );
   }
 
-  void updateUserProfile(
-      {String? name,
-      String? email,
-      String? username,
-      String? phoneNumber,
-      String? avatarUrl,
-      int? streakDays,
-      int? dailyGoalMinutes,
-      bool? notificationsEnabled,
-      bool? recommendationsEnabled,
-      bool? streakFreezeAvailable,
-      List<String>? favoriteGenres,
-      int? yearlyGoalBooks,
-      int? reminderHour,
-      bool? remindersEnabled}) {
+  void updateUserProfile({
+    String? name,
+    String? email,
+    String? username,
+    String? phoneNumber,
+    String? avatarUrl,
+    int? streakDays,
+    int? dailyGoalMinutes,
+    bool? notificationsEnabled,
+    bool? recommendationsEnabled,
+    bool? streakFreezeAvailable,
+    List<String>? favoriteGenres,
+    int? yearlyGoalBooks,
+    int? reminderHour,
+    bool? remindersEnabled,
+  }) {
     _userProfile = _userProfile.copyWith(
       name: name,
       email: email,
@@ -274,6 +597,11 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
     BookProviderPersistence.syncProfilePreferences(_apiService, _userProfile);
+    if (notificationsEnabled != null ||
+        remindersEnabled != null ||
+        reminderHour != null) {
+      unawaited(_syncNotificationSettings());
+    }
   }
 
   void updateReadingReminder({
@@ -305,8 +633,12 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     notifyListeners();
     BookProviderPersistence.persistBookmarks(_bookmarks);
     BookProviderPersistence.syncBookReadingNode(
-        _apiService, _userProfile, _books, bookmark.bookId,
-        highlight: {'text': bookmark.quote, 'chapterIndex': 0});
+      _apiService,
+      _userProfile,
+      _books,
+      bookmark.bookId,
+      highlight: {'text': bookmark.quote, 'chapterIndex': 0},
+    );
   }
 
   void removeBookmark(String bookmarkId) {
@@ -357,7 +689,9 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     } else {
       notifyListeners();
     }
-    if (query.trim().length >= 3 && searchResults.isEmpty && !_isFetchingRemote) {
+    if (query.trim().length >= 3 &&
+        searchResults.isEmpty &&
+        !_isFetchingRemote) {
       fetchRemoteBooks(query: query.trim());
     }
   }
@@ -385,8 +719,11 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     notifyListeners();
   }
 
-  void applyFilters(
-      {List<String>? categories, double? minRating, String? sortBy}) {
+  void applyFilters({
+    List<String>? categories,
+    double? minRating,
+    String? sortBy,
+  }) {
     if (categories != null) _searchCategories = List.from(categories);
     if (minRating != null) _minRating = minRating;
     if (sortBy != null) _sortBy = sortBy;
@@ -409,8 +746,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   }
 
   void markAllNotificationsAsRead() {
-    _notifications =
-        BookStateMutator.markAllNotificationsRead(_notifications);
+    _notifications = BookStateMutator.markAllNotificationsRead(_notifications);
     notifyListeners();
     BookProviderPersistence.persistNotifications(_notifications);
   }
@@ -445,8 +781,11 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   }
 
   @override
-  void createCollection(String name, String description,
-      {String icon = 'bookmark'}) {
+  void createCollection(
+    String name,
+    String description, {
+    String icon = 'bookmark',
+  }) {
     super.createCollection(name, description, icon: icon);
     addXp(30);
   }

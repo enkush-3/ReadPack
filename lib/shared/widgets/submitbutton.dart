@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/animated_button.dart';
 
 class SubmitButton extends StatelessWidget {
   final String label;
@@ -17,60 +17,14 @@ class SubmitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return AnimatedPressable(
-      onTap: isLoading ? null : onPressed,
-      child: Container(
-        width: double.infinity,
-        height: 52,
-        decoration: BoxDecoration(
-          color: onPressed != null
-              ? colorScheme.primary
-              : colorScheme.primary.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: onPressed != null
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.25),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Center(
-          child: isLoading
-              ? SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      colorScheme.onPrimary,
-                    ),
-                  ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, size: 20, color: colorScheme.onPrimary),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onPrimary,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
-                ),
-        ),
+    return SizedBox(
+      width: double.infinity,
+      child: AnimatedButton(
+        onPressed: onPressed,
+        isLoading: isLoading,
+        icon: icon,
+        semanticLabel: label,
+        child: Text(label),
       ),
     );
   }

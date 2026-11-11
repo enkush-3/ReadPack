@@ -1,4 +1,3 @@
-// lib/core/themes/book_theme.dart
 import 'package:flutter/material.dart';
 import 'package:readpack/core/themes/app_color.dart';
 import 'package:readpack/core/themes/app_text_styles.dart';
@@ -6,324 +5,204 @@ import 'package:readpack/core/themes/app_text_styles.dart';
 class BookTheme {
   BookTheme._();
 
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: BookColors.lightBg,
-      colorScheme: const ColorScheme.light(
-        primary: BookColors.deepBlue,
-        onPrimary: Colors.white,
-        primaryContainer: BookColors.powderBlueLight,
-        onPrimaryContainer: BookColors.deepBlueDark,
-        secondary: BookColors.slateBlue,
-        onSecondary: Colors.white,
-        secondaryContainer: Color(0xFFDCE8F8),
-        onSecondaryContainer: BookColors.deepBlueDark,
-        tertiary: BookColors.powderBlue,
-        onTertiary: BookColors.deepBlue,
-        tertiaryContainer: BookColors.powderBlueLight,
-        onTertiaryContainer: BookColors.deepBlueDark,
-        surface: BookColors.lightCardBg,
-        onSurface: BookColors.lightTextPrimary,
-        onSurfaceVariant: BookColors.lightTextSecondary,
-        surfaceContainerLowest: Color(0xFFF8FAFD),
-        surfaceContainerLow: Color(0xFFEDF2F8),
-        surfaceContainer: BookColors.lightInputBg,
-        surfaceContainerHigh: BookColors.lightCardBg,
-        surfaceContainerHighest: Color(0xFFE2EBF5),
-        error: Color(0xFFB00020),
-        onError: Colors.white,
-        outline: BookColors.lightTextMuted,
-        outlineVariant: BookColors.lightInputBorder,
-        shadow: BookColors.lightDivider,
-        scrim: BookColors.deepBlue,
-        inverseSurface: BookColors.deepBlue,
-        onInverseSurface: Color(0xFFF8FAFD),
-        inversePrimary: BookColors.powderBlue,
-      ),
-      textTheme: AppTextStyles.buildTextTheme(BookColors.lightTextPrimary),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: BookColors.deepBlue,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
-        ),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
-        selectedItemColor: BookColors.deepBlue,
-        unselectedItemColor: BookColors.lightTextMuted,
-        elevation: 8,
-        type: BottomNavigationBarType.fixed,
-      ),
-      cardTheme: CardThemeData(
-        color: BookColors.lightCardBg,
-        elevation: 2,
-        shadowColor: BookColors.lightDivider,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: BookColors.lightInputBg,
-        hintStyle: const TextStyle(color: BookColors.lightTextHint),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: BookColors.lightInputBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: BookColors.lightInputBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: BookColors.deepBlue, width: 1.5),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: BookColors.deepBlue,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.4,
-          ),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: BookColors.deepBlue,
-          side: const BorderSide(color: BookColors.deepBlue),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: BookColors.deepBlue,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
-      chipTheme: const ChipThemeData(
-        backgroundColor: BookColors.lightInputBg,
-        selectedColor: BookColors.powderBlueLight,
-        labelStyle: TextStyle(
-          color: BookColors.deepBlue,
-          fontWeight: FontWeight.w500,
-        ),
-        side: BorderSide(color: BookColors.lightInputBorder),
-        shape: StadiumBorder(),
-      ),
-      sliderTheme: const SliderThemeData(
-        activeTrackColor: BookColors.deepBlue,
-        inactiveTrackColor: BookColors.lightInputBorder,
-        thumbColor: BookColors.deepBlue,
-        overlayColor: Color(0x1A182350),
-      ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: BookColors.deepBlue,
-        linearTrackColor: BookColors.powderBlueLight,
-      ),
-      dividerTheme: const DividerThemeData(
-        color: BookColors.lightDivider,
-        thickness: 1,
-      ),
-      iconTheme: const IconThemeData(
-        color: BookColors.lightTextSecondary,
-      ),
-      primaryIconTheme: const IconThemeData(
-        color: Colors.white,
-      ),
-    );
+  static const double cardRadius = 16;
+  static const double controlRadius = 12;
+  static const Size minimumTapTarget = Size(48, 48);
+
+  static ColorScheme lightColorScheme({ColorScheme? dynamicScheme}) {
+    return dynamicScheme ??
+        ColorScheme.fromSeed(
+          seedColor: BookColors.seed,
+          brightness: Brightness.light,
+        );
   }
 
-  static ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: BookColors.darkBg,
-      colorScheme: const ColorScheme.dark(
-        primary: BookColors.powderBlue,
-        onPrimary: BookColors.deepBlue,
-        primaryContainer: BookColors.deepBlueLight,
-        onPrimaryContainer: BookColors.powderBlueLight,
-        secondary: BookColors.powderBlueLight,
-        onSecondary: BookColors.deepBlueDark,
-        secondaryContainer: Color(0xFF1E2D5A),
-        onSecondaryContainer: BookColors.powderBlueLight,
-        tertiary: BookColors.powderBlueLight,
-        onTertiary: BookColors.deepBlueDark,
-        tertiaryContainer: BookColors.deepBlue,
-        onTertiaryContainer: BookColors.powderBlue,
-        surface: BookColors.darkCardBg,
-        onSurface: BookColors.darkTextPrimary,
-        onSurfaceVariant: BookColors.darkTextSecondary,
-        surfaceContainerLowest: BookColors.darkBg,
-        surfaceContainerLow: BookColors.darkBgSecondary,
-        surfaceContainer: BookColors.darkInputBg,
-        surfaceContainerHigh: BookColors.darkCardBg,
-        surfaceContainerHighest: Color(0xFF223060),
-        error: Color(0xFFCF6679),
-        onError: Colors.black,
-        outline: BookColors.darkTextMuted,
-        outlineVariant: BookColors.darkInputBorder,
-        shadow: Color(0xFF000000),
-        scrim: Color(0xFF000000),
-        inverseSurface: Colors.white,
-        onInverseSurface: BookColors.deepBlue,
-        inversePrimary: BookColors.deepBlue,
-      ),
-      textTheme: AppTextStyles.buildTextTheme(BookColors.darkTextPrimary),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: BookColors.darkBgSecondary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        titleTextStyle: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
-        ),
-      ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: BookColors.darkBgSecondary,
-        selectedItemColor: BookColors.powderBlue,
-        unselectedItemColor: BookColors.darkTextMuted,
-        elevation: 8,
-        type: BottomNavigationBarType.fixed,
-      ),
-      cardTheme: CardThemeData(
-        color: BookColors.darkCardBg,
-        elevation: 4,
-        shadowColor: Colors.black54,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: BookColors.darkInputBg,
-        hintStyle: const TextStyle(color: BookColors.darkTextHint),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: BookColors.darkInputBorder),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: BookColors.darkInputBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: BookColors.powderBlue, width: 1.5),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: BookColors.powderBlue,
-          foregroundColor: BookColors.deepBlue,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.4,
-          ),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: BookColors.powderBlue,
-          side: const BorderSide(color: BookColors.powderBlue),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: BookColors.powderBlueLight,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
-      chipTheme: const ChipThemeData(
-        backgroundColor: BookColors.darkInputBg,
-        selectedColor: BookColors.deepBlue,
-        labelStyle: TextStyle(
-          color: BookColors.darkTextPrimary,
-          fontWeight: FontWeight.w500,
-        ),
-        side: BorderSide(color: BookColors.darkInputBorder),
-        shape: StadiumBorder(),
-      ),
-      sliderTheme: const SliderThemeData(
-        activeTrackColor: BookColors.powderBlue,
-        inactiveTrackColor: BookColors.darkInputBorder,
-        thumbColor: BookColors.powderBlue,
-        overlayColor: Color(0x1AAFD2FA),
-      ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: BookColors.powderBlue,
-        linearTrackColor: BookColors.darkInputBorder,
-      ),
-      dividerTheme: const DividerThemeData(
-        color: BookColors.darkDivider,
-        thickness: 1,
-      ),
-      iconTheme: const IconThemeData(
-        color: BookColors.darkTextSecondary,
-      ),
-      primaryIconTheme: const IconThemeData(
-        color: Colors.white,
-      ),
-    );
+  static ColorScheme darkColorScheme({ColorScheme? dynamicScheme}) {
+    return dynamicScheme ??
+        ColorScheme.fromSeed(
+          seedColor: BookColors.seed,
+          brightness: Brightness.dark,
+        );
   }
+
+  static ThemeData lightTheme({ColorScheme? colorScheme}) =>
+      _buildTheme(lightColorScheme(dynamicScheme: colorScheme));
+
+  static ThemeData darkTheme({ColorScheme? colorScheme}) =>
+      _buildTheme(darkColorScheme(dynamicScheme: colorScheme));
 
   static ThemeData get sepiaTheme {
+    final seeded = ColorScheme.fromSeed(
+      seedColor: BookColors.sepiaPrimary,
+      brightness: Brightness.light,
+    );
+    return _buildTheme(
+      seeded.copyWith(
+        primary: BookColors.sepiaPrimary,
+        onPrimary: Colors.white,
+        surface: BookColors.sepiaSurface,
+        onSurface: BookColors.sepiaOnSurface,
+        onSurfaceVariant: BookColors.sepiaOnSurfaceVariant,
+        surfaceContainerLowest: BookColors.sepiaBackground,
+        surfaceContainerLow: const Color(0xFFF4EBDD),
+        surfaceContainer: const Color(0xFFF0E6D6),
+        surfaceContainerHigh: const Color(0xFFECE0CC),
+        surfaceContainerHighest: const Color(0xFFE6D8C2),
+        outline: const Color(0xFF7A6955),
+        outlineVariant: const Color(0xFFD4C5AF),
+      ),
+    );
+  }
+
+  static ThemeData _buildTheme(ColorScheme scheme) {
+    final textTheme = AppTextStyles.buildTextTheme(scheme.onSurface);
+    final outline = scheme.outlineVariant;
+    final focus = scheme.primary;
+    final controlShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(controlRadius),
+    );
+
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
-      scaffoldBackgroundColor: BookColors.sepiaBg,
-      colorScheme: const ColorScheme.light(
-        primary: BookColors.paleBrownDark,
-        onPrimary: Colors.white,
-        primaryContainer: BookColors.floralWhiteDeep,
-        onPrimaryContainer: BookColors.paleBrownDark,
-        secondary: BookColors.deepBlue,
-        onSecondary: Colors.white,
-        surface: BookColors.sepiaBg,
-        onSurface: BookColors.sepiaText,
-        onSurfaceVariant: BookColors.sepiaTextMuted,
-        surfaceContainerLowest: BookColors.sepiaBg,
-        surfaceContainerLow: BookColors.sepiaBgSecondary,
-        surfaceContainer: BookColors.floralWhiteDeep,
-        surfaceContainerHigh: BookColors.floralWhiteDark,
-        outline: BookColors.sepiaTextMuted,
-        outlineVariant: BookColors.floralWhiteDeep,
-        error: Color(0xFFB00020),
-        onError: Colors.white,
-        inverseSurface: BookColors.sepiaText,
-        onInverseSurface: BookColors.sepiaBg,
-        inversePrimary: BookColors.paleBrownLight,
+      brightness: scheme.brightness,
+      colorScheme: scheme,
+      scaffoldBackgroundColor: scheme.surface,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      visualDensity: VisualDensity.standard,
+      textTheme: textTheme,
+      focusColor: focus.withValues(alpha: 0.12),
+      hoverColor: focus.withValues(alpha: 0.08),
+      highlightColor: focus.withValues(alpha: 0.12),
+      splashColor: focus.withValues(alpha: 0.12),
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        foregroundColor: scheme.onSurface,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 1,
+        centerTitle: false,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: scheme.onSurface,
+          fontWeight: FontWeight.w600,
+        ),
       ),
-      textTheme: AppTextStyles.buildTextTheme(BookColors.sepiaText),
+      cardTheme: CardThemeData(
+        color: scheme.surfaceContainerLow,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardRadius),
+          side: BorderSide(color: outline.withValues(alpha: 0.45)),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        hintStyle: TextStyle(color: scheme.onSurfaceVariant),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(controlRadius),
+          borderSide: BorderSide(color: outline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(controlRadius),
+          borderSide: BorderSide(color: outline.withValues(alpha: 0.65)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(controlRadius),
+          borderSide: BorderSide(color: focus, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(controlRadius),
+          borderSide: BorderSide(color: scheme.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(controlRadius),
+          borderSide: BorderSide(color: scheme.error, width: 2),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: minimumTapTarget,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: controlShape,
+          elevation: 0,
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: minimumTapTarget,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: controlShape,
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: minimumTapTarget,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: controlShape,
+          side: BorderSide(color: outline),
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: minimumTapTarget,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          shape: controlShape,
+          textStyle: textTheme.labelLarge,
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: minimumTapTarget,
+          tapTargetSize: MaterialTapTargetSize.padded,
+          shape: const CircleBorder(),
+        ),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: scheme.surfaceContainer,
+        selectedItemColor: scheme.primary,
+        unselectedItemColor: scheme.onSurfaceVariant,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        height: 80,
+        backgroundColor: scheme.surfaceContainer,
+        indicatorColor: scheme.secondaryContainer,
+        labelTextStyle: WidgetStatePropertyAll(textTheme.labelMedium),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: scheme.surfaceContainerLow,
+        selectedColor: scheme.secondaryContainer,
+        labelStyle: textTheme.labelLarge?.copyWith(color: scheme.onSurface),
+        side: BorderSide(color: outline.withValues(alpha: 0.6)),
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        showCheckmark: true,
+      ),
+      sliderTheme: SliderThemeData(
+        activeTrackColor: scheme.primary,
+        inactiveTrackColor: scheme.surfaceContainerHighest,
+        thumbColor: scheme.primary,
+        overlayColor: scheme.primary.withValues(alpha: 0.12),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: scheme.primary,
+        linearTrackColor: scheme.surfaceContainerHighest,
+      ),
+      dividerTheme: DividerThemeData(
+        color: outline.withValues(alpha: 0.45),
+        thickness: 1,
+        space: 1,
+      ),
     );
   }
 }

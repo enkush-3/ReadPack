@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/providers/theme_provider.dart';
@@ -19,25 +20,24 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'ReadPack',
-            locale: themeProvider.locale,
-            supportedLocales: const [
-              Locale('mn'),
-              Locale('en'),
-            ],
-            localizationsDelegates: const [
-              AppLocalizations.delegate,
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            theme: BookTheme.lightTheme,
-            darkTheme: BookTheme.darkTheme,
-            themeMode: themeProvider.themeMode,
-            initialRoute: Routes.appshell,
-            onGenerateRoute: Routes.generateRoute,
+          return DynamicColorBuilder(
+            builder: (lightDynamic, darkDynamic) => MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'ReadPack',
+              locale: themeProvider.locale,
+              supportedLocales: const [Locale('mn'), Locale('en')],
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              theme: BookTheme.lightTheme(colorScheme: lightDynamic),
+              darkTheme: BookTheme.darkTheme(colorScheme: darkDynamic),
+              themeMode: themeProvider.themeMode,
+              initialRoute: Routes.appshell,
+              onGenerateRoute: Routes.generateRoute,
+            ),
           );
         },
       ),

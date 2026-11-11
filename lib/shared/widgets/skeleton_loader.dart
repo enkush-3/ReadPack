@@ -20,8 +20,10 @@ class SkeletonLoader extends StatefulWidget {
 
 class _SkeletonLoaderState extends State<SkeletonLoader>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late final AnimationController _controller;
+  late final Animation<double> _shimmerPosition;
+  bool _reduceMotion = false;
+  bool _hasReadMotionPreference = false;
 
   @override
   void initState() {
@@ -29,11 +31,23 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1600),
-    )..repeat();
-
-    _animation = Tween<double>(begin: -1.0, end: 2.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.linear),
     );
+    _shimmerPosition = Tween<double>(begin: -1, end: 2).animate(_controller);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    if (_hasReadMotionPreference && reduceMotion == _reduceMotion) return;
+    _hasReadMotionPreference = true;
+    _reduceMotion = reduceMotion;
+    if (reduceMotion) {
+      _controller.stop();
+      _controller.value = 0;
+    } else {
+      _controller.repeat();
+    }
   }
 
   @override
@@ -44,45 +58,41 @@ class _SkeletonLoaderState extends State<SkeletonLoader>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
-    final highlightColor =
-        isDark ? const Color(0xFF334155) : const Color(0xFFF8FAFC);
+    final scheme = Theme.of(context).colorScheme;
+    final baseColor = scheme.surfaceContainerHighest;
+    final highlightColor = scheme.surfaceContainerLow;
+    final shape = BoxDecoration(
+      color: baseColor,
+      borderRadius: BorderRadius.circular(widget.borderRadius),
+    );
 
-    return Container(
-      width: widget.width,
-      height: widget.height,
-      margin: widget.margin,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          return ShaderMask(
-            shaderCallback: (bounds) {
-              return LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                stops: [
-                  (_animation.value - 0.4).clamp(0.0, 1.0),
-                  _animation.value.clamp(0.0, 1.0),
-                  (_animation.value + 0.4).clamp(0.0, 1.0),
-                ],
-                colors: [
-                  baseColor,
-                  highlightColor,
-                  baseColor,
-                ],
-              ).createShader(bounds);
-            },
-            blendMode: BlendMode.srcATop,
-            child: Container(
-              color: baseColor,
-            ),
-          );
-        },
+    return ExcludeSemantics(
+      child: Container(
+        width: widget.width,
+        height: widget.height,
+        margin: widget.margin,
+        decoration: shape,
+        clipBehavior: Clip.antiAlias,
+        child: _reduceMotion
+            ? null
+            : AnimatedBuilder(
+                animation: _shimmerPosition,
+                builder: (context, child) => ShaderMask(
+                  shaderCallback: (bounds) => LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    stops: [
+                      (_shimmerPosition.value - 0.4).clamp(0.0, 1.0),
+                      _shimmerPosition.value.clamp(0.0, 1.0),
+                      (_shimmerPosition.value + 0.4).clamp(0.0, 1.0),
+                    ],
+                    colors: [baseColor, highlightColor, baseColor],
+                  ).createShader(bounds),
+                  blendMode: BlendMode.srcATop,
+                  child: child,
+                ),
+                child: ColoredBox(color: baseColor),
+              ),
       ),
     );
   }
@@ -99,9 +109,9 @@ class BookCardSkeleton extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SkeletonLoader(width: 140, height: 190, borderRadius: 16),
+          SkeletonLoader(width: 140, height: 192, borderRadius: 16),
           SizedBox(height: 8),
-          SkeletonLoader(width: 120, height: 14, borderRadius: 4),
+          SkeletonLoader(width: 120, height: 16, borderRadius: 4),
           SizedBox(height: 4),
           SkeletonLoader(width: 80, height: 12, borderRadius: 4),
         ],

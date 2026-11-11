@@ -60,6 +60,7 @@ function registerMongooseUserTreeModel(mongoose) {
       currentChapter: { type: Number, default: 0 },
       currentPage: { type: Number, default: 0 },
       updatedAt: { type: String, default: () => new Date().toISOString() },
+      syncReadingEventIds: { type: [String], default: [] },
       highlightsNodes: { type: [HighlightNodeSchema], default: [] },
       notesNodes: { type: [NoteNodeSchema], default: [] },
     },
@@ -78,14 +79,46 @@ function registerMongooseUserTreeModel(mongoose) {
   const UserAccountTreeSchema = new mongoose.Schema(
     {
       userId: { type: String, required: true, unique: true, index: true },
-      email: { type: String, required: true, unique: true, index: true },
+      email: {
+        type: String,
+        lowercase: true,
+        trim: true,
+        unique: true,
+        sparse: true,
+        index: true,
+        default: undefined,
+      },
       authNode: {
-        passwordHash: { type: String, required: true },
+        passwordHash: { type: String, default: null },
         provider: { type: String, default: 'email' },
+        providerSubject: { type: String, default: null },
+        emailVerified: { type: Boolean, default: false },
+        phoneVerified: { type: Boolean, default: false },
         lastLoginAt: { type: String, default: () => new Date().toISOString() },
+        verificationChallenge: {
+          challengeId: { type: String, default: null },
+          purpose: { type: String, default: null },
+          contact: { type: String, default: null },
+          contactType: { type: String, default: null },
+          otpHash: { type: String, default: null },
+          providerVerificationSid: { type: String, default: null },
+          expiresAt: { type: String, default: null },
+          attempts: { type: Number, default: 0 },
+        },
+        refreshSessions: {
+          type: [{ sessionId: String, tokenHash: String, expiresAt: String }],
+          default: [],
+        },
       },
       profileNode: {
         displayName: { type: String, required: true },
+        phoneNumber: {
+          type: String,
+          trim: true,
+          unique: true,
+          sparse: true,
+          default: undefined,
+        },
         avatarUrl: { type: String, default: null },
         bio: { type: String, default: 'ReadPack Reader' },
         preferencesNode: {
@@ -104,19 +137,25 @@ function registerMongooseUserTreeModel(mongoose) {
       readingTree: {
         shelves: { type: [ShelfNodeSchema], default: [] },
       },
+      notificationDevices: {
+        type: [{ token: String, platform: String, updatedAt: String }],
+        default: [],
+      },
       gamificationTree: {
         xpNode: {
-          totalXp: { type: Number, default: 100 },
+          totalXp: { type: Number, default: 0 },
+          xpEvents: { type: [mongoose.Schema.Types.Mixed], default: [] },
           level: { type: Number, default: 1 },
           title: { type: String, default: 'Эхлэн уншигч (Lv. 1)' },
-          weeklyLeague: { type: String, default: 'Gold League' },
+          weeklyLeague: { type: String, default: '' },
         },
         streakNode: {
-          currentStreak: { type: Number, default: 1 },
-          longestStreak: { type: Number, default: 1 },
+          currentStreak: { type: Number, default: 0 },
+          longestStreak: { type: Number, default: 0 },
           minutesReadToday: { type: Number, default: 0 },
           streakFreezeAvailable: { type: Boolean, default: true },
           historyDates: { type: [String], default: [] },
+          lastActiveDate: { type: String, default: null },
         },
         challengeNode: {
           year: { type: Number, default: 2026 },
@@ -127,6 +166,11 @@ function registerMongooseUserTreeModel(mongoose) {
       },
     },
     { timestamps: true }
+  );
+
+  UserAccountTreeSchema.index(
+    { 'authNode.provider': 1, 'authNode.providerSubject': 1 },
+    { unique: true, partialFilterExpression: { 'authNode.providerSubject': { $type: 'string' } } }
   );
 
   return mongoose.model('UserAccountTree', UserAccountTreeSchema, 'users');
@@ -148,35 +192,40 @@ function computeLevelTitle(xp) {
   return 'Мэргэн уншигч (Lv. 5)';
 }
 
-function hashPassword(rawPassword = 'readpack123') {
+function hashLegacyPassword(rawPassword) {
   return crypto.createHash('sha256').update(String(rawPassword)).digest('hex');
 }
 
 function createDefaultUserAccountTree({
   userId,
-  email,
+  email = null,
+  phoneNumber = null,
   displayName = 'Уншигч',
-  password = 'readpack123',
   provider = 'email',
-  xp = 1450,
-  streakDays = 7,
+  providerSubject = null,
+  passwordHash = null,
+  emailVerified = false,
+  phoneVerified = false,
 }) {
-  const cleanEmail = String(email || 'user@readpack.app').trim().toLowerCase();
-  const resolvedId =
-    userId ||
-    `usr_${cleanEmail.replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_')}`;
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const cleanEmail = email ? String(email).trim().toLowerCase() : null;
+  const resolvedId = userId || `usr_${crypto.randomUUID()}`;
 
   return {
     userId: resolvedId,
-    email: cleanEmail,
+    ...(cleanEmail ? { email: cleanEmail } : {}),
     authNode: {
-      passwordHash: hashPassword(password),
+      passwordHash,
       provider,
+      providerSubject,
+      emailVerified,
+      phoneVerified,
       lastLoginAt: new Date().toISOString(),
+      verificationChallenge: null,
+      refreshSessions: [],
     },
     profileNode: {
       displayName: displayName || 'Уншигч',
+      ...(phoneNumber ? { phoneNumber } : {}),
       avatarUrl: null,
       bio: 'ReadPack дижитал уншигч',
       preferencesNode: {
@@ -213,30 +262,33 @@ function createDefaultUserAccountTree({
         },
       ],
     },
+    notificationDevices: [],
     gamificationTree: {
       xpNode: {
-        totalXp: xp,
-        level: computeLevel(xp),
-        title: computeLevelTitle(xp),
-        weeklyLeague: 'Gold League',
+        totalXp: 0,
+        xpEvents: [],
+        level: 1,
+        title: computeLevelTitle(0),
+        weeklyLeague: '',
       },
       streakNode: {
-        currentStreak: streakDays,
-        longestStreak: Math.max(streakDays, 7),
-        minutesReadToday: 24,
+        currentStreak: 0,
+        longestStreak: 0,
+        minutesReadToday: 0,
         streakFreezeAvailable: true,
-        historyDates: [todayIso],
+        historyDates: [],
+        lastActiveDate: null,
       },
       challengeNode: {
-        year: 2026,
+        year: new Date().getFullYear(),
         targetBooks: 24,
         completedBookIds: [],
         achievementsNodes: [
           {
             id: 'streak_7',
             title: '🔥 7 хоногийн цуврал',
-            isUnlocked: streakDays >= 7,
-            progress: Math.min(1.0, streakDays / 7),
+            isUnlocked: false,
+            progress: 0,
           },
         ],
       },
@@ -251,5 +303,5 @@ module.exports = {
   createDefaultUserAccountTree,
   computeLevel,
   computeLevelTitle,
-  hashPassword,
+  hashLegacyPassword,
 };

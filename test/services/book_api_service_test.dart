@@ -31,7 +31,8 @@ void main() {
             "England -- Fiction"
           ],
           "formats": {
-            "image/jpeg": "https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg"
+            "image/jpeg": "https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg",
+            "audio/mpeg": "https://example.org/pride-and-prejudice.mp3"
           },
           "download_count": 54200
         }
@@ -39,31 +40,35 @@ void main() {
     }
     ''';
 
-    test('fetchBooks parses remote Gutendex payload correctly and caches',
-        () async {
-      final mockClient = MockClient((request) async {
-        return http.Response(mockSuccessJson, 200, headers: {
-          'content-type': 'application/json; charset=utf-8',
+    test(
+      'fetchBooks parses remote Gutendex payload correctly and caches',
+      () async {
+        final mockClient = MockClient((request) async {
+          return http.Response(
+            mockSuccessJson,
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
         });
-      });
 
-      final service = BookApiService(client: mockClient);
-      final books = await service.fetchBooks();
+        final service = BookApiService(client: mockClient);
+        final books = await service.fetchBooks();
 
-      expect(books.length, 1);
-      final book = books.first;
-      expect(book.id, 'api_1342');
-      expect(book.title, 'Pride and Prejudice');
-      expect(book.author, 'Jane Austen');
-      expect(book.category, 'book.categories.romance');
-      expect(book.hasAudio, isTrue);
-      expect(book.chapters.length, 2);
+        expect(books.length, 1);
+        final book = books.first;
+        expect(book.id, 'api_1342');
+        expect(book.title, 'Pride and Prejudice');
+        expect(book.author, 'Jane Austen');
+        expect(book.category, 'book.categories.romance');
+        expect(book.hasAudio, isTrue);
+        expect(book.chapters.length, 2);
 
-      // Verify cached in SharedPreferences
-      final cached = await service.getCachedBooks();
-      expect(cached.length, 1);
-      expect(cached.first.title, 'Pride and Prejudice');
-    });
+        // Verify cached in SharedPreferences
+        final cached = await service.getCachedBooks();
+        expect(cached.length, 1);
+        expect(cached.first.title, 'Pride and Prejudice');
+      },
+    );
 
     test('fetchBooks appends search query to URI', () async {
       String? requestedUrl;
@@ -104,10 +109,9 @@ void main() {
           'tags': ['Classic'],
           'reviews': [],
           'chapters': [],
-        }
+        },
       ];
-      await prefs.setString(
-          BookApiService.cacheKey, jsonEncode(sampleCached));
+      await prefs.setString(BookApiService.cacheKey, jsonEncode(sampleCached));
 
       final failingClient = MockClient((request) async {
         return http.Response('Server error', 500);
@@ -120,110 +124,72 @@ void main() {
       expect(books.first.title, 'Cached Title');
     });
 
-    test('fetchBooks falls back to repository if network fails and cache is empty',
-        () async {
-      final failingClient = MockClient((request) async {
-        throw http.ClientException('Network down');
-      });
+    test(
+      'fetchBooks falls back to repository if network fails and cache is empty',
+      () async {
+        final failingClient = MockClient((request) async {
+          throw http.ClientException('Network down');
+        });
 
-      final service = BookApiService(client: failingClient);
-      final books = await service.fetchBooks();
+        final service = BookApiService(client: failingClient);
+        final books = await service.fetchBooks();
 
-      expect(books.length, greaterThanOrEqualTo(16));
-    });
+        expect(books.length, greaterThanOrEqualTo(16));
+      },
+    );
 
-    test('syncUserAccountTree and syncUserReadingToTree communicate with Express + MongoDB Tree API',
-        () async {
-      final mockClient = MockClient((request) async {
-        if (request.url.path.endsWith('/auth/login')) {
-          return http.Response(
-            jsonEncode({
-              'status': 'authenticated',
-              'userAccountTree': {
-                'userId': 'usr_bat_01',
-                'email': 'bat@readpack.app',
-                'profileNode': {'displayName': 'Bat-Erdene'},
-                'readingTree': {'shelves': []},
-              },
-            }),
-            200,
-          );
-        }
-        if (request.url.path.endsWith('/reading')) {
-          return http.Response(
-            jsonEncode({
-              'status': 'synced',
-              'source': 'central_db',
-              'centralBook': {'id': '1', 'title': 'Atomic Habits'},
-            }),
-            201,
-          );
-        }
-        return http.Response('Not found', 404);
-      });
+    test(
+      'private user data is not sent without an authenticated session',
+      () async {
+        final hitPaths = <String>[];
+        final mockClient = MockClient((request) async {
+          hitPaths.add('${request.method} ${request.url.path}');
+          return http.Response('Not found', 404);
+        });
 
-      final service = BookApiService(client: mockClient);
-      final authRes = await service.syncUserAccountTree(
-        email: 'bat@readpack.app',
-        name: 'Bat-Erdene',
-      );
-      expect(authRes, isNotNull);
-      expect(authRes!['status'], 'authenticated');
+        final service = BookApiService(client: mockClient);
+        final books = await service.fetchBooks();
+        final syncRes = await service.syncUserReadingToTree(
+          userIdOrEmail: 'usr_bat_01',
+          book: books.first,
+        );
+        expect(syncRes, isNull);
+        expect(
+          hitPaths.where((path) => path.startsWith('POST /api/v1/users/')),
+          isEmpty,
+        );
+      },
+    );
 
-      final books = await service.fetchBooks();
-      final syncRes = await service.syncUserReadingToTree(
-        userIdOrEmail: 'bat@readpack.app',
-        book: books.first,
-      );
-      expect(syncRes, isNotNull);
-      expect(syncRes!['source'], 'central_db');
-    });
+    test(
+      'BookProvider actions automatically sync with Express + MongoDB backend',
+      () async {
+        final hitPaths = <String>[];
+        final mockClient = MockClient((request) async {
+          hitPaths.add('${request.method} ${request.url.path}');
+          return http.Response(mockSuccessJson, 200);
+        });
 
-    test('BookProvider actions automatically sync with Express + MongoDB backend',
-        () async {
-      final hitPaths = <String>[];
-      final mockClient = MockClient((request) async {
-        hitPaths.add('${request.method} ${request.url.path}');
-        if (request.url.path.endsWith('/auth/login')) {
-          return http.Response(
-            jsonEncode({'status': 'authenticated', 'userAccountTree': {}}),
-            200,
-          );
-        }
-        if (request.url.path.endsWith('/reading')) {
-          return http.Response(
-            jsonEncode({'status': 'synced', 'source': 'central_db'}),
-            201,
-          );
-        }
-        if (request.url.path.endsWith('/tree')) {
-          return http.Response(
-            jsonEncode({'status': 'updated', 'userAccountTree': {}}),
-            200,
-          );
-        }
-        return http.Response(mockSuccessJson, 200);
-      });
+        final apiService = BookApiService(client: mockClient);
+        final provider = BookProvider(apiService: apiService);
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      final apiService = BookApiService(client: mockClient);
-      final provider = BookProvider(apiService: apiService);
-      await Future.delayed(const Duration(milliseconds: 50));
+        provider.loginWithEmail('bat@readpack.app', 'Bat-Erdene');
+        provider.updateReadingProgress(provider.books.first.id, 40, 0.5, 1);
+        provider.toggleSaveBook(provider.books.first.id);
+        provider.updateUserProfile(dailyGoalMinutes: 45);
+        await Future.delayed(const Duration(milliseconds: 50));
 
-      provider.loginWithEmail('bat@readpack.app', 'Bat-Erdene');
-      provider.updateReadingProgress(provider.books.first.id, 40, 0.5, 1);
-      provider.toggleSaveBook(provider.books.first.id);
-      provider.updateUserProfile(dailyGoalMinutes: 45);
-      await Future.delayed(const Duration(milliseconds: 50));
-
-      expect(hitPaths, contains('POST /api/v1/auth/login'));
-      expect(
-        hitPaths.any((p) => p.startsWith('POST /api/v1/users/') && p.endsWith('/reading')),
-        isTrue,
-      );
-      expect(
-        hitPaths.any((p) => p.startsWith('PUT /api/v1/users/') && p.endsWith('/tree')),
-        isTrue,
-      );
-    });
+        expect(hitPaths.where((path) => path.contains('/auth/login')), isEmpty);
+        expect(
+          hitPaths.where((path) => path.startsWith('POST /api/v1/users/')),
+          isEmpty,
+        );
+        expect(
+          hitPaths.where((path) => path.startsWith('PUT /api/v1/users/')),
+          isEmpty,
+        );
+      },
+    );
   });
 }
