@@ -65,33 +65,49 @@ class MongoStore {
   }
 
   _loadFromDisk() {
-    try {
-      if (fs.existsSync(this.storageFilePath)) {
-        const raw = fs.readFileSync(this.storageFilePath, 'utf8');
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed.books) && Array.isArray(parsed.users)) {
-          this.state = { ...parsed, readingEvents: parsed.readingEvents || [] };
-          return;
-        }
+    if (fs.existsSync(this.storageFilePath)) {
+      const serializedState = fs.readFileSync(this.storageFilePath, 'utf8');
+      const parsedState = JSON.parse(serializedState);
+      if (
+        !parsedState ||
+        typeof parsedState !== 'object' ||
+        Array.isArray(parsedState) ||
+        !Array.isArray(parsedState.books) ||
+        !Array.isArray(parsedState.users) ||
+        (parsedState.readingEvents !== undefined &&
+          !Array.isArray(parsedState.readingEvents))
+      ) {
+        throw new Error(`Fallback store has an invalid structure: ${this.storageFilePath}`);
       }
-    } catch (_) {}
+      this.state = {
+        ...parsedState,
+        readingEvents: parsedState.readingEvents || [],
+      };
+      return;
+    }
 
     this.state = { books: getInitialCentralBooks(), users: [], readingEvents: [] };
-    this._persistToDisk();
+    this._persistToDisk(this.state);
   }
 
-  _persistToDisk() {
+  _persistToDisk(nextState) {
+    const directory = path.dirname(this.storageFilePath);
+    fs.mkdirSync(directory, { recursive: true });
+    const temporaryFilePath = `${this.storageFilePath}.tmp.${process.pid}.${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2, 8)}`;
+
     try {
-      const dir = path.dirname(this.storageFilePath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-      const tmpPath = `${this.storageFilePath}.tmp.${process.pid}.${Date.now()}_${Math.random()
-        .toString(36)
-        .slice(2, 8)}`;
-      fs.writeFileSync(tmpPath, JSON.stringify(this.state, null, 2), 'utf8');
-      fs.renameSync(tmpPath, this.storageFilePath);
-    } catch (_) {}
+      fs.writeFileSync(temporaryFilePath, JSON.stringify(nextState, null, 2), {
+        encoding: 'utf8',
+        mode: 0o600,
+        flag: 'wx',
+      });
+      fs.renameSync(temporaryFilePath, this.storageFilePath);
+    } catch (error) {
+      fs.rmSync(temporaryFilePath, { force: true });
+      throw error;
+    }
   }
 
   async getAllBooks() {
@@ -103,50 +119,74 @@ class MongoStore {
 
   async upsertBook(bookDoc) {
     if (this.mode === 'mongodb_mongoose' && this.BookModel) {
-      const updated = await this.BookModel.findOneAndUpdate(
-        {
-          $or: [
-            { id: bookDoc.id },
-            ...(bookDoc.externalId ? [{ externalId: bookDoc.externalId }] : []),
-            {
-              normalizedTitle: bookDoc.normalizedTitle,
-              normalizedAuthor: bookDoc.normalizedAuthor,
-            },
-          ],
-        },
-        { $set: bookDoc },
-        { upsert: true, new: true, lean: true }
-      );
-      return updated;
+      return this._upsertMongoBook(bookDoc);
     }
 
-    const idx = this.state.books.findIndex(
-      (b) =>
-        b.id === bookDoc.id ||
-        (bookDoc.externalId && b.externalId === bookDoc.externalId) ||
-        (b.normalizedTitle === bookDoc.normalizedTitle &&
-          b.normalizedAuthor === bookDoc.normalizedAuthor)
+    return this._upsertFallbackBook(bookDoc);
+  }
+
+  _upsertMongoBook(bookDoc) {
+    return this.BookModel.findOneAndUpdate(
+      {
+        $or: [
+          { id: bookDoc.id },
+          ...(bookDoc.externalId ? [{ externalId: bookDoc.externalId }] : []),
+          {
+            normalizedTitle: bookDoc.normalizedTitle,
+            normalizedAuthor: bookDoc.normalizedAuthor,
+          },
+        ],
+      },
+      { $set: bookDoc },
+      { upsert: true, new: true, lean: true }
     );
+  }
 
-    if (idx >= 0) {
-      this.state.books[idx] = structuredClone({
-        ...this.state.books[idx],
-        ...bookDoc,
-        id: this.state.books[idx].id,
-        updatedAt: new Date().toISOString(),
-      });
-      this._persistToDisk();
-      return structuredClone(this.state.books[idx]);
+  _upsertFallbackBook(bookDoc) {
+    const nextState = structuredClone(this.state);
+    const bookIndex = this._findMatchingBookIndex(nextState.books, bookDoc);
+    const savedBook =
+      bookIndex >= 0
+        ? this._mergeBook(nextState.books[bookIndex], bookDoc)
+        : this._createBook(bookDoc);
+
+    if (bookIndex >= 0) {
+      nextState.books[bookIndex] = savedBook;
+    } else {
+      nextState.books.push(savedBook);
     }
 
-    const inserted = structuredClone({
-      ...bookDoc,
-      createdAt: new Date().toISOString(),
+    this._persistToDisk(nextState);
+    this.state = nextState;
+    return structuredClone(savedBook);
+  }
+
+  _findMatchingBookIndex(books, bookDoc) {
+    return books.findIndex(
+      (book) =>
+        book.id === bookDoc.id ||
+        (bookDoc.externalId && book.externalId === bookDoc.externalId) ||
+        (book.normalizedTitle === bookDoc.normalizedTitle &&
+          book.normalizedAuthor === bookDoc.normalizedAuthor)
+    );
+  }
+
+  _mergeBook(existingBook, incomingBook) {
+    return structuredClone({
+      ...existingBook,
+      ...incomingBook,
+      id: existingBook.id,
       updatedAt: new Date().toISOString(),
     });
-    this.state.books.push(inserted);
-    this._persistToDisk();
-    return structuredClone(inserted);
+  }
+
+  _createBook(bookDoc) {
+    const createdAt = new Date().toISOString();
+    return structuredClone({
+      ...bookDoc,
+      createdAt,
+      updatedAt: createdAt,
+    });
   }
 
   async findUserTree(userIdOrEmail) {
@@ -229,13 +269,15 @@ class MongoStore {
       );
       return;
     }
-    for (const tree of this.state.users) {
+    const nextState = structuredClone(this.state);
+    for (const tree of nextState.users) {
       if (tree.userId === userId) continue;
       tree.notificationDevices = (tree.notificationDevices || []).filter(
         (device) => device.token !== token
       );
     }
-    this._persistToDisk();
+    this._persistToDisk(nextState);
+    this.state = nextState;
   }
 
   async findReadingEvent(userId, eventId) {
@@ -261,8 +303,10 @@ class MongoStore {
 
     const existing = await this.findReadingEvent(event.userId, event.eventId);
     if (existing) return { created: false, event: existing };
-    this.state.readingEvents.push(structuredClone(event));
-    this._persistToDisk();
+    const nextState = structuredClone(this.state);
+    nextState.readingEvents.push(structuredClone(event));
+    this._persistToDisk(nextState);
+    this.state = nextState;
     return { created: true, event: structuredClone(event) };
   }
 
@@ -275,12 +319,14 @@ class MongoStore {
         { new: true, lean: true }
       );
     }
-    const event = this.state.readingEvents.find(
+    const nextState = structuredClone(this.state);
+    const event = nextState.readingEvents.find(
       (item) => item.userId === userId && item.eventId === eventId
     );
     if (!event) return null;
     Object.assign(event, { xp, status: 'complete', createdAt, completedAt });
-    this._persistToDisk();
+    this._persistToDisk(nextState);
+    this.state = nextState;
     return structuredClone(event);
   }
 
@@ -314,27 +360,37 @@ class MongoStore {
   async saveUserTree(userTreeDoc) {
     userTreeDoc.updatedAt = new Date().toISOString();
     if (this.mode === 'mongodb_mongoose' && this.UserModel) {
-      return await this.UserModel.findOneAndUpdate(
-        { userId: userTreeDoc.userId },
-        { $set: userTreeDoc },
-        { upsert: true, new: true, lean: true }
-      );
+      return this._saveMongoUserTree(userTreeDoc);
     }
 
+    return this._saveFallbackUserTree(userTreeDoc);
+  }
+
+  _saveMongoUserTree(userTreeDoc) {
+    return this.UserModel.findOneAndUpdate(
+      { userId: userTreeDoc.userId },
+      { $set: userTreeDoc },
+      { upsert: true, new: true, lean: true }
+    );
+  }
+
+  _saveFallbackUserTree(userTreeDoc) {
     const cloned = structuredClone(userTreeDoc);
-    const idx = this.state.users.findIndex(
+    const nextState = structuredClone(this.state);
+    const userIndex = nextState.users.findIndex(
       (u) =>
         u.userId === cloned.userId ||
         (cloned.email && u.email?.toLowerCase() === cloned.email.toLowerCase()) ||
         (cloned.profileNode?.phoneNumber &&
           u.profileNode?.phoneNumber === cloned.profileNode.phoneNumber)
     );
-    if (idx >= 0) {
-      this.state.users[idx] = cloned;
+    if (userIndex >= 0) {
+      nextState.users[userIndex] = cloned;
     } else {
-      this.state.users.push(cloned);
+      nextState.users.push(cloned);
     }
-    this._persistToDisk();
+    this._persistToDisk(nextState);
+    this.state = nextState;
     return structuredClone(cloned);
   }
 }
