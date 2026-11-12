@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "ReadPack Centralized Express.js + MongoDB Backend with Hierarchical User Account Tree & Smart Read-Through Book Catalog",
   "main": "src/server.js",
+  "engines": {
+    "node": ">=20.12.0"
+  },
   "scripts": {
     "start": "node src/server.js",
-    "test": "node --test test/backend.test.js"
+    "test": "node --test"
   },
   "dependencies": {
     "argon2": "^0.45.2",

@@ -83,39 +83,41 @@ Provider tokens are never treated as ReadPack API access tokens. Verified Google
 
 The `userId` in each account route must match the subject of the Bearer token. Email addresses cannot be used in place of `userId`.
 
-- `GET /users/:userId/tree` returns `{ "userAccountTree": { ... } }`.
+- `GET /users/:userId/tree` returns `{ "userAccountTree": { ... }, "readingStats": { ... } }`.
 - `PUT /users/:userId/tree` updates `displayName`, `bio`, and preference fields (`language`, `theme`, `dailyGoalMinutes`, `yearlyBookGoal`, `favoriteGenres`, `notificationsEnabled`, `recommendationsEnabled`). It returns `{ "status": "updated", "userAccountTree": { ... } }`. Gamification values are server-managed; requests that include client-supplied XP fields are rejected with `400 server_managed_fields`.
 - `POST /users/:userId/reading` saves a book/shelf/progress update. It accepts a `book` object or existing `bookId`, plus optional shelf, status, progress, chapter, page, highlight and note fields. It returns `{ "status": "synced", "centralBook": { ... }, "userAccountTree": { ... } }`.
-- The same `POST /users/:userId/reading` endpoint records a reading event when the body includes a unique `eventId`. Example:
+- `POST /users/:userId/reading/events` records a reading event and syncs its reading progress. The request requires a unique `eventId`, a non-negative integer `minutesRead` from 0 to 180, and either a `book` object or `bookId`. It may also include `timezoneOffsetMinutes`, `shelfId`, `status`, `progress`, `currentChapter`, `currentPage`, `highlight`, and `note`. Example:
 
-```json
+~~~json
 {
   "eventId": "client-generated-unique-id",
   "bookId": "b_atomic_habits",
   "minutesRead": 12
 }
-```
+~~~
 
-Reading-event responses include the canonical weekly minutes, today's minutes, current streak and total XP:
+The event endpoint returns `201` for a new event and `200` for an identical duplicate:
 
-```json
+~~~json
 {
   "status": "synced",
   "duplicate": false,
   "eventId": "client-generated-unique-id",
   "earnedXp": 60,
   "readingStats": {
+    "weeklyMinutes": [0, 0, 0, 12, 0, 0, 0],
     "weeklyMinutesRead": 12,
     "minutesReadToday": 12,
     "totalXp": 60,
-    "currentStreak": 1
+    "currentStreak": 1,
+    "lastActiveDate": "2026-11-12"
   },
   "userAccountTree": { "userId": "usr_<uuid>" },
   "centralBook": { "id": "b_atomic_habits" }
 }
-```
+~~~
 
-The event's XP is `minutesRead × 5`; a zero-minute event earns zero XP. Repeating an identical `eventId` returns the prior result with `duplicate: true` and does not change XP, minutes or streak. Reusing it with different payload data returns `409 event_id_conflict`. Weekly minutes are derived from persisted reading events in the current UTC week.
+The event's XP is `minutesRead × 5`; a zero-minute event earns zero XP. Repeating an identical `eventId` returns the prior result with `duplicate: true` and does not change XP, minutes or streak. Reusing it with different payload data returns `409 event_id_conflict`. Weekly minutes are derived from persisted events in the current week; the seven-element `weeklyMinutes` array is ordered Monday through Sunday. The regular `POST /users/:userId/reading` route handles shelf/progress updates and rejects a body containing `eventId` with `400 event_endpoint_required`.
 
 `GET /leaderboard?period=weekly|monthly` returns `{ "entries": [...] }` from verified users' persisted reading events. The list is empty when no qualifying activity exists; no sample users are added.
 

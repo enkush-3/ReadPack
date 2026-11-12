@@ -14,7 +14,13 @@ The default `http://10.0.2.2:4000/api/v1` address is for an Android emulator tal
 
 ## Backend credentials
 
-Copy `backend/.env.example` to `backend/.env`, then configure the MongoDB connection and independent random secrets for access tokens, refresh tokens, OTP hashing, and internal notification requests. Production refuses to start authenticated sessions when its JWT or OTP secrets are shorter than 32 bytes.
+Use Node.js 20.12 or later. Copy `backend/.env.example` to `backend/.env`, then configure the MongoDB connection and independent random secrets for access tokens, refresh tokens, OTP hashing, and internal notification requests. `npm start` loads this file automatically. Production refuses to start authenticated sessions when its JWT or OTP secrets are shorter than 32 bytes.
+
+Generate a different value for each secret:
+
+```sh
+openssl rand -hex 32
+```
 
 Set only the providers the deployment uses:
 
@@ -56,10 +62,22 @@ Firebase client setup is optional for local scheduled reminders. Device token re
 
 ## Local services
 
-Start the backend from `backend/` after installing its dependencies and setting `.env`:
+Start MongoDB and the backend together with Docker Compose. Compose reads the optional `backend/.env`, waits for MongoDB to become healthy, and stores database files in its named volume:
 
 ```sh
+cd backend
+docker compose up --build -d
+docker compose logs -f backend
+```
+
+To run the backend directly on your machine, configure `backend/.env`, install dependencies, and start the server:
+
+```sh
+cd backend
+npm install
 npm start
 ```
+
+The backend falls back to its local JSON store if a MongoDB server is unreachable. The fallback store is development storage; use MongoDB for persistent deployments. Email and phone verification require SMTP or Twilio settings. Google/Facebook sign-in and remote push require their provider credentials. Those features return an explicit configuration error until the corresponding service is configured.
 
 For a local Android emulator, the emulator reaches the host machine at `10.0.2.2`. Keep cleartext traffic restricted to the debug manifest and use HTTPS for deployed builds.

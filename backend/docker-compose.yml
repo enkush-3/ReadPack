@@ -1,9 +1,6 @@
-version: '3.9'
-
 services:
   mongodb:
     image: mongo:7.0
-    container_name: readpack_mongodb
     restart: unless-stopped
     ports:
       - "27017:27017"
@@ -11,18 +8,28 @@ services:
       MONGO_INITDB_DATABASE: readpack
     volumes:
       - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   backend:
-    build: .
-    container_name: readpack_express_api
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "4000:4000"
+    env_file:
+      - path: .env
+        required: false
     environment:
       PORT: 4000
       MONGODB_URI: mongodb://mongodb:27017/readpack
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
 
 volumes:
   mongodb_data:

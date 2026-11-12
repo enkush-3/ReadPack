@@ -1,5 +1,13 @@
 'use strict';
 
+const fs = require('node:fs');
+const path = require('node:path');
+
+const localEnvironmentPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(localEnvironmentPath)) {
+  process.loadEnvFile(localEnvironmentPath);
+}
+
 const { createReadPackApp } = require('./app');
 
 const PORT = Number(process.env.PORT || 4000);
