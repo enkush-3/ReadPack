@@ -6,11 +6,17 @@ import 'package:readpack/models/collection.dart';
 
 mixin BookCollectionMixin on ChangeNotifier {
   List<Book> get books;
+  String get persistenceUserId;
+  void markPersonalStateChanged();
   List<BookCollection> collections = [];
   Set<String> downloadedBookIds = {};
 
-  void createCollection(String name, String description,
-      {String icon = 'bookmark'}) {
+  void createCollection(
+    String name,
+    String description, {
+    String icon = 'bookmark',
+  }) {
+    markPersonalStateChanged();
     CollectionDownloadManager.createCollection(
       collections: collections,
       name: name,
@@ -18,13 +24,20 @@ mixin BookCollectionMixin on ChangeNotifier {
       icon: icon,
     );
     notifyListeners();
-    BookProviderPersistence.persistCollections(collections);
+    BookProviderPersistence.persistCollections(
+      collections,
+      userId: persistenceUserId,
+    );
   }
 
   void deleteCollection(String id) {
+    markPersonalStateChanged();
     CollectionDownloadManager.deleteCollection(collections, id);
     notifyListeners();
-    BookProviderPersistence.persistCollections(collections);
+    BookProviderPersistence.persistCollections(
+      collections,
+      userId: persistenceUserId,
+    );
   }
 
   bool addBookToCollection(String collectionId, String bookId) {
@@ -34,23 +47,32 @@ mixin BookCollectionMixin on ChangeNotifier {
       bookId: bookId,
     );
     if (added) {
+      markPersonalStateChanged();
       notifyListeners();
-      BookProviderPersistence.persistCollections(collections);
+      BookProviderPersistence.persistCollections(
+        collections,
+        userId: persistenceUserId,
+      );
     }
     return added;
   }
 
   void removeBookFromCollection(String collectionId, String bookId) {
+    markPersonalStateChanged();
     CollectionDownloadManager.removeBookFromCollection(
       collections: collections,
       collectionId: collectionId,
       bookId: bookId,
     );
     notifyListeners();
-    BookProviderPersistence.persistCollections(collections);
+    BookProviderPersistence.persistCollections(
+      collections,
+      userId: persistenceUserId,
+    );
   }
 
   void toggleDownload(String bookId, VoidCallback onAwardXp) {
+    markPersonalStateChanged();
     if (downloadedBookIds.contains(bookId)) {
       downloadedBookIds.remove(bookId);
     } else {
@@ -58,7 +80,10 @@ mixin BookCollectionMixin on ChangeNotifier {
       onAwardXp();
     }
     notifyListeners();
-    BookProviderPersistence.persistDownloadedBooks(downloadedBookIds);
+    BookProviderPersistence.persistDownloadedBooks(
+      downloadedBookIds,
+      userId: persistenceUserId,
+    );
   }
 
   bool isBookDownloaded(String bookId) => downloadedBookIds.contains(bookId);
@@ -68,5 +93,7 @@ mixin BookCollectionMixin on ChangeNotifier {
 
   double get totalDownloadedStorageMb =>
       CollectionDownloadManager.totalDownloadedStorageMb(
-          books, downloadedBookIds);
+        books,
+        downloadedBookIds,
+      );
 }

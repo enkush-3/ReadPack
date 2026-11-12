@@ -11,9 +11,7 @@ const { registerMongooseReadingEventModel } = require('../models/ReadingEvent');
 /**
  * Dual-Mode MongoDB Storage Engine:
  * - Connects to a live MongoDB instance (`MONGODB_URI`) via Mongoose when available.
- * - Automatically falls back to a file-backed MongoDB document & tree store
- *   (`backend/data/mongodb_fallback_store.json`) when no local `mongod` daemon is running,
- *   guaranteeing 100% deterministic execution in local dev, CI, and offline environments.
+ * - Uses a file-backed document store in non-production only when explicitly enabled.
  */
 class MongoStore {
   constructor({ storageFilePath } = {}) {
@@ -34,32 +32,77 @@ class MongoStore {
     this._initialized = false;
   }
 
-  async init({ mongoUri = process.env.MONGODB_URI, forceFallback = false } = {}) {
+  async init({ mongoUri, forceFallback = false, environment = process.env } = {}) {
     if (this._initialized) return;
-
-    if (mongoUri && !forceFallback) {
-      try {
-        // Attempt live Mongoose connection if mongoose is installed and mongod is reachable
-        const mongoose = require('mongoose');
-        await mongoose.connect(mongoUri, {
-          serverSelectionTimeoutMS: 1500,
-        });
-        this.UserModel = registerMongooseUserTreeModel(mongoose);
-        this.BookModel = registerMongooseCentralBookModel(mongoose);
-        this.ReadingEventModel = registerMongooseReadingEventModel(mongoose);
-        this.mode = 'mongodb_mongoose';
-
-        const count = await this.BookModel.countDocuments();
-        if (count === 0) {
-          await this.BookModel.insertMany(getInitialCentralBooks());
-        }
-        this._initialized = true;
-        return;
-      } catch (_) {
-        // Fallback to local MongoDB JSON document store when mongod is not running
-      }
+    const settings = this._storageSettings({
+      mongoUri,
+      forceFallback,
+      environment,
+    });
+    this._assertStorageSettings(settings);
+    if (settings.mongoUri && !settings.forceFallback) {
+      await this._initializeMongoOrFallback(settings);
+      return;
     }
+    this._initializeJsonFallback(settings.allowJsonFallback);
+  }
 
+  async _initializeMongoOrFallback(settings) {
+    try {
+      await this._connectMongo(settings.mongoUri);
+    } catch (error) {
+      if (!settings.allowJsonFallback) {
+        throw new Error('MongoDB connection failed; JSON fallback is disabled', {
+          cause: error,
+        });
+      }
+      this._initializeJsonFallback(settings.allowJsonFallback);
+    }
+  }
+
+  _storageSettings({ mongoUri, forceFallback, environment }) {
+    const isProduction = environment.NODE_ENV === 'production';
+    return {
+      mongoUri: mongoUri ?? environment.MONGODB_URI,
+      forceFallback,
+      allowJsonFallback:
+        !isProduction &&
+        (forceFallback || environment.ALLOW_JSON_FALLBACK === 'true'),
+      isProduction,
+    };
+  }
+
+  _assertStorageSettings(settings) {
+    if (settings.isProduction && settings.forceFallback) {
+      throw new Error('JSON fallback storage is disabled in production');
+    }
+    if (!settings.mongoUri && !settings.allowJsonFallback) {
+      throw new Error(
+        'MONGODB_URI is required unless JSON fallback is explicitly enabled outside production',
+      );
+    }
+  }
+
+  async _connectMongo(mongoUri) {
+    const mongoose = require('mongoose');
+    await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 1500 });
+    const userModel = registerMongooseUserTreeModel(mongoose);
+    const bookModel = registerMongooseCentralBookModel(mongoose);
+    const readingEventModel = registerMongooseReadingEventModel(mongoose);
+    if ((await bookModel.countDocuments()) === 0) {
+      await bookModel.insertMany(getInitialCentralBooks());
+    }
+    this.UserModel = userModel;
+    this.BookModel = bookModel;
+    this.ReadingEventModel = readingEventModel;
+    this.mode = 'mongodb_mongoose';
+    this._initialized = true;
+  }
+
+  _initializeJsonFallback(allowJsonFallback) {
+    if (!allowJsonFallback) {
+      throw new Error('JSON fallback storage is not enabled');
+    }
     this._loadFromDisk();
     this._initialized = true;
   }
@@ -125,21 +168,32 @@ class MongoStore {
     return this._upsertFallbackBook(bookDoc);
   }
 
-  _upsertMongoBook(bookDoc) {
+  async _upsertMongoBook(bookDoc) {
+    const match = this._bookMatch(bookDoc);
+    const existingBook = await this.BookModel.findOne(match).lean();
+    const mergedBook = existingBook
+      ? this._mergeBook(existingBook, bookDoc)
+      : this._createBook(bookDoc);
+    delete mergedBook._id;
+    delete mergedBook.__v;
     return this.BookModel.findOneAndUpdate(
-      {
-        $or: [
-          { id: bookDoc.id },
-          ...(bookDoc.externalId ? [{ externalId: bookDoc.externalId }] : []),
-          {
-            normalizedTitle: bookDoc.normalizedTitle,
-            normalizedAuthor: bookDoc.normalizedAuthor,
-          },
-        ],
-      },
-      { $set: bookDoc },
+      match,
+      { $set: mergedBook },
       { upsert: true, new: true, lean: true }
     );
+  }
+
+  _bookMatch(bookDoc) {
+    return {
+      $or: [
+        { id: bookDoc.id },
+        ...(bookDoc.externalId ? [{ externalId: bookDoc.externalId }] : []),
+        {
+          normalizedTitle: bookDoc.normalizedTitle,
+          normalizedAuthor: bookDoc.normalizedAuthor,
+        },
+      ],
+    };
   }
 
   _upsertFallbackBook(bookDoc) {
@@ -172,12 +226,39 @@ class MongoStore {
   }
 
   _mergeBook(existingBook, incomingBook) {
+    const existingCatalog = this._withoutUserReadingState(existingBook);
+    const incomingCatalog = this._withoutUserReadingState(incomingBook);
     return structuredClone({
-      ...this._withoutUserReadingState(existingBook),
-      ...this._withoutUserReadingState(incomingBook),
+      ...existingCatalog,
+      ...this._mergeCatalogFields(existingCatalog, incomingCatalog),
       id: existingBook.id,
       updatedAt: new Date().toISOString(),
     });
+  }
+
+  _mergeCatalogFields(existingBook, incomingBook) {
+    const mergedBook = { ...incomingBook };
+    for (const [field, value] of Object.entries(incomingBook)) {
+      if (
+        this._isUnknownCatalogValue(field, value) &&
+        existingBook[field] != null
+      ) {
+        mergedBook[field] = existingBook[field];
+      }
+    }
+    return mergedBook;
+  }
+
+  _isUnknownCatalogValue(field, value) {
+    return (
+      value == null ||
+      value === '' ||
+      value === false ||
+      value === 0 ||
+      (Array.isArray(value) && value.length === 0) ||
+      (field === 'category' && value === 'book.categories.all') ||
+      (field === 'colorHex' && value === 0xff2c3e50)
+    );
   }
 
   _withoutUserReadingState(book) {

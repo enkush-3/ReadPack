@@ -74,10 +74,10 @@ To run the backend directly on your machine, configure `backend/.env`, install d
 
 ```sh
 cd backend
-npm install
+npm ci
 npm start
 ```
 
-The backend falls back to its local JSON store if a MongoDB server is unreachable. The fallback store is development storage; use MongoDB for persistent deployments. Email and phone verification require SMTP or Twilio settings. Google/Facebook sign-in and remote push require their provider credentials. Those features return an explicit configuration error until the corresponding service is configured.
+The backend uses its local JSON store only outside production when `ALLOW_JSON_FALLBACK=true`. Production startup fails if MongoDB is unavailable or not configured, preventing account writes from splitting between stores. Docker Compose disables the fallback and binds its API and MongoDB ports to localhost for local development. For deployment, place the API behind HTTPS and keep MongoDB private. Email and phone verification require SMTP or Twilio settings. Google/Facebook sign-in and remote push require their provider credentials. Those features return an explicit configuration error until the corresponding service is configured.
 
 For a local Android emulator, the emulator reaches the host machine at `10.0.2.2`. Keep cleartext traffic restricted to the debug manifest and use HTTPS for deployed builds.

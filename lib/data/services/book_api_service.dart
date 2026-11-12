@@ -7,6 +7,8 @@ import 'package:readpack/data/services/auth_api_service.dart';
 import 'package:readpack/models/book.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum _CatalogEndpointPreference { centralFirst, externalOnly }
+
 class BookApiService {
   static String get defaultBackendBaseUrl => ApiConfiguration.baseUrl;
   static const String openLibrarySearchUrl =
@@ -20,6 +22,8 @@ class BookApiService {
   late final http.Client _client;
   late final AuthApiService _authService;
   final String backendBaseUrl;
+  String? _lastCatalogErrorMessage;
+  int _catalogFetchGeneration = 0;
 
   BookApiService({
     http.Client? client,
@@ -33,6 +37,7 @@ class BookApiService {
   }
 
   AuthApiService get authService => _authService;
+  String? get lastCatalogErrorMessage => _lastCatalogErrorMessage;
 
   /// Fetches books via Smart Read-Through Search:
   /// 1. Local/Central Express+MongoDB Catalog first (`$backendBaseUrl/books/search`)
@@ -43,96 +48,139 @@ class BookApiService {
     String query = '',
     bool preferCentralBackend = true,
   }) async {
+    final fetchGeneration = ++_catalogFetchGeneration;
+    _lastCatalogErrorMessage = null;
     final trimmed = query.trim();
-
-    // If a specific search query is provided, check if our local curated DB already has it
-    if (trimmed.isNotEmpty) {
-      final localBooks = BookRepository.getInitialBooks();
-      final lowerQuery = trimmed.toLowerCase();
-      final localMatches = localBooks.where((b) {
-        return b.title.toLowerCase().contains(lowerQuery) ||
-            b.author.toLowerCase().contains(lowerQuery);
-      }).toList();
-      // We still check remote if localMatches is empty, or enrich alongside local DB
-      if (localMatches.isEmpty) {
-        final openLibBooks = await fetchFromOpenLibrary(trimmed);
-        if (openLibBooks.isNotEmpty) {
-          await _cacheBooks(openLibBooks);
-          return openLibBooks;
-        }
-      }
+    final unmatchedResults = await _fetchUnmatchedOpenLibraryBooks(trimmed);
+    if (unmatchedResults.isNotEmpty) return unmatchedResults;
+    final endpointPreference = preferCentralBackend
+        ? _CatalogEndpointPreference.centralFirst
+        : _CatalogEndpointPreference.externalOnly;
+    for (final endpoint in _catalogEndpoints(trimmed, endpointPreference)) {
+      final remoteBooks = await _fetchCatalogEndpoint(
+        endpoint,
+        fetchGeneration,
+      );
+      if (remoteBooks.isEmpty) continue;
+      await _cacheBooks(remoteBooks);
+      return remoteBooks;
     }
+    return _loadCatalogFallback();
+  }
 
-    final endpoints = preferCentralBackend
-        ? [
-            '$backendBaseUrl/books/search',
-            openLibrarySearchUrl,
-            _gutendexBaseUrl,
-          ]
-        : [openLibrarySearchUrl, _gutendexBaseUrl];
+  Future<List<Book>> _fetchUnmatchedOpenLibraryBooks(String query) async {
+    if (query.isEmpty || _hasLocalCatalogMatch(query)) return [];
+    final books = await fetchFromOpenLibrary(query);
+    if (books.isNotEmpty) await _cacheBooks(books);
+    return books;
+  }
 
-    for (final baseEndpoint in endpoints) {
-      final Uri uri;
-      if (baseEndpoint == openLibrarySearchUrl) {
-        final q = trimmed.isEmpty ? 'bestseller' : trimmed;
-        uri = Uri.parse(
-          '$openLibrarySearchUrl?q=${Uri.encodeComponent(q)}&limit=10&Search=${Uri.encodeComponent(trimmed)}&search=${Uri.encodeComponent(trimmed)}',
+  bool _hasLocalCatalogMatch(String query) {
+    final normalizedQuery = query.toLowerCase();
+    return BookRepository.getInitialBooks().any(
+      (book) =>
+          book.title.toLowerCase().contains(normalizedQuery) ||
+          book.author.toLowerCase().contains(normalizedQuery),
+    );
+  }
+
+  List<Uri> _catalogEndpoints(
+    String query,
+    _CatalogEndpointPreference preference,
+  ) => _catalogEndpointBases(
+    preference,
+  ).map((endpoint) => _catalogEndpointUri(endpoint, query)).toList();
+
+  List<String> _catalogEndpointBases(_CatalogEndpointPreference preference) =>
+      switch (preference) {
+        _CatalogEndpointPreference.centralFirst => [
+          '$backendBaseUrl/books/search',
+          openLibrarySearchUrl,
+          _gutendexBaseUrl,
+        ],
+        _CatalogEndpointPreference.externalOnly => [
+          openLibrarySearchUrl,
+          _gutendexBaseUrl,
+        ],
+      };
+
+  Uri _catalogEndpointUri(String endpoint, String query) {
+    if (endpoint != openLibrarySearchUrl) {
+      return query.isEmpty
+          ? Uri.parse(endpoint)
+          : Uri.parse('$endpoint?search=${Uri.encodeComponent(query)}');
+    }
+    final openLibraryQuery = query.isEmpty ? 'bestseller' : query;
+    return Uri.parse(
+      '$openLibrarySearchUrl?q=${Uri.encodeComponent(openLibraryQuery)}&limit=10&Search=${Uri.encodeComponent(query)}&search=${Uri.encodeComponent(query)}',
+    );
+  }
+
+  Future<List<Book>> _fetchCatalogEndpoint(
+    Uri endpoint,
+    int fetchGeneration,
+  ) async {
+    try {
+      final response = await _client.get(endpoint).timeout(defaultTimeout);
+      if (response.statusCode != 200) {
+        _recordCatalogFailure(
+          'Catalog endpoint returned HTTP ${response.statusCode}',
+          fetchGeneration,
         );
-      } else {
-        uri = trimmed.isEmpty
-            ? Uri.parse(baseEndpoint)
-            : Uri.parse('$baseEndpoint?search=${Uri.encodeComponent(trimmed)}');
+        return [];
       }
-
-      try {
-        final response = await _client.get(uri).timeout(defaultTimeout);
-        if (response.statusCode == 200) {
-          final Map<String, dynamic> data =
-              jsonDecode(utf8.decode(response.bodyBytes))
-                  as Map<String, dynamic>;
-
-          final books = <Book>[];
-
-          // 1. Parse OpenLibrary 'docs' array if present
-          final List<dynamic>? docs = data['docs'] as List<dynamic>?;
-          if (docs != null && docs.isNotEmpty) {
-            for (final doc in docs) {
-              if (doc is Map<String, dynamic>) {
-                final book = _parseOpenLibraryDoc(doc);
-                if (book != null) {
-                  books.add(book);
-                }
-              }
-            }
-          }
-
-          // 2. Parse Central DB or Gutendex 'results' array if present
-          final List<dynamic> results = data['results'] as List<dynamic>? ?? [];
-          for (final item in results) {
-            if (item is Map<String, dynamic>) {
-              final book = _parseRemoteBook(item);
-              if (book != null) {
-                books.add(book);
-              }
-            }
-          }
-
-          if (books.isNotEmpty) {
-            await _cacheBooks(books);
-            return books;
-          }
-        }
-      } catch (_) {
-        // Try next endpoint or fall back to local cache
-      }
+      return _parseCatalogResponse(response);
+    } on Exception catch (error) {
+      _recordCatalogFailure(error.toString(), fetchGeneration);
+    } on TypeError catch (error) {
+      _recordCatalogFailure(error.toString(), fetchGeneration);
     }
+    return [];
+  }
 
-    final cached = await getCachedBooks();
-    if (cached.isNotEmpty) {
-      return cached;
+  List<Book> _parseCatalogResponse(http.Response response) {
+    final data =
+        jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return [
+      ..._parseOpenLibraryDocuments(data['docs']),
+      ..._parseCatalogResults(data['results']),
+    ];
+  }
+
+  List<Book> _parseOpenLibraryDocuments(Object? rawDocuments) {
+    if (rawDocuments != null && rawDocuments is! List) {
+      throw const FormatException('Catalog docs must be a list');
     }
+    if (rawDocuments is! List) return [];
+    return rawDocuments
+        .whereType<Map<String, dynamic>>()
+        .map(_parseOpenLibraryDoc)
+        .whereType<Book>()
+        .toList();
+  }
 
-    return BookRepository.getInitialBooks();
+  List<Book> _parseCatalogResults(Object? rawResults) {
+    if (rawResults != null && rawResults is! List) {
+      throw const FormatException('Catalog results must be a list');
+    }
+    if (rawResults is! List) return [];
+    return rawResults
+        .whereType<Map<String, dynamic>>()
+        .map(_parseRemoteBook)
+        .whereType<Book>()
+        .toList();
+  }
+
+  Future<List<Book>> _loadCatalogFallback() async {
+    final cachedBooks = await getCachedBooks();
+    return cachedBooks.isNotEmpty
+        ? cachedBooks
+        : BookRepository.getInitialBooks();
+  }
+
+  void _recordCatalogFailure(String message, int fetchGeneration) {
+    if (fetchGeneration != _catalogFetchGeneration) return;
+    _lastCatalogErrorMessage ??= message;
   }
 
   /// Directly queries OpenLibrary API (`https://openlibrary.org/search.json`)

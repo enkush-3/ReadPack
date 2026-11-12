@@ -19,7 +19,7 @@ async function createReadPackApp({
   authOptions = {},
 } = {}) {
   const store = new MongoStore({ storageFilePath });
-  await store.init({ mongoUri, forceFallback });
+  await store.init({ mongoUri, forceFallback, environment: env });
   const bookCatalogService = new BookCatalogService({ store, externalFetcher });
   const userTreeService = new UserTreeService({ store, bookCatalogService });
   const authService = new AuthService({ ...authOptions, store, userTreeService, env });

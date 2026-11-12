@@ -6,7 +6,7 @@ ReadPack is a Flutter reading app with a bundled book catalog, a local library, 
 
 - The Flutter client is in **lib/**. It supports Mongolian and English, light and dark themes, and local guest use.
 - Bundled book records and covers are in **assets/** and **lib/data/raw_data/**. Search can also use Open Library, Gutendex, and the configured backend catalog.
-- The Node.js API is in **backend/**. It stores shared catalog and account data in MongoDB; when MongoDB is unavailable, local development can use the JSON fallback store.
+- The Node.js API is in **backend/**. It stores shared catalog and account data in MongoDB. Local development can explicitly enable the JSON fallback with **ALLOW_JSON_FALLBACK=true**; production always requires MongoDB.
 - Reading state and preferences are persisted on the device. Session tokens use secure storage.
 
 Use MongoDB for deployments that need durable shared data. The JSON fallback is intended for local development, not multi-instance production use.
@@ -25,7 +25,7 @@ From the repository root:
 
 ~~~sh
 cd backend
-npm install
+npm ci
 cp .env.example .env
 ~~~
 

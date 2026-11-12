@@ -351,6 +351,7 @@ void main() {
 
       expect(books.isNotEmpty, isTrue);
       expect(books.first.title, 'Cached Title');
+      expect(service.lastCatalogErrorMessage, contains('HTTP 500'));
     });
 
     test(
@@ -364,6 +365,7 @@ void main() {
         final books = await service.fetchBooks();
 
         expect(books.length, greaterThanOrEqualTo(16));
+        expect(service.lastCatalogErrorMessage, contains('Network down'));
       },
     );
 

@@ -20,40 +20,177 @@ class BookProviderPersistence {
   static const String keyCollections = 'readpack_book_collections';
   static const String keyDownloadedBooks = 'readpack_downloaded_books';
   static const String keyRemoteUserBooks = 'readpack_remote_user_books';
+  static const String _legacyActivityOwnerKey =
+      'readpack_legacy_activity_owner';
+  static const String _unknownLegacyActivityOwner = '__unknown_owner__';
   static Future<void>? _remoteUserBooksWrite;
 
-  static Future<void> persistNotifications(
-    List<NotificationItem> notifications,
+  static String storageKey(String key, {String userId = ''}) {
+    final owner = userId.trim().toLowerCase();
+    final encodedOwner = owner.isEmpty
+        ? 'guest'
+        : base64Url.encode(utf8.encode(owner)).replaceAll('=', '');
+    return '${key}_$encodedOwner';
+  }
+
+  static Future<void> migrateLegacyActivityToAccount(String userId) async {
+    final normalizedUserId = userId.trim().toLowerCase();
+    if (normalizedUserId.isEmpty) return;
+    final prefs = await SharedPreferences.getInstance();
+    var migrationOwner = prefs.getString(_legacyActivityOwnerKey);
+    if (migrationOwner == null) {
+      migrationOwner =
+          _readLegacyActivityOwner(prefs) ?? _unknownLegacyActivityOwner;
+      await prefs.setString(_legacyActivityOwnerKey, migrationOwner);
+    }
+    if (migrationOwner != normalizedUserId) return;
+
+    await _copyLegacyActivity(prefs, normalizedUserId);
+    await _removeLegacyActivity(prefs);
+  }
+
+  static String? _readLegacyActivityOwner(SharedPreferences prefs) {
+    try {
+      final profileJson = prefs.getString(keyUserProfile);
+      if (profileJson == null) return null;
+      final profile = UserProfile.fromJson(
+        jsonDecode(profileJson) as Map<String, dynamic>,
+      );
+      final userId = profile.userId.trim();
+      if (profile.isGuest || userId.isEmpty) return null;
+      return userId.toLowerCase();
+    } on FormatException {
+      return null;
+    } on TypeError {
+      return null;
+    }
+  }
+
+  static const List<String> _legacyActivityKeys = [
+    keySavedBooks,
+    keyFavorites,
+    keyRecentSearches,
+    keyBookmarks,
+    keyReadingProgress,
+    keyNotifications,
+    keyCollections,
+    keyDownloadedBooks,
+    keyRemoteUserBooks,
+  ];
+
+  static Future<void> _copyLegacyActivity(
+    SharedPreferences prefs,
+    String userId,
   ) async {
+    for (final key in _legacyActivityKeys) {
+      await _copyLegacyPreference(prefs, key, userId);
+    }
+  }
+
+  static Future<void> _copyLegacyPreference(
+    SharedPreferences prefs,
+    String key,
+    String userId,
+  ) async {
+    final accountKey = storageKey(key, userId: userId);
+    if (prefs.containsKey(accountKey)) return;
+    if (key == keyReadingProgress) {
+      await _copyLegacyString(prefs, key, accountKey);
+      return;
+    }
+    await _copyLegacyStringList(prefs, key, accountKey);
+  }
+
+  static Future<void> _copyLegacyString(
+    SharedPreferences prefs,
+    String legacyKey,
+    String accountKey,
+  ) async {
+    final value = prefs.getString(legacyKey);
+    if (value == null) return;
+    if (!await prefs.setString(accountKey, value)) {
+      throw StateError('Could not migrate legacy activity: $legacyKey');
+    }
+  }
+
+  static Future<void> _copyLegacyStringList(
+    SharedPreferences prefs,
+    String legacyKey,
+    String accountKey,
+  ) async {
+    final values = prefs.getStringList(legacyKey);
+    if (values == null) return;
+    if (!await prefs.setStringList(accountKey, values)) {
+      throw StateError('Could not migrate legacy activity: $legacyKey');
+    }
+  }
+
+  static Future<void> _removeLegacyActivity(SharedPreferences prefs) async {
+    for (final key in _legacyActivityKeys) {
+      await prefs.remove(key);
+    }
+  }
+
+  static Future<void> persistNotifications(
+    List<NotificationItem> notifications, {
+    String userId = '',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final list = notifications.map((n) => jsonEncode(n.toJson())).toList();
-    await prefs.setStringList(keyNotifications, list);
+    await prefs.setStringList(
+      storageKey(keyNotifications, userId: userId),
+      list,
+    );
   }
 
-  static Future<void> persistSavedBooks(List<Book> books) async {
+  static Future<void> persistSavedBooks(
+    List<Book> books, {
+    String userId = '',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final savedIds = books.where((b) => b.isSaved).map((b) => b.id).toList();
-    await prefs.setStringList(keySavedBooks, savedIds);
+    await prefs.setStringList(
+      storageKey(keySavedBooks, userId: userId),
+      savedIds,
+    );
   }
 
-  static Future<void> persistFavorites(List<Book> books) async {
+  static Future<void> persistFavorites(
+    List<Book> books, {
+    String userId = '',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final favIds = books.where((b) => b.isFavorite).map((b) => b.id).toList();
-    await prefs.setStringList(keyFavorites, favIds);
+    await prefs.setStringList(storageKey(keyFavorites, userId: userId), favIds);
   }
 
-  static Future<void> persistRecentSearches(List<String> searches) async {
+  static Future<void> persistRecentSearches(
+    List<String> searches, {
+    String userId = '',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(keyRecentSearches, searches);
+    await prefs.setStringList(
+      storageKey(keyRecentSearches, userId: userId),
+      searches,
+    );
   }
 
-  static Future<void> persistBookmarks(List<Bookmark> bookmarks) async {
+  static Future<void> persistBookmarks(
+    List<Bookmark> bookmarks, {
+    String userId = '',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = bookmarks.map((b) => jsonEncode(b.toJson())).toList();
-    await prefs.setStringList(keyBookmarks, jsonList);
+    await prefs.setStringList(
+      storageKey(keyBookmarks, userId: userId),
+      jsonList,
+    );
   }
 
-  static Future<void> persistReadingProgress(List<Book> books) async {
+  static Future<void> persistReadingProgress(
+    List<Book> books, {
+    String userId = '',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final Map<String, dynamic> map = {};
     for (final b in books) {
@@ -65,10 +202,16 @@ class BookProviderPersistence {
         };
       }
     }
-    await prefs.setString(keyReadingProgress, jsonEncode(map));
+    await prefs.setString(
+      storageKey(keyReadingProgress, userId: userId),
+      jsonEncode(map),
+    );
   }
 
-  static Future<void> persistRemoteUserBooks(List<Book> books) {
+  static Future<void> persistRemoteUserBooks(
+    List<Book> books, {
+    String userId = '',
+  }) {
     final curatedBookIds = BookRepository.getInitialBooks()
         .map((book) => book.id)
         .toSet();
@@ -82,34 +225,50 @@ class BookProviderPersistence {
     final previousWrite = _remoteUserBooksWrite;
     final currentWrite = Completer<void>();
     _remoteUserBooksWrite = currentWrite.future;
-    return _writeRemoteUserBooks(remoteUserBooks, previousWrite, currentWrite);
+    return _writeRemoteUserBooks(
+      remoteUserBooks,
+      userId,
+      previousWrite,
+      currentWrite,
+    );
   }
 
   static Future<void> _writeRemoteUserBooks(
     List<String> remoteUserBooks,
+    String userId,
     Future<void>? previousWrite,
     Completer<void> currentWrite,
   ) async {
     try {
       if (previousWrite != null) await previousWrite;
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList(keyRemoteUserBooks, remoteUserBooks);
+      await prefs.setStringList(
+        storageKey(keyRemoteUserBooks, userId: userId),
+        remoteUserBooks,
+      );
     } finally {
       currentWrite.complete();
     }
   }
 
   static Future<void> persistCollections(
-    List<BookCollection> collections,
-  ) async {
+    List<BookCollection> collections, {
+    String userId = '',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final list = collections.map((c) => jsonEncode(c.toJson())).toList();
-    await prefs.setStringList(keyCollections, list);
+    await prefs.setStringList(storageKey(keyCollections, userId: userId), list);
   }
 
-  static Future<void> persistDownloadedBooks(Set<String> downloadedIds) async {
+  static Future<void> persistDownloadedBooks(
+    Set<String> downloadedIds, {
+    String userId = '',
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(keyDownloadedBooks, downloadedIds.toList());
+    await prefs.setStringList(
+      storageKey(keyDownloadedBooks, userId: userId),
+      downloadedIds.toList(),
+    );
   }
 
   static Future<void> persistUserProfile(UserProfile profile) async {
@@ -169,11 +328,11 @@ class BookProviderPersistence {
     required Map<String, dynamic> progressMap,
   }) {
     return initialBooks.map((b) {
-      final isSaved = savedIds.contains(b.id) || b.isSaved;
-      final isFav = favIds.contains(b.id) || b.isFavorite;
-      double progress = b.progress;
-      int currentPage = b.currentPage;
-      int chapterIdx = b.currentChapterIndex;
+      final isSaved = savedIds.contains(b.id);
+      final isFav = favIds.contains(b.id);
+      var progress = 0.0;
+      var currentPage = 0;
+      var chapterIdx = 0;
 
       if (progressMap.containsKey(b.id)) {
         final p = progressMap[b.id] as Map<String, dynamic>;

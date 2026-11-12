@@ -76,7 +76,9 @@ void main() {
 
 void _seedNotifications(List<NotificationItem> notifications) {
   SharedPreferences.setMockInitialValues({
-    BookProviderPersistence.keyNotifications: notifications
+    BookProviderPersistence.storageKey(
+      BookProviderPersistence.keyNotifications,
+    ): notifications
         .map((notification) => jsonEncode(notification.toJson()))
         .toList(),
   });

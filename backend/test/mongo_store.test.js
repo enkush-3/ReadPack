@@ -7,6 +7,54 @@ const path = require('node:path');
 const test = require('node:test');
 const { MongoStore } = require('../src/services/mongoStore');
 
+test('production requires MongoDB and refuses file fallback', async () => {
+  const store = new MongoStore();
+
+  await assert.rejects(
+    store.init({
+      environment: {
+        NODE_ENV: 'production',
+        ALLOW_JSON_FALLBACK: 'true',
+      },
+    }),
+    /MONGODB_URI is required/,
+  );
+  await assert.rejects(
+    store.init({
+      mongoUri: 'not-a-mongodb-uri',
+      environment: {
+        NODE_ENV: 'production',
+        ALLOW_JSON_FALLBACK: 'true',
+      },
+    }),
+    /MongoDB connection failed; JSON fallback is disabled/,
+  );
+  await assert.rejects(
+    store.init({
+      forceFallback: true,
+      environment: { NODE_ENV: 'production' },
+    }),
+    /disabled in production/,
+  );
+});
+
+test('development file fallback requires an explicit setting', async (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'readpack-store-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const store = new MongoStore({
+    storageFilePath: path.join(directory, 'store.json'),
+  });
+
+  await store.init({
+    environment: {
+      NODE_ENV: 'development',
+      ALLOW_JSON_FALLBACK: 'true',
+    },
+  });
+
+  assert.equal(store.mode, 'document_tree_store');
+});
+
 test('preserves an unreadable fallback store and fails initialization', async (t) => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'readpack-store-'));
   const storageFilePath = path.join(directory, 'store.json');

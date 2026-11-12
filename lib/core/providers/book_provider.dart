@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:readpack/core/providers/helpers/book_data_loader.dart';
 import 'package:readpack/core/providers/helpers/book_filter_helper.dart';
 import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
@@ -17,12 +18,21 @@ import 'package:readpack/models/bookmark.dart';
 import 'package:readpack/models/notification_model.dart';
 import 'package:readpack/models/user_stats.dart';
 
+List<Book> _freshBookCatalog() => BookProviderPersistence.rehydrateBooks(
+  initialBooks: BookRepository.getInitialBooks(),
+  savedIds: const [],
+  favIds: const [],
+  progressMap: const {},
+);
+
+enum _SearchQueryUpdate { typing, committed }
+
 class BookProvider extends ChangeNotifier with BookCollectionMixin {
   final BookApiService _apiService;
   final NotificationService _notificationService = NotificationService();
   late final AuthApiService _authApi;
 
-  List<Book> _books = BookRepository.getInitialBooks();
+  List<Book> _books = _freshBookCatalog();
   List<String> _recentSearches = [];
   List<Bookmark> _bookmarks = [];
   List<NotificationItem> _notifications = [];
@@ -44,6 +54,11 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   String _librarySortBy = 'recent';
   String _selectedMood = 'all';
   bool _isDisposed = false;
+  int _accountStateGeneration = 0;
+  int _remoteSearchGeneration = 0;
+  int _personalStateRevision = 0;
+  String _persistenceUserId = '';
+  Timer? _searchFetchDebounce;
   late Future<void> _initialization;
 
   @override
@@ -55,6 +70,8 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       _notifications.where((n) => !n.isRead).length;
 
   UserProfile get userProfile => _userProfile;
+  @override
+  String get persistenceUserId => _persistenceUserId;
   bool get isLoading => _isLoading;
   Future<void> get initialized => _initialization;
   String? get remoteBooksErrorMessage => _remoteBooksErrorMessage;
@@ -100,7 +117,10 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   }
 
   Future<void> _persistRemoteUserBooks() =>
-      BookProviderPersistence.persistRemoteUserBooks(_books);
+      BookProviderPersistence.persistRemoteUserBooks(
+        _books,
+        userId: _persistenceUserId,
+      );
 
   Future<void> retryInitialization() {
     if (_isLoading) return _initialization;
@@ -111,6 +131,8 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   @override
   void dispose() {
     _isDisposed = true;
+    _remoteSearchGeneration++;
+    _searchFetchDebounce?.cancel();
     super.dispose();
   }
 
@@ -143,49 +165,169 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   );
 
   Future<void> _initData() async {
+    _beginInitialization();
+    try {
+      await _restoreStartupState();
+    } on Exception catch (error) {
+      _recordInitializationError(error);
+    } on Error catch (error) {
+      _recordInitializationError(error);
+    } finally {
+      _finishInitialization();
+    }
+  }
+
+  void _beginInitialization() {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-    try {
-      final state = await BookDataLoader.loadInitialState();
-      _books = state.books;
-      _bookmarks = state.bookmarks;
-      _notifications = state.notifications;
-      _recentSearches = state.recentSearches;
-      _userProfile = state.userProfile;
-      collections = state.collections;
-      downloadedBookIds = state.downloadedBookIds;
-      var hasSession = false;
-      try {
-        hasSession = await _authApi.hasStoredSession();
-      } catch (_) {
-        await _authApi.clearSession().catchError((Object _) {});
-      }
-      if (!hasSession) {
-        _userProfile = BookGamificationManager.logout();
-      } else if (_userProfile.isGuest || _userProfile.userId.isEmpty) {
-        await _authApi.clearSession();
-        _userProfile = BookGamificationManager.logout();
-      } else {
-        try {
-          await _authApi.refreshSession();
-          final tree = await _authApi.getUserTree(_userProfile.userId);
-          _userProfile = _profileFromApiResponse(tree);
-        } on AuthApiException {
-          await _authApi.clearSession();
-          _userProfile = BookGamificationManager.logout();
-        }
-      }
-      if (!_userProfile.isGuest && _userProfile.notificationsEnabled) {
-        unawaited(_syncNotificationSettings());
-      }
-    } catch (e) {
-      _errorMessage = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+  }
+
+  void _finishInitialization() {
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  void _recordInitializationError(Object error) {
+    _errorMessage = error.toString();
+  }
+
+  Future<void> _restoreStartupState() async {
+    final guestState = await BookDataLoader.loadInitialState();
+    _userProfile = BookGamificationManager.logout();
+    _persistenceUserId = '';
+    _applyInitialState(guestState);
+    if (!await _hasStoredSession()) return;
+    if (guestState.userProfile.isGuest ||
+        guestState.userProfile.userId.isEmpty) {
+      await _authApi.clearSession();
+      return;
+    }
+    await _restoreAuthenticatedAccount(guestState.userProfile.userId);
+    if (!_userProfile.isGuest && _userProfile.notificationsEnabled) {
+      unawaited(_syncNotificationSettings());
     }
   }
+
+  Future<bool> _hasStoredSession() async {
+    try {
+      return await _authApi.hasStoredSession();
+    } on PlatformException {
+      await _authApi.clearSession();
+      return false;
+    } on MissingPluginException {
+      await _authApi.clearSession();
+      return false;
+    }
+  }
+
+  Future<void> _restoreAuthenticatedAccount(String userId) async {
+    try {
+      await _authApi.refreshSession();
+      final tree = await _authApi.getUserTree(userId);
+      await _applyAuthenticatedAccount(tree, expectedUserId: userId);
+    } on AuthApiException {
+      await _authApi.clearSession();
+    }
+  }
+
+  Future<void> _applyAuthenticatedAccount(
+    Map<String, dynamic> tree, {
+    required String expectedUserId,
+  }) async {
+    final profile = _profileFromApiResponse(tree);
+    if (profile.userId.trim().isEmpty ||
+        profile.userId.trim().toLowerCase() !=
+            expectedUserId.trim().toLowerCase()) {
+      throw const AuthApiException(
+        401,
+        'Authenticated account did not match the stored session',
+      );
+    }
+    await _migrateLegacyActivityForVerifiedUser(profile, expectedUserId);
+    final state = await BookDataLoader.loadInitialState(userId: profile.userId);
+    _userProfile = profile;
+    _persistenceUserId = profile.userId;
+    _applyInitialState(state);
+    await BookProviderPersistence.persistUserProfile(profile);
+  }
+
+  Future<void> _migrateLegacyActivityForVerifiedUser(
+    UserProfile profile,
+    String expectedUserId,
+  ) async {
+    final actualId = profile.userId.trim().toLowerCase();
+    if (actualId != expectedUserId.trim().toLowerCase()) return;
+    try {
+      await BookProviderPersistence.migrateLegacyActivityToAccount(actualId);
+    } on FormatException catch (error) {
+      _reportLegacyActivityMigrationFailure(error);
+    } on TypeError catch (error) {
+      _reportLegacyActivityMigrationFailure(error);
+    } on StateError catch (error) {
+      _reportLegacyActivityMigrationFailure(error);
+    } on PlatformException catch (error) {
+      _reportLegacyActivityMigrationFailure(error);
+    } on MissingPluginException catch (error) {
+      _reportLegacyActivityMigrationFailure(error);
+    }
+  }
+
+  void _reportLegacyActivityMigrationFailure(Object error) {
+    debugPrint('Legacy activity migration could not finish: $error');
+  }
+
+  void _applyInitialState(BookProviderInitialState state) {
+    _books = state.books;
+    _bookmarks = state.bookmarks;
+    _notifications = state.notifications;
+    _recentSearches = state.recentSearches;
+    collections = state.collections;
+    downloadedBookIds = state.downloadedBookIds;
+  }
+
+  void _clearPersonalState() {
+    _books = _freshBookCatalog();
+    _bookmarks = [];
+    _notifications = [];
+    _recentSearches = [];
+    collections = [];
+    downloadedBookIds = {};
+    _errorMessage = null;
+    _invalidateRemoteSearch();
+    _searchQuery = '';
+    _searchCategories = [];
+    _leaderboardEntries = const [];
+    notifyListeners();
+  }
+
+  Future<void> _switchAccountState(String userId) async {
+    final generation = ++_accountStateGeneration;
+    final revision = _personalStateRevision;
+    _persistenceUserId = userId;
+    _clearPersonalState();
+    try {
+      final state = await BookDataLoader.loadInitialState(userId: userId);
+      if (generation == _accountStateGeneration &&
+          revision == _personalStateRevision) {
+        _applyInitialState(state);
+        notifyListeners();
+      }
+    } on Exception catch (error) {
+      _reportAccountStateLoadError(generation, error);
+    } on Error catch (error) {
+      _reportAccountStateLoadError(generation, error);
+    }
+  }
+
+  void _reportAccountStateLoadError(int generation, Object error) {
+    if (generation != _accountStateGeneration) return;
+    _errorMessage = error.toString();
+    notifyListeners();
+  }
+
+  @override
+  void markPersonalStateChanged() => _personalStateRevision++;
 
   Future<void> refresh() async => fetchRemoteBooks();
 
@@ -216,45 +358,103 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   }
 
   Future<void> fetchRemoteBooks({String? query}) async {
-    _isFetchingRemote = true;
-    _remoteBooksErrorMessage = null;
-    notifyListeners();
+    final accountGeneration = _accountStateGeneration;
+    final requestGeneration = ++_remoteSearchGeneration;
+    _beginRemoteFetch();
     try {
       final remoteBooks = await _apiService.fetchBooks(
         query: query ?? _searchQuery,
       );
-      if (remoteBooks.isNotEmpty) {
-        final Map<String, Book> bookMap = {for (final b in _books) b.id: b};
-        for (final r in remoteBooks) {
-          if (bookMap.containsKey(r.id)) {
-            final old = bookMap[r.id]!;
-            bookMap[r.id] = r.copyWith(
-              image: (old.image != null && old.image!.startsWith('assets/'))
-                  ? old.image
-                  : r.image,
-              isSaved: old.isSaved,
-              isFavorite: old.isFavorite,
-              progress: old.progress,
-              currentPage: old.currentPage,
-            );
-          } else {
-            bookMap[r.id] = r;
-          }
-        }
-        _books = bookMap.values.toList();
-      }
+      _applyRemoteSearchResult(
+        remoteBooks,
+        accountGeneration,
+        requestGeneration,
+      );
     } catch (error) {
-      _remoteBooksErrorMessage = error.toString();
+      _recordRemoteSearchError(error, accountGeneration, requestGeneration);
     } finally {
-      _isFetchingRemote = false;
-      notifyListeners();
+      _finishRemoteFetch(accountGeneration, requestGeneration);
     }
+  }
+
+  void _beginRemoteFetch() {
+    _remoteBooksErrorMessage = null;
+    _isFetchingRemote = true;
+    notifyListeners();
+  }
+
+  void _applyRemoteSearchResult(
+    List<Book> remoteBooks,
+    int accountGeneration,
+    int requestGeneration,
+  ) {
+    if (!_isCurrentRemoteRequest(accountGeneration, requestGeneration)) return;
+    _remoteBooksErrorMessage = _apiService.lastCatalogErrorMessage;
+    _mergeRemoteBooks(remoteBooks);
+  }
+
+  void _mergeRemoteBooks(List<Book> remoteBooks) {
+    if (remoteBooks.isEmpty) return;
+    final bookMap = {for (final book in _books) book.id: book};
+    for (final remoteBook in remoteBooks) {
+      final previousBook = bookMap[remoteBook.id];
+      bookMap[remoteBook.id] = previousBook == null
+          ? remoteBook
+          : _mergeRemoteBook(previousBook, remoteBook);
+    }
+    _books = bookMap.values.toList();
+  }
+
+  Book _mergeRemoteBook(Book previousBook, Book remoteBook) =>
+      remoteBook.copyWith(
+        image:
+            (previousBook.image != null &&
+                previousBook.image!.startsWith('assets/'))
+            ? previousBook.image
+            : remoteBook.image,
+        isSaved: previousBook.isSaved,
+        isFavorite: previousBook.isFavorite,
+        progress: previousBook.progress,
+        currentPage: previousBook.currentPage,
+      );
+
+  void _recordRemoteSearchError(
+    Object error,
+    int accountGeneration,
+    int requestGeneration,
+  ) {
+    if (_isCurrentRemoteRequest(accountGeneration, requestGeneration)) {
+      _remoteBooksErrorMessage = error.toString();
+    }
+  }
+
+  void _finishRemoteFetch(int accountGeneration, int requestGeneration) {
+    if (!_isCurrentRemoteRequest(accountGeneration, requestGeneration)) return;
+    _isFetchingRemote = false;
+    notifyListeners();
+  }
+
+  bool _isCurrentRemoteRequest(int accountGeneration, int requestGeneration) =>
+      !_isDisposed &&
+      accountGeneration == _accountStateGeneration &&
+      requestGeneration == _remoteSearchGeneration;
+
+  void _invalidateRemoteSearch() {
+    _remoteSearchGeneration++;
+    _searchFetchDebounce?.cancel();
+    _searchFetchDebounce = null;
+    _isFetchingRemote = false;
+    _remoteBooksErrorMessage = null;
   }
 
   Future<void> toggleSaveBook(String bookId) {
     if (BookStateMutator.toggleSave(_books, bookId)) {
+      markPersonalStateChanged();
       notifyListeners();
-      BookProviderPersistence.persistSavedBooks(_books);
+      BookProviderPersistence.persistSavedBooks(
+        _books,
+        userId: _persistenceUserId,
+      );
       BookProviderPersistence.syncBookReadingNode(
         _apiService,
         _userProfile,
@@ -270,8 +470,12 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   Future<void> toggleFavoriteBook(String bookId) {
     if (BookStateMutator.toggleFavorite(_books, bookId)) {
+      markPersonalStateChanged();
       notifyListeners();
-      BookProviderPersistence.persistFavorites(_books);
+      BookProviderPersistence.persistFavorites(
+        _books,
+        userId: _persistenceUserId,
+      );
       return _persistRemoteUserBooks();
     }
     return Future<void>.value();
@@ -291,9 +495,13 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       progress: progress,
       currentChapterIndex: currentChapterIndex,
     )) {
+      markPersonalStateChanged();
       notifyListeners();
       final persistenceWrites = <Future<void>>[
-        BookProviderPersistence.persistReadingProgress(_books),
+        BookProviderPersistence.persistReadingProgress(
+          _books,
+          userId: _persistenceUserId,
+        ),
         _persistRemoteBooksIfReadingStateChanged(previousProgress, progress),
       ];
       BookProviderPersistence.syncBookReadingNode(
@@ -313,6 +521,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     int? currentChapterIndex,
   ]) async {
     final previousProgress = _bookById(bookId)?.progress;
+    markPersonalStateChanged();
     _userProfile = BookStateMutator.updateProgressAndStats(
       _books,
       _userProfile,
@@ -323,7 +532,10 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     );
     notifyListeners();
     final persistenceWrites = <Future<void>>[
-      BookProviderPersistence.persistReadingProgress(_books),
+      BookProviderPersistence.persistReadingProgress(
+        _books,
+        userId: _persistenceUserId,
+      ),
       _persistRemoteBooksIfReadingStateChanged(previousProgress, progress),
     ];
     BookProviderPersistence.persistUserProfile(_userProfile);
@@ -357,6 +569,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     }
     final eventId =
         '${userId}_${DateTime.now().toUtc().microsecondsSinceEpoch}_$minutes';
+    final accountGeneration = _accountStateGeneration;
     _apiService
         .recordReadingEvent(
           userId: userId,
@@ -366,7 +579,10 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
           bookId: bookId,
         )
         .then((response) {
-          if (_isDisposed || response == null) return;
+          if (response == null ||
+              _isStaleReadingEvent(accountGeneration, userId, response)) {
+            return;
+          }
           final tree = response['userAccountTree'];
           if (tree is Map<String, dynamic>) {
             _userProfile = _profileFromApiResponse(response);
@@ -375,6 +591,15 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
           }
         });
   }
+
+  bool _isStaleReadingEvent(
+    int accountGeneration,
+    String userId,
+    Map<String, dynamic> response,
+  ) =>
+      _isDisposed ||
+      accountGeneration != _accountStateGeneration ||
+      userId != _userProfile.userId;
 
   Future<AuthChallenge> beginSignUp({
     required String name,
@@ -399,7 +624,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       challengeId: challengeId,
       code: code,
     );
-    _setAuthenticatedProfile(result.userAccountTree);
+    await _setAuthenticatedProfile(result.userAccountTree);
   }
 
   Future<void> signInWithPassword({
@@ -412,7 +637,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       contactType: contactType,
       password: password,
     );
-    _setAuthenticatedProfile(result.userAccountTree);
+    await _setAuthenticatedProfile(result.userAccountTree);
   }
 
   Future<void> signInWithProvider({
@@ -423,7 +648,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       provider: provider,
       token: token,
     );
-    _setAuthenticatedProfile(result.userAccountTree);
+    await _setAuthenticatedProfile(result.userAccountTree);
   }
 
   Future<AuthChallenge> requestPasswordReset({
@@ -442,8 +667,11 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     newPassword: newPassword,
   );
 
-  void _setAuthenticatedProfile(Map<String, dynamic> response) {
-    _userProfile = _profileFromApiResponse(response);
+  Future<void> _setAuthenticatedProfile(Map<String, dynamic> response) async {
+    final profile = _profileFromApiResponse(response);
+    await _migrateLegacyActivityForVerifiedUser(profile, profile.userId);
+    _userProfile = profile;
+    await _switchAccountState(_userProfile.userId);
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
     if (_userProfile.notificationsEnabled) {
@@ -547,6 +775,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   void loginAsGuest() {
     _userProfile = BookGamificationManager.loginAsGuest(_userProfile);
+    if (_persistenceUserId.isNotEmpty) unawaited(_switchAccountState(''));
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
   }
@@ -564,6 +793,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       username: username,
       phoneNumber: phoneNumber,
     );
+    unawaited(_switchAccountState(_userProfile.userId));
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
   }
@@ -580,6 +810,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       username: username,
       phoneNumber: phoneNumber,
     );
+    unawaited(_switchAccountState(_userProfile.userId));
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
   }
@@ -587,6 +818,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   void logout() {
     final previousProfile = _userProfile;
     _userProfile = BookGamificationManager.logout();
+    unawaited(_switchAccountState(''));
     notifyListeners();
     BookProviderPersistence.persistUserProfile(_userProfile);
     final unregister =
@@ -664,17 +896,28 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   }
 
   void clearCache() {
+    markPersonalStateChanged();
     _recentSearches.clear();
     downloadedBookIds.clear();
-    BookProviderPersistence.persistRecentSearches(_recentSearches);
-    BookProviderPersistence.persistDownloadedBooks(downloadedBookIds);
+    BookProviderPersistence.persistRecentSearches(
+      _recentSearches,
+      userId: _persistenceUserId,
+    );
+    BookProviderPersistence.persistDownloadedBooks(
+      downloadedBookIds,
+      userId: _persistenceUserId,
+    );
     notifyListeners();
   }
 
   void addBookmark(Bookmark bookmark) {
+    markPersonalStateChanged();
     _bookmarks.insert(0, bookmark);
     notifyListeners();
-    BookProviderPersistence.persistBookmarks(_bookmarks);
+    BookProviderPersistence.persistBookmarks(
+      _bookmarks,
+      userId: _persistenceUserId,
+    );
     BookProviderPersistence.syncBookReadingNode(
       _apiService,
       _userProfile,
@@ -685,28 +928,40 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   }
 
   void removeBookmark(String bookmarkId) {
+    markPersonalStateChanged();
     _bookmarks.removeWhere((b) => b.id == bookmarkId);
     notifyListeners();
-    BookProviderPersistence.persistBookmarks(_bookmarks);
+    BookProviderPersistence.persistBookmarks(
+      _bookmarks,
+      userId: _persistenceUserId,
+    );
   }
 
   void toggleLikeBookmark(String bookmarkId) {
     final index = _bookmarks.indexWhere((b) => b.id == bookmarkId);
     if (index != -1) {
+      markPersonalStateChanged();
       _bookmarks[index] = _bookmarks[index].copyWith(
         isLiked: !_bookmarks[index].isLiked,
       );
       notifyListeners();
-      BookProviderPersistence.persistBookmarks(_bookmarks);
+      BookProviderPersistence.persistBookmarks(
+        _bookmarks,
+        userId: _persistenceUserId,
+      );
     }
   }
 
   void updateBookmarkNote(String bookmarkId, String note) {
     final index = _bookmarks.indexWhere((b) => b.id == bookmarkId);
     if (index != -1) {
+      markPersonalStateChanged();
       _bookmarks[index] = _bookmarks[index].copyWith(note: note.trim());
       notifyListeners();
-      BookProviderPersistence.persistBookmarks(_bookmarks);
+      BookProviderPersistence.persistBookmarks(
+        _bookmarks,
+        userId: _persistenceUserId,
+      );
     }
   }
 
@@ -725,36 +980,84 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     notifyListeners();
   }
 
-  void setSearchQuery(String query, {bool isTyping = false}) {
+  void setSearchQuery(String query) =>
+      _updateSearchQuery(query, _SearchQueryUpdate.committed);
+
+  void setSearchQueryWhileTyping(String query) =>
+      _updateSearchQuery(query, _SearchQueryUpdate.typing);
+
+  void _updateSearchQuery(String query, _SearchQueryUpdate update) {
+    _prepareSearchQuery(query, update);
     _searchQuery = query;
-    if (!isTyping && query.trim().isNotEmpty) {
+    final trimmedQuery = query.trim();
+    final shouldFetchRemote = _shouldFetchRemoteSearch(trimmedQuery);
+    if (update == _SearchQueryUpdate.typing && shouldFetchRemote) {
+      _isFetchingRemote = true;
+    }
+    _notifySearchQuery(query, update);
+    if (shouldFetchRemote) _scheduleRemoteSearch(trimmedQuery, update);
+  }
+
+  void _prepareSearchQuery(String query, _SearchQueryUpdate update) {
+    if (update == _SearchQueryUpdate.committed) {
+      _searchFetchDebounce?.cancel();
+      _searchFetchDebounce = null;
+    }
+    if (query != _searchQuery) _invalidateRemoteSearch();
+  }
+
+  bool _shouldFetchRemoteSearch(String query) =>
+      query.length >= 3 && searchResults.isEmpty;
+
+  void _notifySearchQuery(String query, _SearchQueryUpdate update) {
+    if (update == _SearchQueryUpdate.committed && query.trim().isNotEmpty) {
       commitSearchQuery(query);
     } else {
       notifyListeners();
     }
-    if (query.trim().length >= 3 &&
-        searchResults.isEmpty &&
-        !_isFetchingRemote) {
-      fetchRemoteBooks(query: query.trim());
+  }
+
+  void _scheduleRemoteSearch(String query, _SearchQueryUpdate update) {
+    if (update == _SearchQueryUpdate.committed) {
+      unawaited(fetchRemoteBooks(query: query));
+      return;
     }
+    _searchFetchDebounce = Timer(const Duration(milliseconds: 300), () {
+      _searchFetchDebounce = null;
+      if (!_isDisposed && _searchQuery.trim() == query) {
+        unawaited(fetchRemoteBooks(query: query));
+      }
+    });
   }
 
   void commitSearchQuery(String query) {
+    markPersonalStateChanged();
     BookFilterHelper.commitQuery(_recentSearches, query);
-    BookProviderPersistence.persistRecentSearches(_recentSearches);
+    BookProviderPersistence.persistRecentSearches(
+      _recentSearches,
+      userId: _persistenceUserId,
+    );
     notifyListeners();
   }
 
   void removeRecentSearch(String query) {
+    markPersonalStateChanged();
     _recentSearches.remove(query);
     notifyListeners();
-    BookProviderPersistence.persistRecentSearches(_recentSearches);
+    BookProviderPersistence.persistRecentSearches(
+      _recentSearches,
+      userId: _persistenceUserId,
+    );
   }
 
   void clearRecentSearches() {
+    markPersonalStateChanged();
     _recentSearches.clear();
     notifyListeners();
-    BookProviderPersistence.persistRecentSearches(_recentSearches);
+    BookProviderPersistence.persistRecentSearches(
+      _recentSearches,
+      userId: _persistenceUserId,
+    );
   }
 
   void setSelectedCategory(String category) {
@@ -774,6 +1077,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   }
 
   void resetFilters() {
+    _invalidateRemoteSearch();
     _searchCategories = [];
     _minRating = 0.0;
     _sortBy = 'popular';
@@ -783,27 +1087,43 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   void markNotificationAsRead(String id) {
     if (BookStateMutator.markNotificationRead(_notifications, id)) {
+      markPersonalStateChanged();
       notifyListeners();
-      BookProviderPersistence.persistNotifications(_notifications);
+      BookProviderPersistence.persistNotifications(
+        _notifications,
+        userId: _persistenceUserId,
+      );
     }
   }
 
   void markAllNotificationsAsRead() {
+    markPersonalStateChanged();
     _notifications = BookStateMutator.markAllNotificationsRead(_notifications);
     notifyListeners();
-    BookProviderPersistence.persistNotifications(_notifications);
+    BookProviderPersistence.persistNotifications(
+      _notifications,
+      userId: _persistenceUserId,
+    );
   }
 
   void deleteNotification(String id) {
+    markPersonalStateChanged();
     BookStateMutator.deleteNotification(_notifications, id);
     notifyListeners();
-    BookProviderPersistence.persistNotifications(_notifications);
+    BookProviderPersistence.persistNotifications(
+      _notifications,
+      userId: _persistenceUserId,
+    );
   }
 
   void clearAllNotifications() {
+    markPersonalStateChanged();
     _notifications.clear();
     notifyListeners();
-    BookProviderPersistence.persistNotifications(_notifications);
+    BookProviderPersistence.persistNotifications(
+      _notifications,
+      userId: _persistenceUserId,
+    );
   }
 
   void toggleReviewHelpful(String bookId, String reviewId) {

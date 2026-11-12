@@ -294,6 +294,56 @@ test('catalog sync never exposes user reading state to global search', async () 
   }
 });
 
+test('sparse user sync preserves richer shared catalog fields', async () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'readpack-catalog-test-'));
+  const store = new MongoStore({
+    storageFilePath: path.join(tempDirectory, 'store.json'),
+  });
+  await store.init({ forceFallback: true });
+  const service = new BookCatalogService({ store, externalFetcher: async () => [] });
+
+  try {
+    await store.upsertBook({
+      id: 'sparse-sync-book',
+      externalId: 'source-rich-book',
+      externalSource: 'google_books',
+      title: 'Sparse Sync Book',
+      author: 'Catalog Author',
+      normalizedTitle: 'sparse sync book',
+      normalizedAuthor: 'catalog author',
+      description: 'Source-backed description.',
+      pages: 240,
+      rating: 4.5,
+      reviewsCount: 31,
+      category: 'book.categories.business',
+      colorHex: 0xff314159,
+      image: 'https://example.test/cover.jpg',
+      chapters: [{ id: 'chapter-1', title: 'Chapter One', content: 'Text.' }],
+      reviews: [{ id: 'review-1', comment: 'Verified review.' }],
+      keyTakeaways: ['Verified takeaway.'],
+    });
+
+    const savedBook = await service.syncBookToCentralCatalog({
+      id: 'sparse-sync-book',
+      title: 'Sparse Sync Book',
+      author: 'Catalog Author',
+    });
+
+    assert.equal(savedBook.description, 'Source-backed description.');
+    assert.equal(savedBook.pages, 240);
+    assert.equal(savedBook.rating, 4.5);
+    assert.equal(savedBook.reviewsCount, 31);
+    assert.equal(savedBook.category, 'book.categories.business');
+    assert.equal(savedBook.colorHex, 0xff314159);
+    assert.equal(savedBook.image, 'https://example.test/cover.jpg');
+    assert.equal(savedBook.chapters.length, 1);
+    assert.equal(savedBook.reviews.length, 1);
+    assert.deepEqual(savedBook.keyTakeaways, ['Verified takeaway.']);
+  } finally {
+    fs.rmSync(tempDirectory, { recursive: true, force: true });
+  }
+});
+
 test('catalog sync ignores a forged seed source and sanitizes legacy generated content', async () => {
   const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'readpack-catalog-test-'));
   const store = new MongoStore({

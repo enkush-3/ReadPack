@@ -1,15 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:readpack/core/providers/book_provider.dart';
+import 'package:readpack/core/providers/helpers/book_data_loader.dart';
 import 'package:readpack/core/providers/helpers/book_provider_persistence.dart';
+import 'package:readpack/data/book_repository.dart';
 import 'package:readpack/data/services/book_api_service.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/models/bookmark.dart';
 import 'package:readpack/models/collection.dart';
 import 'package:readpack/models/notification_model.dart';
+import 'package:readpack/models/user_stats.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -30,11 +34,18 @@ void main() {
       expect(provider.notifications, isEmpty);
       expect(provider.collections, isEmpty);
       expect(provider.recentSearches, isEmpty);
+      expect(provider.savedBooks, isEmpty);
+      expect(provider.continueReadingBooks, isEmpty);
+      expect(provider.books.every((book) => !book.isFavorite), isTrue);
     });
 
     test('retryInitialization recovers from an initialization error', () async {
       SharedPreferences.setMockInitialValues({
-        BookProviderPersistence.keyBookmarks: ['invalid-json'],
+        BookProviderPersistence.storageKey(
+          BookProviderPersistence.keyBookmarks,
+        ): [
+          'invalid-json',
+        ],
       });
       final provider = BookProvider();
       final firstInitialization = provider.initialized;
@@ -78,11 +89,91 @@ void main() {
     );
 
     test(
+      'service fallback keeps catalog errors available for search retry',
+      () async {
+        final service = BookApiService(
+          client: MockClient((request) async {
+            throw http.ClientException('Catalog offline', request.url);
+          }),
+        );
+        final provider = BookProvider(apiService: service);
+        await provider.initialized;
+
+        await provider.fetchRemoteBooks(query: 'unknown search phrase');
+
+        expect(provider.remoteBooksErrorMessage, contains('Catalog offline'));
+        expect(provider.errorMessage, isNull);
+        expect(provider.books, isNotEmpty);
+      },
+    );
+
+    test('new search requests supersede stale remote results', () async {
+      final service = _ControllableBookApiService();
+      final oldResponse = Completer<List<Book>>();
+      final currentResponse = Completer<List<Book>>();
+      service.pendingResponses['old query'] = oldResponse;
+      service.pendingResponses['current query'] = currentResponse;
+      final provider = BookProvider(apiService: service);
+      await provider.initialized;
+      final template = BookRepository.getInitialBooks().first;
+      final oldBook = template.copyWith(
+        id: 'remote-old-result',
+        title: 'Old Query Result',
+      );
+      final currentBook = template.copyWith(
+        id: 'remote-current-result',
+        title: 'Current Query Result',
+      );
+
+      provider.setSearchQuery('old query');
+      provider.setSearchQuery('current query');
+      expect(provider.isFetchingRemote, isTrue);
+
+      oldResponse.complete([oldBook]);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(provider.books.any((book) => book.id == oldBook.id), isFalse);
+      expect(provider.isFetchingRemote, isTrue);
+
+      currentResponse.complete([currentBook]);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(provider.books.any((book) => book.id == currentBook.id), isTrue);
+      expect(provider.isFetchingRemote, isFalse);
+      provider.dispose();
+    });
+
+    test('reset filters invalidates an in-flight search', () async {
+      final service = _ControllableBookApiService();
+      final pendingResponse = Completer<List<Book>>();
+      service.pendingResponses['pending query'] = pendingResponse;
+      final provider = BookProvider(apiService: service);
+      await provider.initialized;
+      final staleBook = BookRepository.getInitialBooks().first.copyWith(
+        id: 'remote-reset-result',
+        title: 'Stale Search Result',
+      );
+
+      provider.setSearchQuery('pending query');
+      expect(provider.isFetchingRemote, isTrue);
+      provider.resetFilters();
+      expect(provider.isFetchingRemote, isFalse);
+
+      pendingResponse.complete([staleBook]);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(provider.searchQuery, isEmpty);
+      expect(provider.books.any((book) => book.id == staleBook.id), isFalse);
+      expect(provider.isFetchingRemote, isFalse);
+      provider.dispose();
+    });
+
+    test(
       'cleared activity lists stay empty after restarting provider',
       () async {
         final createdAt = DateTime.utc(2026, 1, 1);
         SharedPreferences.setMockInitialValues({
-          BookProviderPersistence.keyBookmarks: [
+          BookProviderPersistence.storageKey(
+            BookProviderPersistence.keyBookmarks,
+          ): [
             jsonEncode(
               Bookmark(
                 id: 'bookmark-1',
@@ -95,7 +186,9 @@ void main() {
               ).toJson(),
             ),
           ],
-          BookProviderPersistence.keyNotifications: [
+          BookProviderPersistence.storageKey(
+            BookProviderPersistence.keyNotifications,
+          ): [
             jsonEncode(
               NotificationItem(
                 id: 'notification-1',
@@ -107,7 +200,9 @@ void main() {
               ).toJson(),
             ),
           ],
-          BookProviderPersistence.keyCollections: [
+          BookProviderPersistence.storageKey(
+            BookProviderPersistence.keyCollections,
+          ): [
             jsonEncode(
               BookCollection(
                 id: 'collection-1',
@@ -116,7 +211,11 @@ void main() {
               ).toJson(),
             ),
           ],
-          BookProviderPersistence.keyRecentSearches: ['Persisted search'],
+          BookProviderPersistence.storageKey(
+            BookProviderPersistence.keyRecentSearches,
+          ): [
+            'Persisted search',
+          ],
         });
 
         final provider = BookProvider();
@@ -193,6 +292,204 @@ void main() {
         expect(restoredBook.isFavorite, isTrue);
         expect(restoredBook.progress, 0.42);
         expect(restoredBook.currentPage, 72);
+      },
+    );
+
+    test('local reading state is isolated between accounts', () async {
+      final curated = (await BookDataLoader.loadInitialState()).books.first;
+      final remoteBook = curated.copyWith(
+        id: 'account-private-remote-book',
+        title: 'Private Remote Book',
+        isSaved: true,
+        isFavorite: true,
+        progress: 0.42,
+        currentPage: 58,
+      );
+
+      await BookProviderPersistence.persistSavedBooks([
+        curated.copyWith(isSaved: true),
+        remoteBook,
+      ], userId: 'reader-a');
+      await BookProviderPersistence.persistFavorites([
+        curated.copyWith(isFavorite: true),
+        remoteBook,
+      ], userId: 'reader-a');
+      await BookProviderPersistence.persistReadingProgress([
+        curated.copyWith(progress: 0.42, currentPage: 58),
+        remoteBook,
+      ], userId: 'reader-a');
+      await BookProviderPersistence.persistRemoteUserBooks([
+        remoteBook,
+      ], userId: 'reader-a');
+
+      final ownerState = await BookDataLoader.loadInitialState(
+        userId: 'reader-a',
+      );
+      final otherState = await BookDataLoader.loadInitialState(
+        userId: 'reader-b',
+      );
+      final ownerRemoteBook = ownerState.books.firstWhere(
+        (book) => book.id == remoteBook.id,
+      );
+      final otherCuratedBook = otherState.books.firstWhere(
+        (book) => book.id == curated.id,
+      );
+
+      expect(ownerRemoteBook.progress, 0.42);
+      expect(ownerRemoteBook.isSaved, isTrue);
+      expect(otherState.books.any((book) => book.id == remoteBook.id), isFalse);
+      expect(otherCuratedBook.progress, 0);
+      expect(otherCuratedBook.isSaved, isFalse);
+      expect(otherCuratedBook.isFavorite, isFalse);
+    });
+
+    test('legacy activity moves only to its recorded account owner', () async {
+      final curated = BookRepository.getInitialBooks().first;
+      final previousOwner = UserProfile.freshUser(
+        name: 'Reader A',
+        email: 'reader-a@example.com',
+        userId: 'reader-a',
+      );
+      SharedPreferences.setMockInitialValues({
+        BookProviderPersistence.keyUserProfile: jsonEncode(
+          previousOwner.toJson(),
+        ),
+        BookProviderPersistence.keySavedBooks: [curated.id],
+        BookProviderPersistence.keyRecentSearches: ['legacy search'],
+        BookProviderPersistence.keyReadingProgress: jsonEncode({
+          curated.id: {'progress': 0.5, 'currentPage': 40, 'chapterIndex': 1},
+        }),
+      });
+
+      await BookProviderPersistence.migrateLegacyActivityToAccount('reader-a');
+      final migratedState = await BookDataLoader.loadInitialState(
+        userId: 'reader-a',
+      );
+      final otherState = await BookDataLoader.loadInitialState(
+        userId: 'reader-b',
+      );
+      final migratedBook = migratedState.books.firstWhere(
+        (book) => book.id == curated.id,
+      );
+
+      expect(migratedBook.isSaved, isTrue);
+      expect(migratedBook.progress, 0.5);
+      expect(migratedState.recentSearches, ['legacy search']);
+      expect(otherState.books.first.isSaved, isFalse);
+      expect(otherState.recentSearches, isEmpty);
+      expect(
+        (await SharedPreferences.getInstance()).getStringList(
+          BookProviderPersistence.keySavedBooks,
+        ),
+        isNull,
+      );
+
+      await BookProviderPersistence.migrateLegacyActivityToAccount('reader-b');
+      final laterAccountState = await BookDataLoader.loadInitialState(
+        userId: 'reader-b',
+      );
+      expect(laterAccountState.recentSearches, isEmpty);
+      expect(laterAccountState.books.first.isSaved, isFalse);
+    });
+
+    test(
+      'legacy activity stays quarantined from a different account',
+      () async {
+        final curated = BookRepository.getInitialBooks().first;
+        final previousOwner = UserProfile.freshUser(
+          name: 'Reader A',
+          email: 'reader-a@example.com',
+          userId: 'reader-a',
+        );
+        final newOwner = UserProfile.freshUser(
+          name: 'Reader B',
+          email: 'reader-b@example.com',
+          userId: 'reader-b',
+        );
+        SharedPreferences.setMockInitialValues({
+          BookProviderPersistence.keyUserProfile: jsonEncode(
+            previousOwner.toJson(),
+          ),
+          BookProviderPersistence.keySavedBooks: [curated.id],
+          BookProviderPersistence.keyRecentSearches: ['reader-a search'],
+        });
+
+        await BookProviderPersistence.migrateLegacyActivityToAccount(
+          'reader-b',
+        );
+        final prefs = await SharedPreferences.getInstance();
+        expect(prefs.getStringList(BookProviderPersistence.keyRecentSearches), [
+          'reader-a search',
+        ]);
+        await prefs.setString(
+          BookProviderPersistence.keyUserProfile,
+          jsonEncode(newOwner.toJson()),
+        );
+        await BookProviderPersistence.migrateLegacyActivityToAccount(
+          'reader-b',
+        );
+
+        final laterAccountState = await BookDataLoader.loadInitialState(
+          userId: 'reader-b',
+        );
+        expect(laterAccountState.recentSearches, isEmpty);
+        expect(laterAccountState.books.first.isSaved, isFalse);
+
+        await BookProviderPersistence.migrateLegacyActivityToAccount(
+          'reader-a',
+        );
+        final originalOwnerState = await BookDataLoader.loadInitialState(
+          userId: 'reader-a',
+        );
+        expect(originalOwnerState.recentSearches, ['reader-a search']);
+        expect(
+          originalOwnerState.books
+              .firstWhere((book) => book.id == curated.id)
+              .isSaved,
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'ambiguous guest activity remains quarantined after sign-in',
+      () async {
+        final guestProfile = UserProfile.freshUser(
+          name: 'Зочин',
+          email: '',
+          username: '@guest',
+        ).copyWith(isGuest: true);
+        final newOwner = UserProfile.freshUser(
+          name: 'Reader B',
+          email: 'reader-b@example.com',
+          userId: 'reader-b',
+        );
+        SharedPreferences.setMockInitialValues({
+          BookProviderPersistence.keyUserProfile: jsonEncode(
+            guestProfile.toJson(),
+          ),
+          BookProviderPersistence.keyRecentSearches: ['unowned search'],
+        });
+
+        await BookProviderPersistence.migrateLegacyActivityToAccount(
+          'reader-b',
+        );
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(
+          BookProviderPersistence.keyUserProfile,
+          jsonEncode(newOwner.toJson()),
+        );
+        await BookProviderPersistence.migrateLegacyActivityToAccount(
+          'reader-b',
+        );
+
+        final accountState = await BookDataLoader.loadInitialState(
+          userId: 'reader-b',
+        );
+        expect(accountState.recentSearches, isEmpty);
+        expect(prefs.getStringList(BookProviderPersistence.keyRecentSearches), [
+          'unowned search',
+        ]);
       },
     );
 
@@ -323,6 +620,7 @@ class _ControllableBookApiService extends BookApiService {
       );
 
   bool shouldFailFetchBooks = false;
+  final Map<String, Completer<List<Book>>> pendingResponses = {};
 
   @override
   Future<List<Book>> fetchBooks({
@@ -330,6 +628,8 @@ class _ControllableBookApiService extends BookApiService {
     bool preferCentralBackend = true,
   }) async {
     if (shouldFailFetchBooks) throw StateError('catalog unavailable');
+    final pendingResponse = pendingResponses[query];
+    if (pendingResponse != null) return pendingResponse.future;
     return [];
   }
 }

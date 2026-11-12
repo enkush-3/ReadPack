@@ -7,6 +7,7 @@ import 'package:readpack/features/search/widgets/searchhistory.dart';
 import 'package:readpack/features/search/widgets/searchresult.dart';
 import 'package:readpack/features/shared/common/refresh.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/error_state_view.dart';
 import 'package:readpack/shared/widgets/inputfield.dart';
 import 'package:readpack/shared/widgets/skeleton_loader.dart';
@@ -98,10 +99,10 @@ class _SearchPageState extends State<SearchPage> {
                           textInputAction: TextInputAction.search,
                           onChanged: (val) {
                             setState(() {});
-                            bookProvider.setSearchQuery(val, isTyping: true);
+                            bookProvider.setSearchQueryWhileTyping(val);
                           },
                           onSubmitted: (val) {
-                            bookProvider.setSearchQuery(val, isTyping: false);
+                            bookProvider.setSearchQuery(val);
                           },
                         ),
                       ),
@@ -286,38 +287,115 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Widget _buildSearchContent(BookProvider provider) {
-    if (provider.isLoading) {
-      return GridView.builder(
-        padding: const EdgeInsets.all(24),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 0.54,
-        ),
-        itemCount: 6,
-        itemBuilder: (_, __) => const BookCardSkeleton(),
-      );
+    if (provider.isLoading ||
+        (provider.isFetchingRemote && provider.searchResults.isEmpty)) {
+      return _buildSearchSkeleton();
     }
-
-    final searchResults = provider.searchResults;
     if (provider.errorMessage != null && provider.books.isEmpty) {
-      return SingleChildScrollView(
+      return _buildInitializationError(provider);
+    }
+    return _buildSearchResults(provider);
+  }
+
+  Widget _buildInitializationError(BookProvider provider) =>
+      SingleChildScrollView(
         child: ErrorStateView(
           errorMessage: provider.errorMessage!,
           onRetry: provider.retryInitialization,
         ),
       );
-    }
 
-    return SearchResult(
+  Widget _buildSearchResults(BookProvider provider) {
+    final searchResults = provider.searchResults;
+    final remoteError = provider.remoteBooksErrorMessage;
+    if (remoteError != null && searchResults.isEmpty) {
+      return ErrorStateView(
+        errorMessage: remoteError,
+        onRetry: () => provider.fetchRemoteBooks(query: provider.searchQuery),
+      );
+    }
+    return _buildSearchResultsBody(provider, searchResults, remoteError);
+  }
+
+  Widget _buildSearchResultsBody(
+    BookProvider provider,
+    List<Book> searchResults,
+    String? remoteError,
+  ) => Column(
+    children: [
+      if (provider.isFetchingRemote)
+        const LinearProgressIndicator(minHeight: 2),
+      if (remoteError != null) _buildRemoteSearchError(provider, remoteError),
+      _buildSearchResultList(provider, searchResults),
+    ],
+  );
+
+  Widget _buildSearchResultList(
+    BookProvider provider,
+    List<Book> searchResults,
+  ) => Expanded(
+    child: SearchResult(
       books: searchResults,
       onResetFilter: () {
         _searchController.clear();
         provider.resetFilters();
       },
+    ),
+  );
+
+  Widget _buildSearchSkeleton() => GridView.builder(
+    padding: const EdgeInsets.all(24),
+    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 0.54,
+    ),
+    itemCount: 6,
+    itemBuilder: (_, __) => const BookCardSkeleton(),
+  );
+
+  Widget _buildRemoteSearchError(BookProvider provider, String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+        decoration: BoxDecoration(
+          color: colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            _buildRemoteErrorIcon(colorScheme),
+            Expanded(child: _buildRemoteErrorMessage(message, colorScheme)),
+            _buildRemoteRetryButton(provider),
+          ],
+        ),
+      ),
     );
   }
+
+  Widget _buildRemoteErrorIcon(ColorScheme colorScheme) => Padding(
+    padding: const EdgeInsets.only(right: 10),
+    child: Icon(Icons.cloud_off_rounded, color: colorScheme.onErrorContainer),
+  );
+
+  Widget _buildRemoteErrorMessage(String message, ColorScheme colorScheme) =>
+      Text(
+        message,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: colorScheme.onErrorContainer),
+      );
+
+  Widget _buildRemoteRetryButton(BookProvider provider) => TextButton.icon(
+    onPressed: () => provider.fetchRemoteBooks(query: provider.searchQuery),
+    icon: const Icon(Icons.refresh_rounded, size: 18),
+    label: Text(
+      AppLocalizations.of(context)?.t('common.retry') ?? 'Дахин оролдох',
+    ),
+  );
 
   Widget _buildQuickPill(
     String key,

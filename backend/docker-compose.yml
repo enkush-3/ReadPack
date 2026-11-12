@@ -3,7 +3,7 @@ services:
     image: mongo:7.0
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     environment:
       MONGO_INITDB_DATABASE: readpack
     volumes:
@@ -20,13 +20,14 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     env_file:
       - path: .env
         required: false
     environment:
       PORT: 4000
       MONGODB_URI: mongodb://mongodb:27017/readpack
+      ALLOW_JSON_FALLBACK: "false"
     depends_on:
       mongodb:
         condition: service_healthy
