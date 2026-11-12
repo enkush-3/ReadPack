@@ -173,17 +173,27 @@ class MongoStore {
 
   _mergeBook(existingBook, incomingBook) {
     return structuredClone({
-      ...existingBook,
-      ...incomingBook,
+      ...this._withoutUserReadingState(existingBook),
+      ...this._withoutUserReadingState(incomingBook),
       id: existingBook.id,
       updatedAt: new Date().toISOString(),
     });
   }
 
+  _withoutUserReadingState(book) {
+    const catalogBook = { ...book };
+    delete catalogBook.progress;
+    delete catalogBook.currentPage;
+    delete catalogBook.currentChapterIndex;
+    delete catalogBook.isSaved;
+    delete catalogBook.isFavorite;
+    return catalogBook;
+  }
+
   _createBook(bookDoc) {
     const createdAt = new Date().toISOString();
     return structuredClone({
-      ...bookDoc,
+      ...this._withoutUserReadingState(bookDoc),
       createdAt,
       updatedAt: createdAt,
     });
