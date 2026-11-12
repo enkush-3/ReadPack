@@ -10,6 +10,24 @@ class BookDetailStats extends StatelessWidget {
 
   const BookDetailStats({super.key, required this.book, this.l10n});
 
+  String get _ratingValue =>
+      book.rating > 0 ? book.rating.toStringAsFixed(1) : '—';
+
+  String get _ratingLabel => book.reviewsCount > 0
+      ? '${book.reviewsCount} ${l10n?.t('reviews.ratings_count') ?? 'үнэлгээ'}'
+      : (l10n?.t('reviews.ratings_count') ?? 'Үнэлгээ');
+
+  String get _pageCount => book.pages > 0 ? '${book.pages}' : '—';
+
+  String get _durationValue {
+    final minutes = book.audioDurationMinutes > 0
+        ? book.audioDurationMinutes
+        : book.readTimeMinutes;
+    return minutes > 0
+        ? '$minutes ${l10n?.t('common.minutes_short') ?? 'м'}'
+        : '—';
+  }
+
   Widget _buildStatItem({
     required IconData icon,
     required Color iconColor,
@@ -60,15 +78,14 @@ class BookDetailStats extends StatelessWidget {
       _buildStatItem(
         icon: Icons.star_rounded,
         iconColor: Colors.amber,
-        value: book.rating.toStringAsFixed(1),
-        label:
-            '${book.reviewsCount} ${l10n?.t('reviews.ratings_count') ?? 'үнэлгээ'}',
+        value: _ratingValue,
+        label: _ratingLabel,
         colorScheme: colorScheme,
       ),
       _buildStatItem(
         icon: Icons.auto_stories_rounded,
         iconColor: colorScheme.primary,
-        value: '${book.pages}',
+        value: _pageCount,
         label: l10n?.t('book.pages') ?? 'Хуудас',
         colorScheme: colorScheme,
       ),
@@ -76,8 +93,7 @@ class BookDetailStats extends StatelessWidget {
         _buildStatItem(
           icon: Icons.access_time_rounded,
           iconColor: colorScheme.secondary,
-          value:
-              '${book.audioDurationMinutes > 0 ? book.audioDurationMinutes : book.readTimeMinutes} ${l10n?.t('common.minutes_short') ?? 'м'}',
+          value: _durationValue,
           label: l10n?.t('book.duration') ?? 'Хугацаа',
           colorScheme: colorScheme,
         ),
@@ -126,8 +142,23 @@ class BookDetailActionButtons extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isStarted = book.progress > 0;
     final progressPct = (book.progress * 100).toInt();
+    final hasReadableContent = book.chapters.any(
+      (chapter) => chapter.content.trim().isNotEmpty,
+    );
+    final selectedChapterIndex = book.chapters.isEmpty
+        ? 0
+        : book.currentChapterIndex.clamp(0, book.chapters.length - 1);
+    final selectedChapterIsReadable = book.chapters.isNotEmpty &&
+        book.chapters[selectedChapterIndex].content.trim().isNotEmpty;
+    final initialChapterIndex = selectedChapterIsReadable
+        ? selectedChapterIndex
+        : book.chapters.indexWhere(
+            (chapter) => chapter.content.trim().isNotEmpty,
+          );
 
-    final readButtonLabel = isStarted
+    final readButtonLabel = !hasReadableContent
+        ? (l10n?.t('reader.no_chapters') ?? 'Унших агуулга алга')
+        : isStarted
         ? '${l10n?.t('book.continue_reading') ?? 'Үргэлжлүүлэх'} ($progressPct%)'
         : (l10n?.t('book.start_reading') ?? 'Уншиж эхлэх');
 
@@ -136,24 +167,30 @@ class BookDetailActionButtons extends StatelessWidget {
         Expanded(
           flex: 3,
           child: AnimatedPressable(
-            onTap: () {
-              Navigator.of(context).pushNamed(
-                Routes.reader,
-                arguments: {
-                  'book': book,
-                  'initialChapterIndex': book.currentChapterIndex,
-                },
-              );
-            },
+            onTap: hasReadableContent
+                ? () {
+                    Navigator.of(context).pushNamed(
+                      Routes.reader,
+                      arguments: {
+                        'book': book,
+                        'initialChapterIndex': initialChapterIndex,
+                      },
+                    );
+                  }
+                : null,
             child: Container(
               height: 52,
               decoration: BoxDecoration(
-                color: colorScheme.primary,
+                color: hasReadableContent
+                    ? colorScheme.primary
+                    : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.3),
-                    blurRadius: 12,
+                    color: hasReadableContent
+                        ? colorScheme.primary.withValues(alpha: 0.3)
+                        : Colors.transparent,
+                    blurRadius: hasReadableContent ? 12 : 0,
                     offset: const Offset(0, 4),
                   ),
                 ],
@@ -165,7 +202,9 @@ class BookDetailActionButtons extends StatelessWidget {
                     isStarted
                         ? Icons.play_arrow_rounded
                         : Icons.auto_stories_rounded,
-                    color: colorScheme.onPrimary,
+                    color: hasReadableContent
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -177,7 +216,9 @@ class BookDetailActionButtons extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: colorScheme.onPrimary,
+                        color: hasReadableContent
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -186,7 +227,7 @@ class BookDetailActionButtons extends StatelessWidget {
             ),
           ),
         ),
-        if (book.hasAudio) ...[
+        if (book.hasAudio && hasReadableContent) ...[
           const SizedBox(width: 12),
           Expanded(
             flex: 1,

@@ -101,5 +101,21 @@ void main() {
 
       expect(find.text('Chapter 1: The Beginning'), findsOneWidget);
     });
+
+    testWidgets('Handles unknown catalog page count while tracking progress', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        createTestReader(testLongBook.copyWith(pages: 0)),
+      );
+      addTearDown(_provider.dispose);
+      await tester.runAsync(() => _provider.initialized);
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(PageView), const Offset(-400, 0));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
   });
 }

@@ -1,59 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/features/details/widgets/book_detail_review_form.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
 
 class BookDetailReviewsTab extends StatelessWidget {
   final Book currentBook;
   final AppLocalizations? l10n;
 
-  const BookDetailReviewsTab({
-    super.key,
-    required this.currentBook,
-    this.l10n,
-  });
-
-  Widget _buildRatingBar(int stars, double pct, ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Text(
-            '$stars',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearPercentIndicator(
-                lineHeight: 6,
-                percent: pct,
-                padding: EdgeInsets.zero,
-                backgroundColor:
-                    colorScheme.outlineVariant.withValues(alpha: 0.3),
-                progressColor: Colors.amber,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  const BookDetailReviewsTab({super.key, required this.currentBook, this.l10n});
 
   Widget _buildRatingBreakdown(
     Book book,
     ColorScheme colorScheme,
     AppLocalizations? l10n,
   ) {
+    final ratingValue = book.rating > 0 ? book.rating.toStringAsFixed(1) : '—';
+    final ratingCount = book.reviewsCount > 0
+        ? '${book.reviewsCount} ${l10n?.t('reviews.ratings_count') ?? 'үнэлгээ'}'
+        : (l10n?.locale.languageCode == 'en'
+              ? 'No rating data'
+              : 'Үнэлгээний мэдээлэл алга');
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -65,7 +36,7 @@ class BookDetailReviewsTab extends StatelessWidget {
           Column(
             children: [
               Text(
-                book.rating.toStringAsFixed(1),
+                ratingValue,
                 style: TextStyle(
                   fontFamily: 'Serif',
                   fontSize: 36,
@@ -76,9 +47,13 @@ class BookDetailReviewsTab extends StatelessWidget {
               Row(
                 children: List.generate(5, (index) {
                   return Icon(
-                    index < book.rating.floor()
+                    book.rating <= 0
+                        ? Icons.star_outline_rounded
+                        : index < book.rating.floor()
                         ? Icons.star_rounded
-                        : Icons.star_half_rounded,
+                        : index < book.rating
+                        ? Icons.star_half_rounded
+                        : Icons.star_outline_rounded,
                     color: Colors.amber,
                     size: 16,
                   );
@@ -86,7 +61,7 @@ class BookDetailReviewsTab extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${book.reviewsCount} ${l10n?.t('reviews.ratings_count') ?? 'үнэлгээ'}',
+                ratingCount,
                 style: TextStyle(
                   fontSize: 11,
                   color: colorScheme.onSurface.withValues(alpha: 0.5),
@@ -97,12 +72,30 @@ class BookDetailReviewsTab extends StatelessWidget {
           const SizedBox(width: 20),
           Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildRatingBar(5, 0.78, colorScheme),
-                _buildRatingBar(4, 0.15, colorScheme),
-                _buildRatingBar(3, 0.05, colorScheme),
-                _buildRatingBar(2, 0.01, colorScheme),
-                _buildRatingBar(1, 0.01, colorScheme),
+                Text(
+                  l10n?.t('reviews.rating_summary') ??
+                      (l10n?.locale.languageCode == 'en'
+                          ? 'Catalog rating'
+                          : 'Сангийн үнэлгээ'),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n?.t('reviews.rating_distribution_unavailable') ??
+                      (l10n?.locale.languageCode == 'en'
+                          ? 'Rating distribution is not provided.'
+                          : 'Үнэлгээний задаргаа мэдээлэлгүй байна.'),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
               ],
             ),
           ),
@@ -134,23 +127,17 @@ class BookDetailReviewsTab extends StatelessWidget {
         const SizedBox(height: 16),
         _buildRatingBreakdown(currentBook, colorScheme, currentL10n),
         const SizedBox(height: 20),
-        BookDetailReviewForm(
-          currentBook: currentBook,
-          l10n: currentL10n,
-        ),
+        BookDetailReviewForm(currentBook: currentBook, l10n: currentL10n),
         const SizedBox(height: 20),
         if (currentBook.reviews.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(20),
-            alignment: Alignment.center,
-            child: Text(
-              currentL10n?.t('reviews.empty') ??
-                  'Анхны сэтгэгдлийг та бичээрэй!',
-              style: TextStyle(
-                fontSize: 13,
-                color: colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
+          EmptyStateView(
+            icon: Icons.rate_review_outlined,
+            title:
+                currentL10n?.t('reviews.empty') ??
+                'Анхны сэтгэгдлийг та бичээрэй!',
+            message: currentL10n?.locale.languageCode == 'en'
+                ? 'There are no submitted reviews for this book.'
+                : 'Энэ номд одоогоор сэтгэгдэл ирээгүй байна.',
           )
         else
           ...currentBook.reviews.map((rev) {
@@ -158,8 +145,9 @@ class BookDetailReviewsTab extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color:
-                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.2,
+                ),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.25),
@@ -175,8 +163,9 @@ class BookDetailReviewsTab extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 14,
-                            backgroundColor:
-                                colorScheme.primary.withValues(alpha: 0.15),
+                            backgroundColor: colorScheme.primary.withValues(
+                              alpha: 0.15,
+                            ),
                             child: Text(
                               rev.userName.isNotEmpty
                                   ? rev.userName[0].toUpperCase()
@@ -201,8 +190,11 @@ class BookDetailReviewsTab extends StatelessWidget {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.star_rounded,
-                              size: 15, color: Colors.amber),
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 15,
+                            color: Colors.amber,
+                          ),
                           const SizedBox(width: 2),
                           Text(
                             rev.rating.toStringAsFixed(1),
@@ -230,24 +222,28 @@ class BookDetailReviewsTab extends StatelessWidget {
                     children: [
                       AnimatedPressable(
                         onTap: () {
-                          context
-                              .read<BookProvider>()
-                              .toggleReviewHelpful(currentBook.id, rev.id);
+                          context.read<BookProvider>().toggleReviewHelpful(
+                            currentBook.id,
+                            rev.id,
+                          );
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: rev.isHelpful
                                 ? colorScheme.primary.withValues(alpha: 0.12)
                                 : colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.4),
+                                      .withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: rev.isHelpful
                                   ? colorScheme.primary
-                                  : colorScheme.outlineVariant
-                                      .withValues(alpha: 0.3),
+                                  : colorScheme.outlineVariant.withValues(
+                                      alpha: 0.3,
+                                    ),
                             ),
                           ),
                           child: Row(
@@ -260,22 +256,24 @@ class BookDetailReviewsTab extends StatelessWidget {
                                 size: 13,
                                 color: rev.isHelpful
                                     ? colorScheme.primary
-                                    : colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
+                                    : colorScheme.onSurface.withValues(
+                                        alpha: 0.6,
+                                      ),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 rev.helpfulCount > 0
                                     ? '${rev.helpfulCount} ${currentL10n?.t('book.helpful') ?? 'тустай'}'
                                     : (currentL10n?.t('book.helpful_btn') ??
-                                        'Тустай 👍'),
+                                          'Тустай 👍'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color: rev.isHelpful
                                       ? colorScheme.primary
-                                      : colorScheme.onSurface
-                                          .withValues(alpha: 0.7),
+                                      : colorScheme.onSurface.withValues(
+                                          alpha: 0.7,
+                                        ),
                                 ),
                               ),
                             ],

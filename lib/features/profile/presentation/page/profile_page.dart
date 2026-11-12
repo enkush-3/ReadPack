@@ -8,6 +8,8 @@ import 'package:readpack/features/profile/widgets/profile_header_card.dart';
 import 'package:readpack/features/profile/widgets/profile_league_card.dart';
 import 'package:readpack/features/profile/widgets/profile_xp_card.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/page_loading_skeleton.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -39,7 +41,14 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: bookProvider.isLoading
+            ? const PageLoadingSkeleton()
+            : bookProvider.errorMessage != null
+                ? ErrorStateView(
+                    errorMessage: bookProvider.errorMessage!,
+                    onRetry: bookProvider.retryInitialization,
+                  )
+                : SingleChildScrollView(
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
           ),

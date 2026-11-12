@@ -9,6 +9,8 @@ import 'package:readpack/features/quotes/presentation/phone_widget_sheet.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/user_stats.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/page_loading_skeleton.dart';
 import 'package:readpack/shared/widgets/user_avatar.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -40,7 +42,14 @@ class SettingsPage extends StatelessWidget {
         ),
         elevation: 0,
       ),
-      body: ListView(
+      body: bookProvider.isLoading
+          ? const PageLoadingSkeleton()
+          : bookProvider.errorMessage != null
+              ? ErrorStateView(
+                  errorMessage: bookProvider.errorMessage!,
+                  onRetry: bookProvider.retryInitialization,
+                )
+              : ListView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         children: [

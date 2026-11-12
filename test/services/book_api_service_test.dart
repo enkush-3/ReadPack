@@ -40,6 +40,30 @@ void main() {
     }
     ''';
 
+    const mockOpenLibraryJson = '''
+    {
+      "docs": [
+        {
+          "key": "/works/OL12345W",
+          "title": "Unrated Remote Book",
+          "author_name": ["A. Author"]
+        }
+      ]
+    }
+    ''';
+
+    const mockSparseCentralCatalogJson = '''
+    {
+      "results": [
+        {
+          "id": "central-book-1",
+          "title": "Sparse Catalog Book",
+          "author": "Catalog Author"
+        }
+      ]
+    }
+    ''';
+
     test(
       'fetchBooks parses remote Gutendex payload correctly and caches',
       () async {
@@ -61,7 +85,14 @@ void main() {
         expect(book.author, 'Jane Austen');
         expect(book.category, 'book.categories.romance');
         expect(book.hasAudio, isTrue);
-        expect(book.chapters.length, 2);
+        expect(book.chapters, isEmpty);
+        expect(book.reviews, isEmpty);
+        expect(book.rating, 0.0);
+        expect(book.reviewsCount, 0);
+        expect(book.pages, 0);
+        expect(book.readTimeMinutes, 0);
+        expect(book.description, isEmpty);
+        expect(book.keyTakeaways, isEmpty);
 
         // Verify cached in SharedPreferences
         final cached = await service.getCachedBooks();
@@ -69,6 +100,204 @@ void main() {
         expect(cached.first.title, 'Pride and Prejudice');
       },
     );
+
+    test(
+      'OpenLibrary metadata does not imply book content or ratings',
+      () async {
+        final mockClient = MockClient((request) async {
+          return http.Response(
+            mockOpenLibraryJson,
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        });
+
+        final service = BookApiService(client: mockClient);
+        final books = await service.fetchBooks(query: 'Unrated Remote Book');
+
+        expect(books, hasLength(1));
+        expect(books.first.chapters, isEmpty);
+        expect(books.first.reviews, isEmpty);
+        expect(books.first.rating, 0.0);
+        expect(books.first.reviewsCount, 0);
+        expect(books.first.pages, 0);
+        expect(books.first.readTimeMinutes, 0);
+        expect(books.first.image, isNull);
+        expect(books.first.description, isEmpty);
+        expect(books.first.keyTakeaways, isEmpty);
+      },
+    );
+
+    test(
+      'central catalog results do not inherit model metric defaults',
+      () async {
+        final mockClient = MockClient((request) async {
+          return http.Response(mockSparseCentralCatalogJson, 200);
+        });
+
+        final service = BookApiService(client: mockClient);
+        final books = await service.fetchBooks();
+
+        expect(books, hasLength(1));
+        expect(books.first.id, 'central-book-1');
+        expect(books.first.rating, 0.0);
+        expect(books.first.reviewsCount, 0);
+        expect(books.first.pages, 0);
+        expect(books.first.readTimeMinutes, 0);
+        expect(books.first.chapters, isEmpty);
+        expect(books.first.reviews, isEmpty);
+      },
+    );
+
+    test('sparse remote cache entries keep metrics unknown', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        BookApiService.cacheKey,
+        jsonEncode([
+          {
+            'id': 'ol_cached_sparse',
+            'title': 'Sparse Cached Book',
+            'author': 'Cached Author',
+          },
+        ]),
+      );
+
+      final service = BookApiService(
+        client: MockClient((request) async => http.Response('', 500)),
+      );
+      final books = await service.getCachedBooks();
+
+      expect(books, hasLength(1));
+      expect(books.first.rating, 0.0);
+      expect(books.first.reviewsCount, 0);
+      expect(books.first.pages, 0);
+      expect(books.first.readTimeMinutes, 0);
+      expect(books.first.chapters, isEmpty);
+      expect(books.first.reviews, isEmpty);
+    });
+
+    test('legacy remote cache removes generated content and metrics', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        BookApiService.cacheKey,
+        jsonEncode([
+          {
+            'id': 'api_1342',
+            'title': 'Pride and Prejudice',
+            'author': 'Jane Austen',
+            'rating': 4.2,
+            'reviewsCount': 54200,
+            'pages': 222,
+            'readTimeMinutes': 244,
+            'chapters': [
+              {
+                'id': 'api_1342_c1',
+                'title': 'Part 1: The Beginning',
+                'content': 'Generated prose',
+              },
+              {
+                'id': 'source-chapter-1',
+                'title': 'Source chapter',
+                'content': 'Verified source text',
+              },
+            ],
+            'reviews': [
+              {
+                'id': 'rev_api_1342_1',
+                'userName': 'Open Reader',
+                'rating': 5.0,
+                'comment': 'Generated review',
+              },
+              {
+                'id': 'source-review-1',
+                'userName': 'Catalog Reader',
+                'rating': 4.0,
+                'comment': 'Verified review',
+              },
+            ],
+            'keyTakeaways': [
+              'Classic wisdom that withstands the test of historical eras.',
+              'Verified source takeaway',
+            ],
+          },
+        ]),
+      );
+
+      final service = BookApiService(
+        client: MockClient((request) async => http.Response('', 500)),
+      );
+      final books = await service.getCachedBooks();
+
+      expect(books, hasLength(1));
+      expect(books.first.rating, 0.0);
+      expect(books.first.reviewsCount, 0);
+      expect(books.first.pages, 0);
+      expect(books.first.readTimeMinutes, 0);
+      expect(books.first.chapters.map((chapter) => chapter.id), [
+        'source-chapter-1',
+      ]);
+      expect(books.first.reviews.map((review) => review.id), [
+        'source-review-1',
+      ]);
+      expect(books.first.keyTakeaways, ['Verified source takeaway']);
+    });
+
+    test('legacy OpenLibrary cache removes its generated chapters', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        BookApiService.cacheKey,
+        jsonEncode([
+          {
+            'id': 'ol_OL12345W',
+            'title': 'Unrated Remote Book',
+            'author': 'A. Author',
+            'description': 'Generated OpenLibrary description',
+            'rating': 4.6,
+            'reviewsCount': 180,
+            'pages': 240,
+            'readTimeMinutes': 264,
+            'image': 'assets/public/books/atomic_habits.png',
+            'chapters': [
+              {
+                'id': 'ol_OL12345W_c1',
+                'title': '1-р бүлэг: Оршил ба үндсэн санаа',
+                'content': 'Generated prose',
+              },
+            ],
+            'reviews': [
+              {
+                'id': 'rev_ol_OL12345W_1',
+                'userName': 'OpenLibrary Reader',
+                'rating': 5.0,
+                'comment': 'Generated review',
+              },
+            ],
+            'keyTakeaways': [
+              'A. Author-ийн дэвшүүлсэн гол философи болон практик зарчмууд.',
+              'Системтэй сэтгэлгээ ба тууштай дадлыг хэвшүүлэх арга зам.',
+              'OpenLibrary олон улсын номын сангаас баталгаажсан бүтээл.',
+            ],
+          },
+        ]),
+      );
+
+      final service = BookApiService(
+        client: MockClient((request) async => http.Response('', 500)),
+      );
+      final books = await service.getCachedBooks();
+
+      expect(books, hasLength(1));
+      expect(books.first.rating, 0.0);
+      expect(books.first.reviewsCount, 0);
+      expect(books.first.pages, 0);
+      expect(books.first.readTimeMinutes, 0);
+      expect(books.first.description, isEmpty);
+      expect(books.first.image, isNull);
+      expect(books.first.chapters, isEmpty);
+      expect(books.first.reviews, isEmpty);
+      expect(books.first.keyTakeaways, isEmpty);
+      expect(books.first.tags, isEmpty);
+    });
 
     test('fetchBooks appends search query to URI', () async {
       String? requestedUrl;

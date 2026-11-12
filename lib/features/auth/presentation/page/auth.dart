@@ -7,6 +7,9 @@ import 'package:readpack/features/auth/widgets/signup.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/readpacklogo.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/page_loading_skeleton.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -67,10 +70,20 @@ class _AuthPageState extends State<AuthPage>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bookProvider = context.watch<BookProvider>();
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
-      body: Container(
+      body: bookProvider.isLoading
+          ? const SafeArea(child: PageLoadingSkeleton())
+          : bookProvider.errorMessage != null
+              ? SafeArea(
+                  child: ErrorStateView(
+                    errorMessage: bookProvider.errorMessage!,
+                    onRetry: bookProvider.retryInitialization,
+                  ),
+                )
+              : Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -87,7 +100,9 @@ class _AuthPageState extends State<AuthPage>
               _buildTopNav(),
               const SizedBox(height: 8),
               Expanded(
-                child: _buildAnimatedCard(),
+                child: _buildAnimatedCard(
+                  isGuest: bookProvider.userProfile.isGuest,
+                ),
               ),
             ],
           ),
@@ -167,8 +182,9 @@ class _AuthPageState extends State<AuthPage>
     );
   }
 
-  Widget _buildAnimatedCard() {
+  Widget _buildAnimatedCard({required bool isGuest}) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return SlideTransition(
       position: _slideAnimation,
@@ -201,9 +217,22 @@ class _AuthPageState extends State<AuthPage>
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 460),
-                      child: _showLogin
-                          ? SignInPage(onSwitchToSignUp: _switchMode)
-                          : SignUpPage(onSwitchToLogin: _switchMode),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isGuest)
+                            EmptyStateView(
+                              icon: Icons.person_outline_rounded,
+                              title: l10n?.t('profile.guest_user') ??
+                                  'Зочин уншигч',
+                              message: l10n?.t('profile.guest_prompt') ??
+                                  'Бүртгэл үүсгэж уншлагын ахицаа хадгалаарай.',
+                            ),
+                          _showLogin
+                              ? SignInPage(onSwitchToSignUp: _switchMode)
+                              : SignUpPage(onSwitchToLogin: _switchMode),
+                        ],
+                      ),
                     ),
                   ),
                 ),

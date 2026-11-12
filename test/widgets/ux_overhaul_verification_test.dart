@@ -98,6 +98,7 @@ void main() {
               'target': 'reader@test.com',
               'name': 'Test Reader',
               'isPhone': false,
+              'challengeId': 'test-challenge',
             },
           ),
         ),

@@ -14,6 +14,8 @@ class BookApiService {
   static const String _gutendexBaseUrl = 'https://gutendex.com/books/';
   static const String cacheKey = 'readpack_cached_api_books';
   static const Duration defaultTimeout = Duration(seconds: 6);
+  static const String _legacyFallbackCover =
+      'assets/public/books/atomic_habits.png';
 
   late final http.Client _client;
   late final AuthApiService _authService;
@@ -181,113 +183,58 @@ class BookApiService {
   }
 
   Book? _parseOpenLibraryDoc(Map<String, dynamic> doc) {
-    try {
-      final rawKey = (doc['key'] as String? ?? '').replaceAll('/works/', '');
-      final id = rawKey.isNotEmpty
-          ? 'ol_$rawKey'
-          : 'ol_${doc['cover_i'] ?? doc['title'].hashCode.abs()}';
-      final title = (doc['title'] as String? ?? '').trim();
-      if (title.isEmpty) return null;
+    final title = _readNonEmptyString(doc['title']);
+    final rawKey = _readNonEmptyString(doc['key']);
+    if (title == null || rawKey == null) return null;
 
-      final authorList = doc['author_name'] as List<dynamic>? ?? [];
-      final authorName = authorList.isNotEmpty
-          ? authorList.first.toString()
-          : 'Unknown Author';
+    final bookKey = rawKey.replaceAll('/works/', '');
+    if (bookKey.isEmpty) return null;
+    return _buildOpenLibraryBook(doc, bookKey, title);
+  }
 
-      final int? coverId = doc['cover_i'] as int?;
-      final coverUrl = coverId != null
-          ? 'https://covers.openlibrary.org/b/id/$coverId-L.jpg'
-          : 'assets/public/books/atomic_habits.png';
+  Book _buildOpenLibraryBook(
+    Map<String, dynamic> doc,
+    String bookKey,
+    String title,
+  ) => Book.fromJson(
+    _openLibraryBookFields(doc: doc, bookKey: bookKey, title: title),
+  );
 
-      final subjects =
-          (doc['subject'] as List<dynamic>?) ??
-          (doc['subject_facet'] as List<dynamic>?) ??
-          [];
-      final category = _mapSubjectsToCategory(subjects);
+  Map<String, dynamic> _openLibraryBookFields({
+    required Map<String, dynamic> doc,
+    required String bookKey,
+    required String title,
+  }) => {
+    'id': 'ol_$bookKey',
+    'title': title,
+    'author': _readOpenLibraryAuthor(doc['author_name']),
+    'description': _readDescription(doc['description']),
+    'rating': _readRating(doc['ratings_average']),
+    'reviewsCount': _readNonNegativeInt(doc['ratings_count']),
+    'category': _mapSubjectsToCategory(_readOpenLibrarySubjects(doc)),
+    'pages': _readNonNegativeInt(doc['number_of_pages_median']),
+    'readTimeMinutes': _readOpenLibraryReadingMinutes(doc),
+    'image': _readOpenLibraryCoverUrl(doc),
+    'colorHex': 0xFF1E293B,
+    'tags': _readOpenLibrarySubjects(doc),
+  };
 
-      final pages = (doc['number_of_pages_median'] as int?) ?? 240;
-      final readTime = (pages * 1.1).round();
-      final rawRating = (doc['ratings_average'] as num?)?.toDouble() ?? 4.6;
-      final rating = double.parse(rawRating.clamp(3.8, 5.0).toStringAsFixed(1));
-      final ratingsCount =
-          (doc['ratings_count'] as int?) ??
-          ((doc['edition_count'] as int? ?? 15) * 12);
-      final publishYear = doc['first_publish_year'] as int?;
-      final firstSentenceList = doc['first_sentence'] as List<dynamic>?;
-      final firstSentence =
-          firstSentenceList != null && firstSentenceList.isNotEmpty
-          ? firstSentenceList.first.toString()
-          : '';
+  List<String> _readOpenLibrarySubjects(Map<String, dynamic> doc) {
+    final subjects = _readSubjects(doc['subject']);
+    if (subjects.isNotEmpty) return subjects;
+    return _readSubjects(doc['subject_facet']);
+  }
 
-      final chapters = [
-        BookChapter(
-          id: '${id}_c1',
-          title: '1-р бүлэг: Оршил ба үндсэн санаа',
-          estimatedMinutes: 12,
-          content:
-              '${firstSentence.isNotEmpty ? '$firstSentence\n\n' : ''}$title бол зохиолч $authorName-ийн бичсэн олон улсын уншигчдын талархлыг хүлээсэн бүтээл юм${publishYear != null ? ' (Анх хэвлэгдсэн: $publishYear он)' : ''}.\n\nЭнэхүү бүлэгт зохиолын гол зангилаа, хүний сэтгэлгээ болон амьдралын хэв маягт нөлөөлөх суурь зарчмуудыг тайлбарлана. Уншигч та өдөр тутмын жижиг алхмуудаар дамжуулан томоохон өөрчлөлтөд хүрэх арга барилыг эндээс олж мэдэх болно.\n\nМэдлэг гэдэг зөвхөн уншихаас бус, уншсан зүйлээ амьдралд хэрэгжүүлж, тунгаан бодохоос эхэлдэг.',
-        ),
-        BookChapter(
-          id: '${id}_c2',
-          title: '2-р бүлэг: Гүнзгийрүүлсэн задлан шинжилгээ',
-          estimatedMinutes: 15,
-          content:
-              '$authorName энэхүү бүлэгтээ $title бүтээлийнхээ гол философийг бодит жишээ болон түүхэн баримтуудтай холбон тайлбарладаг.\n\nХүн бүр өөрийн зорилгод хүрэхийн тулд тууштай байдал, системтэй сэтгэлгээг хөгжүүлэх шаардлагатай. Орчин үеийн мэдээллийн эрин зуунд төвлөрөх чадвар болон гүнзгий уншлага нь хамгийн үнэ цэнтэй чадваруудын нэг болж байна.\n\nЭнэхүү бүтээл нь OpenLibrary олон улсын нээлттэй номын сангаас ReadPack системээр дамжин танд хүрч байна.',
-        ),
-        BookChapter(
-          id: '${id}_c3',
-          title: '3-р бүлэг: Дүгнэлт ба практик хэрэглээ',
-          estimatedMinutes: 14,
-          content:
-              'Төгсгөлийн бүлэгт $title номоос суралцсан гол санаануудыг хэрхэн өөрийн амьдрал, ажил хэрэгт буулгах тухай практик зөвлөмжүүдийг багтаасан.\n\nУншсан ном бүр хүний оюун санаанд шинэ цонх нээж өгдөг. Та энэхүү номын онцлох эшлэлүүдийг тэмдэглэн авч, өөрийн цуглуулгадаа хадгалах боломжтой.',
-        ),
-      ];
+  String? _readOpenLibraryCoverUrl(Map<String, dynamic> doc) {
+    final coverId = _readNonNegativeInt(doc['cover_i']);
+    if (coverId == 0) return null;
+    return 'https://covers.openlibrary.org/b/id/$coverId-L.jpg';
+  }
 
-      return Book(
-        id: id,
-        title: title,
-        author: authorName,
-        description:
-            'Зохиолч $authorName-ийн "$title" бүтээл${publishYear != null ? ' ($publishYear)' : ''}. OpenLibrary нээлттэй сангаас татагдсан дэлхийн шилдэг бүтээлүүдийн нэг.',
-        rating: rating,
-        reviewsCount: ratingsCount.clamp(10, 9999),
-        category: category,
-        pages: pages,
-        readTimeMinutes: readTime,
-        image: coverUrl,
-        colorHex: 0xFF1E293B,
-        progress: 0.0,
-        currentPage: 0,
-        currentChapterIndex: 0,
-        isSaved: false,
-        isFavorite: false,
-        hasAudio: false,
-        audioDurationMinutes: 0,
-        keyTakeaways: [
-          '$authorName-ийн дэвшүүлсэн гол философи болон практик зарчмууд.',
-          'Системтэй сэтгэлгээ ба тууштай дадлыг хэвшүүлэх арга зам.',
-          'OpenLibrary олон улсын номын сангаас баталгаажсан бүтээл.',
-        ],
-        tags: [
-          'OpenLibrary',
-          if (publishYear != null) '$publishYear',
-          category.replaceAll('book.categories.', ''),
-        ],
-        reviews: [
-          BookReview(
-            id: 'rev_${id}_1',
-            userName: 'OpenLibrary Reader',
-            rating: 5.0,
-            comment: 'Маш өгөөжтэй, заавал унших ёстой бүтээл байна.',
-            createdAt: DateTime.now().subtract(const Duration(days: 3)),
-            helpfulCount: 12,
-          ),
-        ],
-        chapters: chapters,
-      );
-    } catch (_) {
-      return null;
-    }
+  int _readOpenLibraryReadingMinutes(Map<String, dynamic> doc) {
+    return _estimateReadingMinutes(
+      _readNonNegativeInt(doc['number_of_pages_median']),
+    );
   }
 
   /// Synchronizes a book and reading progress into the Express + MongoDB
@@ -379,110 +326,134 @@ class BookApiService {
   Book? _parseRemoteBook(Map<String, dynamic> map) {
     if (map['id'] is String && map['author'] is String) {
       try {
-        return Book.fromJson(map);
+        return Book.fromJson(_normalizeRemoteBookMetrics(map));
       } catch (_) {}
     }
     return _parseGutendexBook(map);
   }
 
-  Book? _parseGutendexBook(Map<String, dynamic> map) {
-    try {
-      final int id = map['id'] as int? ?? 0;
-      final String title = map['title'] as String? ?? 'Untitled';
-
-      final List<dynamic> authors = map['authors'] as List<dynamic>? ?? [];
-      String authorName = 'Unknown Author';
-      if (authors.isNotEmpty && authors.first is Map<String, dynamic>) {
-        final rawAuthor = authors.first['name'] as String? ?? 'Unknown Author';
-        final parts = rawAuthor.split(', ');
-        authorName = parts.length > 1 ? '${parts[1]} ${parts[0]}' : rawAuthor;
-      }
-
-      final List<dynamic> subjects = map['subjects'] as List<dynamic>? ?? [];
-      final category = _mapSubjectsToCategory(subjects);
-
-      final Map<String, dynamic> formats =
-          map['formats'] as Map<String, dynamic>? ?? {};
-      final String coverUrl =
-          formats['image/jpeg'] as String? ??
-          'assets/public/books/atomic_habits.png';
-      final audioUrl =
-          formats['audio/mpeg'] as String? ??
-          formats['audio/mp4'] as String? ??
-          formats['audio/ogg'] as String?;
-
-      final int downloadCount = map['download_count'] as int? ?? 120;
-      final double rating = (4.0 + (downloadCount % 10) * 0.1).clamp(4.0, 5.0);
-      final int pages = 180 + (id % 240);
-      final int readTime = (pages * 1.1).toInt();
-
-      final chapters = [
-        BookChapter(
-          id: 'api_${id}_c1',
-          title: 'Part 1: The Beginning',
-          estimatedMinutes: (readTime / 4).round().clamp(5, 30),
-          content:
-              'A remarkable classic work by $authorName exploring the depths of human nature, philosophy, and discovery.\n\n"The foundation of knowledge begins with an open mind and relentless curiosity."\n\nThis volume, titled $title, has reached readers worldwide through open-access digital archives.',
-        ),
-        BookChapter(
-          id: 'api_${id}_c2',
-          title: 'Part 2: Deeper Horizons',
-          estimatedMinutes: (readTime / 4).round().clamp(5, 30),
-          content:
-              'Continuing through the masterwork: $title.\n\nEvery turning page reveals new insights into human character and timeless wisdom carefully preserved for future generations.',
-        ),
-      ];
-
-      return Book(
-        id: 'api_$id',
-        title: title,
-        author: authorName,
-        description:
-            'A renowned digital classic by $authorName. Part of the public literature index with over $downloadCount active global readers.',
-        rating: double.parse(rating.toStringAsFixed(1)),
-        reviewsCount: downloadCount.clamp(12, 4500),
-        category: category,
-        pages: pages,
-        readTimeMinutes: readTime,
-        image: coverUrl,
-        colorHex: 0xFF2C3E50,
-        progress: 0.0,
-        currentPage: 0,
-        currentChapterIndex: 0,
-        isSaved: false,
-        isFavorite: false,
-        audioUrl: audioUrl,
-        hasAudio: audioUrl != null && audioUrl.trim().isNotEmpty,
-        audioDurationMinutes: 0,
-        keyTakeaways: [
-          'Classic wisdom that withstands the test of historical eras.',
-          'Fundamental principles of human perspective and creative imagination.',
-          'Essential reading preserved in the public open archives.',
-        ],
-        tags: [
-          'Classic',
-          category.replaceAll('book.categories.', ''),
-          'OpenAccess',
-        ],
-        reviews: [
-          BookReview(
-            id: 'rev_api_${id}_1',
-            userName: 'Open Reader',
-            rating: 5.0,
-            comment:
-                'An absolute masterpiece! Accessible online through ReadPack.',
-            createdAt: DateTime.now().subtract(const Duration(days: 2)),
-            helpfulCount: 8,
-          ),
-        ],
-        chapters: chapters,
-      );
-    } catch (_) {
-      return null;
-    }
+  Map<String, dynamic> _normalizeRemoteBookMetrics(Map<String, dynamic> map) {
+    return {
+      ...map,
+      'rating': _readRating(map['rating']),
+      'reviewsCount': _readNonNegativeInt(map['reviewsCount']),
+      'pages': _readNonNegativeInt(map['pages']),
+      'readTimeMinutes': _readNonNegativeInt(map['readTimeMinutes']),
+    };
   }
 
-  String _mapSubjectsToCategory(List<dynamic> subjects) {
+  Book? _parseGutendexBook(Map<String, dynamic> map) {
+    final bookId = _readNonNegativeInt(map['id']);
+    final title = _readNonEmptyString(map['title']);
+    if (bookId == 0 || title == null) return null;
+
+    return _buildGutendexBook(map, bookId, title);
+  }
+
+  Book _buildGutendexBook(Map<String, dynamic> map, int bookId, String title) =>
+      Book.fromJson(
+        _gutendexBookFields(map: map, bookId: bookId, title: title),
+      );
+
+  Map<String, dynamic> _gutendexBookFields({
+    required Map<String, dynamic> map,
+    required int bookId,
+    required String title,
+  }) => {
+    'id': 'api_$bookId',
+    'title': title,
+    'author': _readGutendexAuthor(map['authors']),
+    'description': _readDescription(map['description']),
+    'rating': 0,
+    'reviewsCount': 0,
+    'category': _mapSubjectsToCategory(_readSubjects(map['subjects'])),
+    'pages': 0,
+    'readTimeMinutes': 0,
+    'image': _readHttpsUrl(_readFormats(map['formats'])['image/jpeg']),
+    'colorHex': 0xFF2C3E50,
+    'audioUrl': _readGutendexAudioUrl(map['formats']),
+    'tags': _readSubjects(map['subjects']),
+  };
+
+  String? _readGutendexAudioUrl(Object? rawFormats) {
+    final formats = _readFormats(rawFormats);
+    return _readHttpsUrl(formats['audio/mpeg']) ??
+        _readHttpsUrl(formats['audio/mp4']) ??
+        _readHttpsUrl(formats['audio/ogg']);
+  }
+
+  String _readOpenLibraryAuthor(Object? rawAuthors) {
+    if (rawAuthors is! List) return 'Unknown Author';
+    for (final author in rawAuthors) {
+      if (author is String && author.trim().isNotEmpty) return author.trim();
+    }
+    return 'Unknown Author';
+  }
+
+  String _readGutendexAuthor(Object? rawAuthors) {
+    if (rawAuthors is! List) return 'Unknown Author';
+    for (final author in rawAuthors) {
+      if (author is! Map<String, dynamic>) continue;
+      final name = _readNonEmptyString(author['name']);
+      if (name == null) continue;
+      final parts = name.split(', ');
+      return parts.length > 1 ? '${parts[1]} ${parts[0]}' : name;
+    }
+    return 'Unknown Author';
+  }
+
+  String _readDescription(Object? rawDescription) {
+    if (rawDescription is String) return rawDescription.trim();
+    if (rawDescription is Map<String, dynamic>) {
+      return _readNonEmptyString(rawDescription['value']) ?? '';
+    }
+    return '';
+  }
+
+  String? _readNonEmptyString(Object? rawText) {
+    if (rawText is! String || rawText.trim().isEmpty) return null;
+    return rawText.trim();
+  }
+
+  int _readNonNegativeInt(Object? rawNumber) {
+    if (rawNumber is! int || rawNumber < 0) return 0;
+    return rawNumber;
+  }
+
+  double _readRating(Object? rawRating) {
+    if (rawRating is! num) return 0;
+    final rating = rawRating.toDouble();
+    return rating.isFinite && rating >= 0 && rating <= 5 ? rating : 0;
+  }
+
+  List<String> _readSubjects(Object? rawSubjects) {
+    if (rawSubjects is! List) return const [];
+    return rawSubjects
+        .whereType<String>()
+        .map((subject) => subject.trim())
+        .where((subject) => subject.isNotEmpty)
+        .toList();
+  }
+
+  Map<String, dynamic> _readFormats(Object? rawFormats) {
+    if (rawFormats is Map<String, dynamic>) return rawFormats;
+    return const {};
+  }
+
+  String? _readHttpsUrl(Object? rawUrl) {
+    final url = _readNonEmptyString(rawUrl);
+    if (url == null) return null;
+    final uri = Uri.tryParse(url);
+    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) return null;
+    return uri.toString();
+  }
+
+  int _estimateReadingMinutes(int pages) {
+    if (pages == 0) return 0;
+    return (pages * 1.1).round();
+  }
+
+  String _mapSubjectsToCategory(List<String> subjects) {
     final lower = subjects.map((s) => s.toString().toLowerCase()).join(' ');
     if (lower.contains('science') ||
         lower.contains('physics') ||
@@ -531,10 +502,127 @@ class BookApiService {
       if (str != null && str.isNotEmpty) {
         final List<dynamic> list = jsonDecode(str) as List<dynamic>;
         return list
-            .map((item) => Book.fromJson(item as Map<String, dynamic>))
+            .map(
+              (item) => Book.fromJson(
+                _normalizeCachedBook(item as Map<String, dynamic>),
+              ),
+            )
             .toList();
       }
     } catch (_) {}
     return [];
+  }
+
+  Map<String, dynamic> _normalizeCachedBook(Map<String, dynamic> cachedBook) {
+    final normalizedBook = _normalizeRemoteBookMetrics(cachedBook);
+    final bookId = _readNonEmptyString(cachedBook['id']);
+    if (bookId == null || !_isRemoteCatalogBookId(bookId)) {
+      return normalizedBook;
+    }
+    if (cachedBook['image'] == _legacyFallbackCover) {
+      normalizedBook['image'] = null;
+    }
+    if (!_hasLegacyRemoteContent(cachedBook, bookId)) return normalizedBook;
+    return _removeLegacyRemoteContent(normalizedBook, cachedBook, bookId);
+  }
+
+  bool _isRemoteCatalogBookId(String bookId) =>
+      bookId.startsWith('api_') || bookId.startsWith('ol_');
+
+  bool _hasLegacyRemoteContent(Map<String, dynamic> cachedBook, String bookId) {
+    if (!_isRemoteCatalogBookId(bookId)) return false;
+    final author = _readNonEmptyString(cachedBook['author']) ?? '';
+    return _cachedList(
+          cachedBook['chapters'],
+        ).any((chapter) => _isLegacyGeneratedChapter(chapter, bookId)) ||
+        _cachedList(
+          cachedBook['reviews'],
+        ).any((review) => _isLegacyGeneratedReview(review, bookId)) ||
+        _cachedList(cachedBook['keyTakeaways']).any(
+          (takeaway) => _isLegacyGeneratedTakeaway(takeaway, bookId, author),
+        );
+  }
+
+  Map<String, dynamic> _removeLegacyRemoteContent(
+    Map<String, dynamic> normalizedBook,
+    Map<String, dynamic> cachedBook,
+    String bookId,
+  ) {
+    final author = _readNonEmptyString(cachedBook['author']) ?? '';
+    return {
+      ..._legacyRemoteMetadata(normalizedBook),
+      ..._legacyCachedContent(cachedBook, bookId, author),
+    };
+  }
+
+  Map<String, dynamic> _legacyRemoteMetadata(
+    Map<String, dynamic> normalizedBook,
+  ) => {
+    ...normalizedBook,
+    'description': '',
+    'rating': 0,
+    'reviewsCount': 0,
+    'pages': 0,
+    'readTimeMinutes': 0,
+    'tags': const <String>[],
+  };
+
+  Map<String, dynamic> _legacyCachedContent(
+    Map<String, dynamic> cachedBook,
+    String bookId,
+    String author,
+  ) => {
+    'chapters': _cachedList(
+      cachedBook['chapters'],
+    ).where((chapter) => !_isLegacyGeneratedChapter(chapter, bookId)).toList(),
+    'reviews': _cachedList(
+      cachedBook['reviews'],
+    ).where((review) => !_isLegacyGeneratedReview(review, bookId)).toList(),
+    'keyTakeaways': _cachedList(cachedBook['keyTakeaways'])
+        .where(
+          (takeaway) => !_isLegacyGeneratedTakeaway(takeaway, bookId, author),
+        )
+        .toList(),
+  };
+
+  List<dynamic> _cachedList(Object? value) => value is List ? value : const [];
+
+  bool _isLegacyGeneratedChapter(Object? value, String bookId) {
+    if (value is! Map<String, dynamic>) return false;
+    final chapterId = value['id'];
+    final title = value['title'];
+    if (bookId.startsWith('api_')) {
+      return (chapterId == '${bookId}_c1' &&
+              title == 'Part 1: The Beginning') ||
+          (chapterId == '${bookId}_c2' && title == 'Part 2: Deeper Horizons');
+    }
+    return (chapterId == '${bookId}_c1' &&
+            title == '1-р бүлэг: Оршил ба үндсэн санаа') ||
+        (chapterId == '${bookId}_c2' &&
+            title == '2-р бүлэг: Гүнзгийрүүлсэн задлан шинжилгээ') ||
+        (chapterId == '${bookId}_c3' &&
+            title == '3-р бүлэг: Дүгнэлт ба практик хэрэглээ');
+  }
+
+  bool _isLegacyGeneratedReview(Object? value, String bookId) {
+    if (value is! Map<String, dynamic>) return false;
+    final userName = bookId.startsWith('api_')
+        ? 'Open Reader'
+        : 'OpenLibrary Reader';
+    return value['id'] == 'rev_${bookId}_1' && value['userName'] == userName;
+  }
+
+  bool _isLegacyGeneratedTakeaway(Object? value, String bookId, String author) {
+    if (bookId.startsWith('api_')) {
+      return const {
+        'Classic wisdom that withstands the test of historical eras.',
+        'Fundamental principles of human perspective and creative imagination.',
+        'Essential reading preserved in the public open archives.',
+      }.contains(value);
+    }
+    return value ==
+            '$author-ийн дэвшүүлсэн гол философи болон практик зарчмууд.' ||
+        value == 'Системтэй сэтгэлгээ ба тууштай дадлыг хэвшүүлэх арга зам.' ||
+        value == 'OpenLibrary олон улсын номын сангаас баталгаажсан бүтээл.';
   }
 }

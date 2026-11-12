@@ -15,12 +15,16 @@ class ReaderTocSheet {
       builder: (ctx) {
         final colorScheme = Theme.of(ctx).colorScheme;
         final l10n = AppLocalizations.of(ctx);
+        final readableChapters = book.chapters
+            .asMap()
+            .entries
+            .where((entry) => entry.value.content.trim().isNotEmpty)
+            .toList();
         return Container(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -47,32 +51,53 @@ class ReaderTocSheet {
                 ),
               ),
               const SizedBox(height: 16),
-              if (book.chapters.isEmpty)
+              if (readableChapters.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Center(
-                    child: Text(
-                      l10n?.t('reader.no_chapters') ??
-                          'Бүлгийн гарчиг байхгүй байна',
-                      style: TextStyle(
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.menu_book_rounded,
+                        size: 32,
+                        color: colorScheme.onSurfaceVariant,
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      Text(
+                        l10n?.t('reader.no_chapters') ??
+                            'Унших бүлэг алга байна',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n?.t('reader.no_chapters_desc') ??
+                            'Энэ номын бүрэн текст уншигчид байхгүй байна.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
                   ),
                 )
               else
                 Flexible(
                   child: ListView.separated(
                     shrinkWrap: true,
-                    itemCount: book.chapters.length,
+                    itemCount: readableChapters.length,
                     separatorBuilder: (_, __) => const Divider(height: 1),
                     itemBuilder: (context, index) {
-                      final chapter = book.chapters[index];
-                      final isCurrent = index == currentChapterIndex;
+                      final chapterEntry = readableChapters[index];
+                      final chapter = chapterEntry.value;
+                      final isCurrent = chapterEntry.key == currentChapterIndex;
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
                         onTap: () {
-                          onSelectChapter(index);
+                          onSelectChapter(chapterEntry.key);
                           Navigator.pop(ctx);
                         },
                         leading: Container(
@@ -82,7 +107,7 @@ class ReaderTocSheet {
                             color: isCurrent
                                 ? colorScheme.primary
                                 : colorScheme.surfaceContainerHighest
-                                    .withValues(alpha: 0.4),
+                                      .withValues(alpha: 0.4),
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -102,8 +127,9 @@ class ReaderTocSheet {
                           chapter.title,
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight:
-                                isCurrent ? FontWeight.bold : FontWeight.w500,
+                            fontWeight: isCurrent
+                                ? FontWeight.bold
+                                : FontWeight.w500,
                             color: isCurrent
                                 ? colorScheme.primary
                                 : colorScheme.onSurface,

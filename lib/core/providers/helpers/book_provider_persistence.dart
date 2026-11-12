@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:readpack/data/book_repository.dart';
 import 'package:readpack/data/services/book_api_service.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/models/bookmark.dart';
@@ -17,6 +19,8 @@ class BookProviderPersistence {
   static const String keyNotifications = 'readpack_notifications';
   static const String keyCollections = 'readpack_book_collections';
   static const String keyDownloadedBooks = 'readpack_downloaded_books';
+  static const String keyRemoteUserBooks = 'readpack_remote_user_books';
+  static Future<void>? _remoteUserBooksWrite;
 
   static Future<void> persistNotifications(
     List<NotificationItem> notifications,
@@ -62,6 +66,37 @@ class BookProviderPersistence {
       }
     }
     await prefs.setString(keyReadingProgress, jsonEncode(map));
+  }
+
+  static Future<void> persistRemoteUserBooks(List<Book> books) {
+    final curatedBookIds = BookRepository.getInitialBooks()
+        .map((book) => book.id)
+        .toSet();
+    final remoteUserBooks = books
+        .where(
+          (book) =>
+              !curatedBookIds.contains(book.id) && _hasPersonalBookState(book),
+        )
+        .map((book) => jsonEncode(book.toJson()))
+        .toList();
+    final previousWrite = _remoteUserBooksWrite;
+    final currentWrite = Completer<void>();
+    _remoteUserBooksWrite = currentWrite.future;
+    return _writeRemoteUserBooks(remoteUserBooks, previousWrite, currentWrite);
+  }
+
+  static Future<void> _writeRemoteUserBooks(
+    List<String> remoteUserBooks,
+    Future<void>? previousWrite,
+    Completer<void> currentWrite,
+  ) async {
+    try {
+      if (previousWrite != null) await previousWrite;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(keyRemoteUserBooks, remoteUserBooks);
+    } finally {
+      currentWrite.complete();
+    }
   }
 
   static Future<void> persistCollections(
@@ -123,6 +158,9 @@ class BookProviderPersistence {
       },
     );
   }
+
+  static bool _hasPersonalBookState(Book book) =>
+      book.isSaved || book.isFavorite || book.progress > 0;
 
   static List<Book> rehydrateBooks({
     required List<Book> initialBooks,

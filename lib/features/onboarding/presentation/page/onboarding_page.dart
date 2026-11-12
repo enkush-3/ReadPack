@@ -8,6 +8,9 @@ import 'package:readpack/features/onboarding/presentation/widgets/onboarding_gen
 import 'package:readpack/features/onboarding/presentation/widgets/onboarding_goal_step.dart';
 import 'package:readpack/features/onboarding/presentation/widgets/onboarding_pace_step.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/page_loading_skeleton.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -54,8 +57,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final bookProvider = context.read<BookProvider>();
     final currentGenres = OnboardingConstants.genres(isEn);
     bookProvider.completeOnboarding(
-      favoriteGenres:
-          _selectedGenreIndices.map((i) => currentGenres[i]).toList(),
+      favoriteGenres: _selectedGenreIndices
+          .where((index) => index >= 0 && index < currentGenres.length)
+          .map((index) => currentGenres[index])
+          .toList(),
       dailyGoalMinutes: _selectedDailyMinutes,
       yearlyGoalBooks: _selectedYearlyBooks,
     );
@@ -77,13 +82,22 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bookProvider = context.watch<BookProvider>();
     final l10n = AppLocalizations.of(context);
     final isEn = l10n?.locale.languageCode == 'en';
+    final genres = OnboardingConstants.genres(isEn);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
-        child: Column(
+        child: bookProvider.isLoading
+            ? const PageLoadingSkeleton()
+            : bookProvider.errorMessage != null
+                ? ErrorStateView(
+                    errorMessage: bookProvider.errorMessage!,
+                    onRetry: bookProvider.retryInitialization,
+                  )
+                : Column(
           children: [
             // Top Bar
             Padding(
@@ -154,21 +168,33 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         setState(() => _selectedGoalIndex = index),
                     isEn: isEn,
                   ),
-                  OnboardingGenreStep(
-                    selectedIndices: _selectedGenreIndices,
-                    onToggle: (index) {
-                      setState(() {
-                        if (_selectedGenreIndices.contains(index)) {
-                          if (_selectedGenreIndices.length > 1) {
-                            _selectedGenreIndices.remove(index);
-                          }
-                        } else {
-                          _selectedGenreIndices.add(index);
-                        }
-                      });
-                    },
-                    isEn: isEn,
-                  ),
+                  genres.isEmpty
+                      ? EmptyStateView(
+                          icon: Icons.category_outlined,
+                          title: l10n?.t('onboarding.no_genres_title') ??
+                              (isEn
+                                  ? 'No genres available'
+                                  : 'Төрлийн сонголт алга байна'),
+                          message: l10n?.t('onboarding.no_genres_desc') ??
+                              (isEn
+                                  ? 'You can continue without choosing genres.'
+                                  : 'Та төрөл сонголгүй үргэлжлүүлж болно.'),
+                        )
+                      : OnboardingGenreStep(
+                          selectedIndices: _selectedGenreIndices,
+                          onToggle: (index) {
+                            setState(() {
+                              if (_selectedGenreIndices.contains(index)) {
+                                if (_selectedGenreIndices.length > 1) {
+                                  _selectedGenreIndices.remove(index);
+                                }
+                              } else {
+                                _selectedGenreIndices.add(index);
+                              }
+                            });
+                          },
+                          isEn: isEn,
+                        ),
                   OnboardingPaceStep(
                     selectedDailyMinutes: _selectedDailyMinutes,
                     selectedYearlyBooks: _selectedYearlyBooks,

@@ -4,7 +4,18 @@ const {
   normalizeKey,
   cleanExternalBook,
   deduplicateBooks,
+  readAudioUrl,
+  upgradeCoverUrl,
 } = require('./dataAutoCleaner');
+
+const PRIVATE_BOOK_FIELDS = [
+  'progress',
+  'currentPage',
+  'currentChapterIndex',
+  'isSaved',
+  'isFavorite',
+];
+const LEGACY_FALLBACK_COVER = 'assets/public/books/atomic_habits.png';
 
 /**
  * Central Books Catalog & Smart Read-Through Caching Service.
@@ -27,7 +38,8 @@ class BookCatalogService {
 
   async searchBooks(rawQuery = '') {
     const query = String(rawQuery || '').trim();
-    const allCentralBooks = await this.store.getAllBooks();
+    const storedBooks = await this.store.getAllBooks();
+    const allCentralBooks = storedBooks.map(normalizeCatalogResponseBook);
 
     if (!query) {
       return {
@@ -76,11 +88,13 @@ class BookCatalogService {
   }
 
   async syncBookToCentralCatalog(rawBook) {
-    const cleaned = cleanExternalBook(rawBook, rawBook?.externalSource || 'user_sync');
+    const syncPayload = withUserSyncSource(rawBook);
+    const cleaned = cleanExternalBook(syncPayload, 'user_sync');
     if (!cleaned) {
       throw new Error('Invalid book payload for central catalog sync');
     }
-    const saved = await this.store.upsertBook(cleaned);
+    const normalized = normalizeCatalogResponseBook(cleaned);
+    const saved = await this.store.upsertBook(normalized);
     return saved;
   }
 
@@ -107,11 +121,11 @@ class BookCatalogService {
               externalSource: 'google_books',
               isbn13: isbn13Obj?.identifier,
               title: info.title,
-              authors: info.authors || ['Unknown Author'],
+              authors: info.authors || [],
               description: info.description,
               pages: info.pageCount,
-              rating: info.averageRating || 4.6,
-              reviewsCount: info.ratingsCount || 85,
+              rating: info.averageRating,
+              reviewsCount: info.ratingsCount,
               categories: info.categories || [],
               imageLinks: info.imageLinks || {},
             };
@@ -142,6 +156,139 @@ class BookCatalogService {
 
     return [];
   }
+}
+
+function withUserSyncSource(rawBook) {
+  if (!rawBook || typeof rawBook !== 'object' || Array.isArray(rawBook)) {
+    return rawBook;
+  }
+  return { ...rawBook, externalSource: 'user_sync' };
+}
+
+function normalizeCatalogResponseBook(book) {
+  if (!book || typeof book !== 'object' || Array.isArray(book)) return book;
+  const catalogBook = withoutPrivateBookState(book);
+  if (book.externalSource === 'central_seed') return catalogBook;
+
+  const audioUrl = readAudioUrl(book);
+  const normalizedBook = {
+    ...catalogBook,
+    image:
+      book.image === LEGACY_FALLBACK_COVER ? null : upgradeCoverUrl(book.image),
+    audioUrl,
+    hasAudio: audioUrl !== null,
+    audioDurationMinutes: audioUrl
+      ? readPositiveInteger(book.audioDurationMinutes)
+      : 0,
+  };
+  if (!hasLegacyGeneratedContent(book)) return normalizedBook;
+  return removeLegacyGeneratedContent(normalizedBook, book);
+}
+
+function withoutPrivateBookState(book) {
+  const catalogBook = { ...book };
+  for (const field of PRIVATE_BOOK_FIELDS) delete catalogBook[field];
+  return catalogBook;
+}
+
+function readPositiveInteger(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? Math.floor(number) : 0;
+}
+
+function hasLegacyGeneratedContent(book) {
+  return (
+    hasLegacyGeneratedChapter(book) ||
+    hasLegacyGeneratedTakeaway(book) ||
+    isLegacyGeneratedDescription(book) ||
+    isLegacyGeneratedTags(book)
+  );
+}
+
+function hasLegacyGeneratedChapter(book) {
+  const bookId = String(book.id ?? '');
+  return Array.isArray(book.chapters) &&
+      book.chapters.some((chapter) => isLegacyGeneratedChapter(chapter, bookId));
+}
+
+function hasLegacyGeneratedTakeaway(book) {
+  if (!Array.isArray(book.keyTakeaways)) return false;
+  const generatedTakeaways = legacyGeneratedTakeaways(book);
+  return book.keyTakeaways.some((takeaway) => generatedTakeaways.has(takeaway));
+}
+
+function legacyGeneratedTakeaways(book) {
+  return new Set([
+    `${book.title} номын гол үзэл санаа ба практик хэрэглээ.`,
+    `${book.author}-ийн дэвшүүлсэн суурь зарчмууд.`,
+  ]);
+}
+
+function isLegacyGeneratedDescription(book) {
+  const description = `${book.author}-ийн "${book.title}" бүтээл. ReadPack төвлөрсөн номын санд автоматаар цэвэрлэгдэж бүртгэгдсэн дижитал хувилбар.`;
+  return book.description === description;
+}
+
+function isLegacyGeneratedTags(book) {
+  const tags = book.tags;
+  return (
+    Array.isArray(tags) &&
+    tags.length === 2 &&
+    tags[0] === 'Curated' &&
+    tags[1] === String(book.category || 'book.categories.all').replace(
+      'book.categories.',
+      ''
+    )
+  );
+}
+
+function removeLegacyGeneratedContent(normalizedBook, originalBook) {
+  return {
+    ...normalizedBook,
+    ...unknownLegacyMetrics(),
+    ...withoutLegacyGeneratedFields(normalizedBook, originalBook),
+  };
+}
+
+function unknownLegacyMetrics() {
+  return {
+    rating: 0,
+    reviewsCount: 0,
+    pages: 0,
+    readTimeMinutes: 0,
+    audioDurationMinutes: 0,
+  };
+}
+
+function withoutLegacyGeneratedFields(normalizedBook, originalBook) {
+  return {
+    description: isLegacyGeneratedDescription(originalBook)
+      ? ''
+      : normalizedBook.description,
+    tags: isLegacyGeneratedTags(originalBook) ? [] : normalizedBook.tags,
+    chapters: sourceChapters(originalBook),
+    keyTakeaways: sourceTakeaways(originalBook),
+  };
+}
+
+function sourceChapters(book) {
+  const chapters = Array.isArray(book.chapters) ? book.chapters : [];
+  const bookId = String(book.id ?? '');
+  return chapters.filter((chapter) => !isLegacyGeneratedChapter(chapter, bookId));
+}
+
+function sourceTakeaways(book) {
+  const takeaways = Array.isArray(book.keyTakeaways) ? book.keyTakeaways : [];
+  const generatedTakeaways = legacyGeneratedTakeaways(book);
+  return takeaways.filter((takeaway) => !generatedTakeaways.has(takeaway));
+}
+
+function isLegacyGeneratedChapter(chapter, bookId) {
+  if (!chapter || typeof chapter !== 'object') return false;
+  return (
+    (chapter.id === `${bookId}_c1` && chapter.title === 'Part 1: The Beginning') ||
+    (chapter.id === `${bookId}_c2` && chapter.title === 'Part 2: Deeper Horizons')
+  );
 }
 
 module.exports = { BookCatalogService };

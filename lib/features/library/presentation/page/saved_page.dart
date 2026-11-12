@@ -164,12 +164,12 @@ class _SavedPageState extends State<SavedPage> {
     }
 
     // 2. Error State
-    if (provider.errorMessage != null) {
+    if (provider.errorMessage != null && provider.books.isEmpty) {
       return SliverFillRemaining(
         hasScrollBody: false,
         child: ErrorStateView(
           errorMessage: provider.errorMessage!,
-          onRetry: () => provider.refresh(),
+          onRetry: provider.retryInitialization,
         ),
       );
     }

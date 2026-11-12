@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/skeleton_loader.dart';
 
 class BookDetailChaptersTab extends StatelessWidget {
   final Book currentBook;
@@ -17,7 +21,13 @@ class BookDetailChaptersTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bookProvider = context.watch<BookProvider>();
     final chaptersText = l10n?.t('book.chapters') ?? 'Бүлгүүд';
+    final readableChapters = currentBook.chapters
+        .asMap()
+        .entries
+        .where((entry) => entry.value.content.trim().isNotEmpty)
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -33,22 +43,31 @@ class BookDetailChaptersTab extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        if (currentBook.chapters.isEmpty)
+        if (readableChapters.isEmpty && bookProvider.isLoading)
+          _buildLoadingState()
+        else if (readableChapters.isEmpty && bookProvider.errorMessage != null)
+          ErrorStateView(
+            errorMessage: bookProvider.errorMessage!,
+            onRetry: bookProvider.retryInitialization,
+          )
+        else if (readableChapters.isEmpty)
           EmptyStateView(
             icon: Icons.menu_book_rounded,
-            title: l10n?.t('reader.no_chapters') ??
-                'Бүлэг хараахан ороогүй байна',
-            message: l10n?.t('reader.no_chapters_desc') ??
-                'Номын бүлгүүд удахгүй шинэчлэгдэнэ.',
+            title: l10n?.t('reader.no_chapters') ?? 'Унших бүлэг алга байна',
+            message:
+                l10n?.t('reader.no_chapters_desc') ??
+                'Энэ номын бүрэн текст уншигчид байхгүй байна.',
           )
         else
-          ...List.generate(currentBook.chapters.length, (index) {
-            final chapter = currentBook.chapters[index];
+          ...List.generate(readableChapters.length, (index) {
+            final chapterEntry = readableChapters[index];
+            final chapter = chapterEntry.value;
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color:
-                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
+                color: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.25,
+                ),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: 0.3),
@@ -62,7 +81,7 @@ class BookDetailChaptersTab extends StatelessWidget {
                       Routes.reader,
                       arguments: {
                         'book': currentBook,
-                        'initialChapterIndex': index,
+                        'initialChapterIndex': chapterEntry.key,
                       },
                     );
                   },
@@ -107,6 +126,18 @@ class BookDetailChaptersTab extends StatelessWidget {
               ),
             );
           }),
+      ],
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Column(
+      children: [
+        SkeletonLoader(width: double.infinity, height: 64, borderRadius: 14),
+        SizedBox(height: 12),
+        SkeletonLoader(width: double.infinity, height: 64, borderRadius: 14),
+        SizedBox(height: 12),
+        SkeletonLoader(width: double.infinity, height: 64, borderRadius: 14),
       ],
     );
   }

@@ -17,7 +17,7 @@ void main() {
 
     setUp(() async {
       provider = BookProvider();
-      await Future.delayed(const Duration(milliseconds: 50));
+      await provider.initialized;
     });
 
     test('does not invent weekly reading minutes for an empty history', () {
@@ -31,8 +31,8 @@ void main() {
       expect(updated.weeklyMinutes.reduce((a, b) => a + b), 1);
     });
 
-    test('Initializes with default collections and grants XP on creation', () {
-      expect(provider.collections.isNotEmpty, isTrue);
+    test('starts with no collections and grants XP on creation', () {
+      expect(provider.collections, isEmpty);
       final initialCount = provider.collections.length;
       final initialXp = provider.userProfile.xp;
 
@@ -47,6 +47,7 @@ void main() {
     });
 
     test('Adding and removing books from collection updates book list', () {
+      provider.createCollection('Reading list', 'Books to read next');
       final initialCollection = provider.collections.first;
       final book = provider.books.first;
 
@@ -63,7 +64,7 @@ void main() {
       expect(removedColl.bookIds.contains(book.id), isFalse);
     });
 
-    test('Deleting custom collection removes it successfully', () {
+    test('deleting the last collection stays deleted after restart', () async {
       provider.createCollection(
         'Түр зуурын цуглуулга',
         'Удахгүй устгана',
@@ -73,8 +74,13 @@ void main() {
         (c) => c.name == 'Түр зуурын цуглуулга',
       );
       provider.deleteCollection(created.id);
+      await Future<void>.delayed(Duration.zero);
 
-      expect(provider.collections.any((c) => c.id == created.id), isFalse);
+      final restartedProvider = BookProvider();
+      await restartedProvider.initialized;
+
+      expect(provider.collections, isEmpty);
+      expect(restartedProvider.collections, isEmpty);
     });
 
     test('Offline download toggle updates downloadedBookIds and awards XP', () {

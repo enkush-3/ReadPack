@@ -7,6 +7,9 @@ import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/features/auth/auth_error_message.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/skeleton_loader.dart';
 import 'package:readpack/shared/widgets/submitbutton.dart';
 
 class VerificationPage extends StatefulWidget {
@@ -28,6 +31,8 @@ class _VerificationPageState extends State<VerificationPage> {
   Timer? _timer;
   int _secondsRemaining = 60;
   bool _isLoading = false;
+  bool _isServiceError = false;
+  bool _retryResend = false;
   String? _errorMessage;
   bool _showNewPasswordFields = false;
   String? _challengeId;
@@ -74,6 +79,8 @@ class _VerificationPageState extends State<VerificationPage> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
+      _isServiceError = false;
+      _retryResend = false;
     });
     try {
       if (_resolvedChallengeId.isEmpty) {
@@ -96,12 +103,11 @@ class _VerificationPageState extends State<VerificationPage> {
       );
     } catch (error) {
       if (mounted) {
-        setState(
-          () => _errorMessage = authErrorMessage(
-            error,
-            AppLocalizations.of(context),
-          ),
-        );
+        setState(() {
+          _errorMessage = authErrorMessage(error, AppLocalizations.of(context));
+          _isServiceError = true;
+          _retryResend = true;
+        });
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -123,6 +129,8 @@ class _VerificationPageState extends State<VerificationPage> {
     setState(() {
       _errorMessage = null;
       _isLoading = true;
+      _isServiceError = false;
+      _retryResend = false;
     });
     if (_purpose == 'signup') {
       if (_resolvedChallengeId.isEmpty) {
@@ -152,6 +160,7 @@ class _VerificationPageState extends State<VerificationPage> {
               error,
               AppLocalizations.of(context),
             );
+            _isServiceError = true;
           });
         }
       }
@@ -189,6 +198,8 @@ class _VerificationPageState extends State<VerificationPage> {
     setState(() {
       _errorMessage = null;
       _isLoading = true;
+      _isServiceError = false;
+      _retryResend = false;
     });
 
     if (_resolvedChallengeId.isEmpty ||
@@ -218,15 +229,23 @@ class _VerificationPageState extends State<VerificationPage> {
       Navigator.of(context).pushReplacementNamed(Routes.auth);
     } catch (error) {
       if (mounted) {
-        setState(
-          () => _errorMessage = authErrorMessage(
-            error,
-            AppLocalizations.of(context),
-          ),
-        );
+        setState(() {
+          _errorMessage = authErrorMessage(error, AppLocalizations.of(context));
+          _isServiceError = true;
+        });
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _retryLastAction() {
+    if (_retryResend) {
+      _resendCode();
+    } else if (_showNewPasswordFields) {
+      _resetPassword();
+    } else {
+      _verifyOtp();
     }
   }
 
@@ -247,7 +266,41 @@ class _VerificationPageState extends State<VerificationPage> {
         ),
       ),
       body: SafeArea(
-        child: Center(
+        child: _resolvedChallengeId.isEmpty
+            ? EmptyStateView(
+                icon: Icons.mark_email_unread_outlined,
+                title: l10n?.t('auth.challenge_missing_title') ??
+                    'Баталгаажуулах хүсэлт олдсонгүй',
+                message: l10n?.t('auth.challenge_missing_desc') ??
+                    'Бүртгэл эсвэл нууц үг сэргээх үйлдлээ дахин эхлүүлнэ үү.',
+                actionLabel: l10n?.t('common.back') ?? 'Буцах',
+                onAction: () {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else {
+                    Navigator.of(context).pushReplacementNamed(Routes.auth);
+                  }
+                },
+              )
+            : _isServiceError && _errorMessage != null
+                ? ErrorStateView(
+                    errorMessage: _errorMessage!,
+                    onRetry: _retryLastAction,
+                  )
+                : _isLoading
+                    ? const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SkeletonLoader(width: 180, height: 24),
+                            SizedBox(height: 20),
+                            SkeletonLoader(width: 280, height: 52),
+                            SizedBox(height: 20),
+                            SkeletonLoader(width: 200, height: 48),
+                          ],
+                        ),
+                      )
+                    : Center(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),

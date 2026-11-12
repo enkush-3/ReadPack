@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:readpack/core/providers/helpers/book_provider_persistence.dart';
-import 'package:readpack/core/providers/helpers/default_provider_data.dart';
 import 'package:readpack/data/book_repository.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/models/bookmark.dart';
@@ -32,9 +31,9 @@ class BookProviderInitialState {
 class BookDataLoader {
   static Future<BookProviderInitialState> loadInitialState() async {
     var books = BookRepository.getInitialBooks();
-    var bookmarks = DefaultProviderData.defaultBookmarks();
-    var notifications = DefaultProviderData.defaultNotifications();
-    var recentSearches = ['Atomic Habits', '1984', 'Clear Thinking', 'Sapiens'];
+    var bookmarks = <Bookmark>[];
+    var notifications = <NotificationItem>[];
+    var recentSearches = <String>[];
     var userProfile = UserProfile.freshUser(
       name: 'Зочин',
       email: '',
@@ -51,8 +50,20 @@ class BookDataLoader {
     final searches = prefs.getStringList(
       BookProviderPersistence.keyRecentSearches,
     );
-    if (searches != null && searches.isNotEmpty) {
+    if (searches != null) {
       recentSearches = searches;
+    }
+
+    final remoteBooksJson = prefs.getStringList(
+      BookProviderPersistence.keyRemoteUserBooks,
+    );
+    if (remoteBooksJson != null) {
+      books.addAll(
+        remoteBooksJson.map(
+          (serializedBook) =>
+              Book.fromJson(jsonDecode(serializedBook) as Map<String, dynamic>),
+        ),
+      );
     }
 
     final progressJson = prefs.getString(
@@ -73,7 +84,7 @@ class BookDataLoader {
     final bookmarksJson = prefs.getStringList(
       BookProviderPersistence.keyBookmarks,
     );
-    if (bookmarksJson != null && bookmarksJson.isNotEmpty) {
+    if (bookmarksJson != null) {
       bookmarks = bookmarksJson
           .map((b) => Bookmark.fromJson(jsonDecode(b) as Map<String, dynamic>))
           .toList();
@@ -89,7 +100,7 @@ class BookDataLoader {
     final notifsJson = prefs.getStringList(
       BookProviderPersistence.keyNotifications,
     );
-    if (notifsJson != null && notifsJson.isNotEmpty) {
+    if (notifsJson != null) {
       notifications = notifsJson
           .map(
             (n) => NotificationItem.fromJson(
@@ -102,15 +113,13 @@ class BookDataLoader {
     final collectionsJson = prefs.getStringList(
       BookProviderPersistence.keyCollections,
     );
-    if (collectionsJson != null && collectionsJson.isNotEmpty) {
+    if (collectionsJson != null) {
       collections = collectionsJson
           .map(
             (c) =>
                 BookCollection.fromJson(jsonDecode(c) as Map<String, dynamic>),
           )
           .toList();
-    } else {
-      collections = DefaultProviderData.defaultCollections();
     }
 
     final downloadedList = prefs.getStringList(

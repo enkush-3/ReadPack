@@ -7,6 +7,7 @@ import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
 import 'package:readpack/shared/widgets/backbutton.dart';
 import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
 import 'package:readpack/shared/widgets/skeleton_loader.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -29,7 +30,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final titleText = l10n?.t('notifications.title') ?? 'Мэдэгдэл';
     final markAllText =
         l10n?.t('notifications.mark_all_read') ?? 'Бүгдийг унших';
-    final allMarkedText = l10n?.t('notifications.all_marked_read') ??
+    final allMarkedText =
+        l10n?.t('notifications.all_marked_read') ??
         'Бүх мэдэгдлийг уншсанаар тэмдэглэлээ.';
     final tabAllText =
         '${l10n?.t('notifications.all') ?? 'Бүгд'} (${allNotifs.length})';
@@ -79,7 +81,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
@@ -87,8 +91,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.done_all_rounded,
-                                size: 16, color: colorScheme.primary),
+                            Icon(
+                              Icons.done_all_rounded,
+                              size: 16,
+                              color: colorScheme.primary,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               markAllText,
@@ -110,8 +117,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.35),
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.35,
+                  ),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -125,24 +133,30 @@ class _NotificationsPageState extends State<NotificationsPage> {
             ),
             Expanded(
               child: RefreshWrapper(
-                onRefresh: () => bookProvider.refresh(),
+                onRefresh: bookProvider.retryInitialization,
                 child: bookProvider.isLoading
                     ? _buildLoadingSkeleton()
+                    : filtered.isEmpty &&
+                          bookProvider.notifications.isEmpty &&
+                          bookProvider.errorMessage != null
+                    ? ErrorStateView(
+                        errorMessage: bookProvider.errorMessage!,
+                        onRetry: bookProvider.retryInitialization,
+                      )
                     : filtered.isEmpty
-                        ? _buildEmptyState(bookProvider)
-                        : ListView.separated(
-                            physics: const BouncingScrollPhysics(
-                              parent: AlwaysScrollableScrollPhysics(),
-                            ),
-                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (context, index) => NotificationCard(
-                              notif: filtered[index],
-                              provider: bookProvider,
-                            ),
-                          ),
+                    ? _buildEmptyState(bookProvider)
+                    : ListView.separated(
+                        physics: const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics(),
+                        ),
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) => NotificationCard(
+                          notif: filtered[index],
+                          provider: bookProvider,
+                        ),
+                      ),
               ),
             ),
           ],
@@ -197,8 +211,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
         l10n?.t('notifications.empty_unread_title') ?? 'Уншаагүй мэдэгдэл алга';
     final emptyTitle =
         l10n?.t('notifications.empty_title') ?? 'Мэдэгдэл байхгүй байна';
-    final emptyDesc = l10n?.t('notifications.empty_desc') ??
+    final emptyDesc =
+        l10n?.t('notifications.empty_desc') ??
         'Таны бүх мэдэгдлүүд уншигдсан байна.';
+    final isEn = l10n?.locale.languageCode == 'en';
+    final archivedTitle =
+        l10n?.t('notifications.empty_archived_title') ??
+        (isEn ? 'No read notifications' : 'Уншсан мэдэгдэл алга');
+    final archivedDesc =
+        l10n?.t('notifications.empty_archived_desc') ??
+        (isEn
+            ? 'Read notifications will appear here.'
+            : 'Уншсан мэдэгдэл энд харагдана.');
     final viewAllText =
         l10n?.t('notifications.view_all') ?? 'Бүх мэдэгдлийг харах';
     final hasAnyNotifications = bookProvider.notifications.isNotEmpty;
@@ -206,9 +230,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Center(
       child: EmptyStateView(
         icon: Icons.notifications_off_rounded,
-        title: _activeTab == 'unread' ? emptyUnreadTitle : emptyTitle,
-        message: emptyDesc,
-        actionLabel: (_activeTab != 'all' && hasAnyNotifications) ? viewAllText : null,
+        title: _activeTab == 'unread'
+            ? emptyUnreadTitle
+            : _activeTab == 'archived'
+            ? archivedTitle
+            : emptyTitle,
+        message: _activeTab == 'archived' ? archivedDesc : emptyDesc,
+        actionLabel: (_activeTab != 'all' && hasAnyNotifications)
+            ? viewAllText
+            : null,
         onAction: (_activeTab != 'all' && hasAnyNotifications)
             ? () => setState(() => _activeTab = 'all')
             : null,

@@ -51,27 +51,21 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Empty Chapters Book'), findsOneWidget);
-        expect(find.text('Unknown Author'), findsOneWidget);
-        expect(find.text('Агуулга'), findsOneWidget);
+        expect(find.text('Унших бүлэг алга байна'), findsOneWidget);
+        expect(find.text('Номын агуулга ачаалагдаж байна...'), findsNothing);
       },
     );
 
     testWidgets(
-      'Tapping bookmark icon on empty chapters book does not throw RangeError',
+      'Hides quote bookmark action when the book has no readable chapters',
       (tester) async {
         await tester.pumpWidget(createTestReader(emptyBook));
         addTearDown(_provider.dispose);
         await tester.runAsync(() => _provider.initialized);
         await tester.pumpAndSettle();
 
-        final bookmarkBtn = find.byIcon(Icons.bookmark_add_rounded);
-        expect(bookmarkBtn, findsOneWidget);
-
-        await tester.tap(bookmarkBtn);
-        await tester.pumpAndSettle();
-
-        // Bookmark sheet opens safely
-        expect(find.text('Ишлэл & Тэмдэглэл хадгалах'), findsOneWidget);
+        expect(find.byIcon(Icons.bookmark_add_rounded), findsNothing);
+        expect(find.byIcon(Icons.format_list_bulleted_rounded), findsOneWidget);
       },
     );
 
@@ -90,7 +84,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Гарчиг'), findsOneWidget);
-      expect(find.text('Бүлгийн гарчиг байхгүй байна'), findsOneWidget);
+      expect(find.text('Унших бүлэг алга байна'), findsNWidgets(2));
     });
   });
 }

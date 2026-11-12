@@ -6,7 +6,6 @@ import 'package:readpack/core/providers/helpers/book_filter_helper.dart';
 import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
 import 'package:readpack/core/providers/helpers/book_provider_persistence.dart';
 import 'package:readpack/core/providers/helpers/book_state_mutator.dart';
-import 'package:readpack/core/providers/helpers/default_provider_data.dart';
 import 'package:readpack/core/providers/helpers/search_matching_engine.dart';
 import 'package:readpack/core/providers/mixins/book_collection_mixin.dart';
 import 'package:readpack/data/book_repository.dart';
@@ -24,15 +23,9 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   late final AuthApiService _authApi;
 
   List<Book> _books = BookRepository.getInitialBooks();
-  List<String> _recentSearches = [
-    'Atomic Habits',
-    '1984',
-    'Clear Thinking',
-    'Sapiens',
-  ];
-  List<Bookmark> _bookmarks = DefaultProviderData.defaultBookmarks();
-  List<NotificationItem> _notifications =
-      DefaultProviderData.defaultNotifications();
+  List<String> _recentSearches = [];
+  List<Bookmark> _bookmarks = [];
+  List<NotificationItem> _notifications = [];
   List<LeaderboardCompetitor> _leaderboardEntries = const [];
   UserProfile _userProfile = const UserProfile();
 
@@ -40,6 +33,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   bool _isFetchingRemote = false;
   bool _isLeaderboardLoading = false;
   String? _errorMessage;
+  String? _remoteBooksErrorMessage;
   String? _leaderboardError;
 
   String _searchQuery = '';
@@ -50,7 +44,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   String _librarySortBy = 'recent';
   String _selectedMood = 'all';
   bool _isDisposed = false;
-  late final Future<void> _initialization;
+  late Future<void> _initialization;
 
   @override
   List<Book> get books => _books;
@@ -63,6 +57,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
   UserProfile get userProfile => _userProfile;
   bool get isLoading => _isLoading;
   Future<void> get initialized => _initialization;
+  String? get remoteBooksErrorMessage => _remoteBooksErrorMessage;
   bool get isFetchingRemote => _isFetchingRemote;
   String? get errorMessage => _errorMessage;
   String get searchQuery => _searchQuery;
@@ -80,6 +75,37 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
     : _apiService = apiService ?? BookApiService() {
     _authApi = _apiService.authService;
     _initialization = _initData();
+  }
+
+  Book? _bookById(String bookId) {
+    for (final book in _books) {
+      if (book.id == bookId) return book;
+    }
+    return null;
+  }
+
+  bool _crossesReadingBoundary(double previousProgress, double progress) =>
+      (previousProgress <= 0 && progress > 0) ||
+      (previousProgress > 0 && progress <= 0);
+
+  Future<void> _persistRemoteBooksIfReadingStateChanged(
+    double? previousProgress,
+    double progress,
+  ) {
+    if (previousProgress != null &&
+        _crossesReadingBoundary(previousProgress, progress)) {
+      return _persistRemoteUserBooks();
+    }
+    return Future<void>.value();
+  }
+
+  Future<void> _persistRemoteUserBooks() =>
+      BookProviderPersistence.persistRemoteUserBooks(_books);
+
+  Future<void> retryInitialization() {
+    if (_isLoading) return _initialization;
+    _initialization = _initData();
+    return _initialization;
   }
 
   @override
@@ -118,6 +144,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   Future<void> _initData() async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     try {
       final state = await BookDataLoader.loadInitialState();
@@ -190,6 +217,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
 
   Future<void> fetchRemoteBooks({String? query}) async {
     _isFetchingRemote = true;
+    _remoteBooksErrorMessage = null;
     notifyListeners();
     try {
       final remoteBooks = await _apiService.fetchBooks(
@@ -215,14 +243,15 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
         }
         _books = bookMap.values.toList();
       }
-    } catch (_) {
+    } catch (error) {
+      _remoteBooksErrorMessage = error.toString();
     } finally {
       _isFetchingRemote = false;
       notifyListeners();
     }
   }
 
-  void toggleSaveBook(String bookId) {
+  Future<void> toggleSaveBook(String bookId) {
     if (BookStateMutator.toggleSave(_books, bookId)) {
       notifyListeners();
       BookProviderPersistence.persistSavedBooks(_books);
@@ -234,22 +263,27 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
         shelfId: 'saved',
         status: 'saved',
       );
+      return _persistRemoteUserBooks();
     }
+    return Future<void>.value();
   }
 
-  void toggleFavoriteBook(String bookId) {
+  Future<void> toggleFavoriteBook(String bookId) {
     if (BookStateMutator.toggleFavorite(_books, bookId)) {
       notifyListeners();
       BookProviderPersistence.persistFavorites(_books);
+      return _persistRemoteUserBooks();
     }
+    return Future<void>.value();
   }
 
-  void updateReadingPosition(
+  Future<void> updateReadingPosition(
     String bookId, {
     required int currentPage,
     required double progress,
     int? currentChapterIndex,
-  }) {
+  }) async {
+    final previousProgress = _bookById(bookId)?.progress;
     if (BookStateMutator.updatePosition(
       _books,
       bookId,
@@ -258,22 +292,27 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       currentChapterIndex: currentChapterIndex,
     )) {
       notifyListeners();
-      BookProviderPersistence.persistReadingProgress(_books);
+      final persistenceWrites = <Future<void>>[
+        BookProviderPersistence.persistReadingProgress(_books),
+        _persistRemoteBooksIfReadingStateChanged(previousProgress, progress),
+      ];
       BookProviderPersistence.syncBookReadingNode(
         _apiService,
         _userProfile,
         _books,
         bookId,
       );
+      await Future.wait(persistenceWrites);
     }
   }
 
-  void updateReadingProgress(
+  Future<void> updateReadingProgress(
     String bookId,
     int currentPage,
     double progress, [
     int? currentChapterIndex,
-  ]) {
+  ]) async {
+    final previousProgress = _bookById(bookId)?.progress;
     _userProfile = BookStateMutator.updateProgressAndStats(
       _books,
       _userProfile,
@@ -283,7 +322,10 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       currentChapterIndex,
     );
     notifyListeners();
-    BookProviderPersistence.persistReadingProgress(_books);
+    final persistenceWrites = <Future<void>>[
+      BookProviderPersistence.persistReadingProgress(_books),
+      _persistRemoteBooksIfReadingStateChanged(previousProgress, progress),
+    ];
     BookProviderPersistence.persistUserProfile(_userProfile);
     BookProviderPersistence.syncBookReadingNode(
       _apiService,
@@ -292,6 +334,7 @@ class BookProvider extends ChangeNotifier with BookCollectionMixin {
       bookId,
       status: progress >= 1.0 ? 'completed' : 'reading',
     );
+    await Future.wait(persistenceWrites);
   }
 
   void addReadingMinutes(int minutes, {String? bookId}) {

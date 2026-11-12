@@ -42,7 +42,8 @@ void main() {
       expect(find.textContaining('Бүгд ('), findsOneWidget);
       expect(find.textContaining('Уншаагүй'), findsOneWidget);
       expect(find.textContaining('Уншсан'), findsOneWidget);
-      expect(find.text('Шинэ ном нэмэгдлээ'), findsOneWidget);
+      expect(find.text('Мэдэгдэл байхгүй байна'), findsOneWidget);
+      expect(find.text('Шинэ ном нэмэгдлээ'), findsNothing);
     });
 
     testWidgets('Switching to unread and archived tabs filters items', (
@@ -59,31 +60,27 @@ void main() {
       await tester.tap(unreadTab);
       await tester.pumpAndSettle();
 
-      // Only unread items show
-      expect(find.text('Шинэ ном нэмэгдлээ'), findsOneWidget);
+      expect(find.text('Уншаагүй мэдэгдэл алга'), findsOneWidget);
 
       final archivedTab = find.textContaining('Уншсан');
       expect(archivedTab, findsOneWidget);
       await tester.tap(archivedTab);
       await tester.pumpAndSettle();
 
-      // Read items show
-      expect(find.text('Амжилт!'), findsOneWidget);
+      expect(find.text('Уншсан мэдэгдэл алга'), findsOneWidget);
     });
 
-    testWidgets('Tapping mark all as read updates all items', (tester) async {
+    testWidgets('Hides mark all when there are no unread notifications', (
+      tester,
+    ) async {
       final provider = BookProvider();
       addTearDown(provider.dispose);
       await tester.runAsync(() => provider.initialized);
       await tester.pumpWidget(createTestNotifications(bookProvider: provider));
       await tester.pumpAndSettle();
 
-      final markAllBtn = find.text('Бүгдийг унших');
-      if (markAllBtn.evaluate().isNotEmpty) {
-        await tester.tap(markAllBtn);
-        await tester.pumpAndSettle();
-        expect(find.textContaining('Уншаагүй (0)'), findsOneWidget);
-      }
+      expect(find.text('Бүгдийг унших'), findsNothing);
+      expect(find.textContaining('Уншаагүй (0)'), findsOneWidget);
     });
   });
 }

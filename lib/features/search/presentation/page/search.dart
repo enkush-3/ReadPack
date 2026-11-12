@@ -300,16 +300,15 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
 
-    if (provider.errorMessage != null) {
+    final searchResults = provider.searchResults;
+    if (provider.errorMessage != null && provider.books.isEmpty) {
       return SingleChildScrollView(
         child: ErrorStateView(
           errorMessage: provider.errorMessage!,
-          onRetry: () => provider.refresh(),
+          onRetry: provider.retryInitialization,
         ),
       );
     }
-
-    final searchResults = provider.searchResults;
 
     return SearchResult(
       books: searchResults,

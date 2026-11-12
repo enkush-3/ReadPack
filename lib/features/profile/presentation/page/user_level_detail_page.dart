@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/providers/helpers/book_gamification_manager.dart';
 import 'package:readpack/helper/translation.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/page_loading_skeleton.dart';
 
 class UserLevelDetailPage extends StatelessWidget {
   const UserLevelDetailPage({super.key});
@@ -58,7 +61,22 @@ class UserLevelDetailPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
+      body: bookProvider.isLoading
+          ? const PageLoadingSkeleton()
+          : bookProvider.errorMessage != null
+              ? ErrorStateView(
+                  errorMessage: bookProvider.errorMessage!,
+                  onRetry: bookProvider.retryInitialization,
+                )
+              : currentXp == 0
+                  ? EmptyStateView(
+                      icon: Icons.bolt_outlined,
+                      title: l10n?.t('level.no_xp_title') ??
+                          'Оноо цуглуулаагүй байна',
+                      message: l10n?.t('level.no_xp_desc') ??
+                          'Ном уншиж эхэлсний дараа таны XP болон түвшний ахиц энд харагдана.',
+                    )
+                  : SingleChildScrollView(
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),

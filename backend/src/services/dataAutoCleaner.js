@@ -43,16 +43,206 @@ function canonicalizeAuthor(rawAuthor) {
 }
 
 function upgradeCoverUrl(rawUrl) {
-  if (!rawUrl || typeof rawUrl !== 'string' || !rawUrl.trim()) {
-    return 'assets/public/books/atomic_habits.png';
+  if (typeof rawUrl !== 'string' || !rawUrl.trim()) return null;
+  const url = rawUrl.trim();
+  if (url.startsWith('assets/')) return url;
+  return normalizeHttpUrl(url)?.replace('&edge=curl', '') || null;
+}
+
+function normalizeHttpUrl(rawUrl) {
+  if (typeof rawUrl !== 'string' || !rawUrl.trim()) return null;
+  try {
+    const url = new URL(rawUrl.trim());
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    if (url.protocol === 'http:') url.protocol = 'https:';
+    return url.toString();
+  } catch (error) {
+    if (error instanceof TypeError) return null;
+    throw error;
   }
-  let url = rawUrl.trim();
-  if (url.startsWith('http://')) {
-    url = 'https://' + url.slice('http://'.length);
+}
+
+function readNonNegativeNumber(rawNumber) {
+  if (rawNumber === null || rawNumber === undefined) return 0;
+  if (typeof rawNumber !== 'number' && typeof rawNumber !== 'string') return 0;
+  if (typeof rawNumber === 'string' && !rawNumber.trim()) return 0;
+  const number = Number(rawNumber);
+  return Number.isFinite(number) && number >= 0 ? number : 0;
+}
+
+function readNonNegativeInteger(rawNumber) {
+  return Math.floor(readNonNegativeNumber(rawNumber));
+}
+
+function readRating(rawRating) {
+  if (typeof rawRating !== 'number' && typeof rawRating !== 'string') return 0;
+  const rating = Number(rawRating);
+  return Number.isFinite(rating) && rating >= 0 && rating <= 5 ? rating : 0;
+}
+
+function readExternalAuthor(raw) {
+  let rawAuthor = raw.author;
+  if (!rawAuthor && Array.isArray(raw.authors) && raw.authors.length > 0) {
+    const firstAuthor = raw.authors[0];
+    rawAuthor = typeof firstAuthor === 'string' ? firstAuthor : firstAuthor?.name;
   }
-  // Remove Google Books edge curl artifact
-  url = url.replace('&edge=curl', '');
-  return url;
+  return canonicalizeAuthor(rawAuthor || 'Unknown Author');
+}
+
+function readExternalIds(raw, normalizedTitle) {
+  const externalId = String(
+    raw.externalId ?? raw.id ?? normalizedTitle.replace(/\s+/g, '_')
+  );
+  const id = String(
+    raw.id ??
+      (externalId.startsWith('api_') || externalId.startsWith('ext_')
+        ? externalId
+        : `api_${externalId}`)
+  );
+  return { id, externalId };
+}
+
+function readExternalIdentity(raw, source) {
+  const title = stripHtmlAndCollapseWhitespace(raw.title);
+  if (!title) return null;
+  const author = readExternalAuthor(raw);
+  const normalizedTitle = normalizeKey(title);
+  const normalizedAuthor = normalizeKey(author);
+  const { id, externalId } = readExternalIds(raw, normalizedTitle);
+  return {
+    id,
+    externalSource: raw.externalSource || source,
+    externalId,
+    isbn13: raw.isbn13
+      ? String(raw.isbn13).replace(/[^0-9X]/gi, '')
+      : undefined,
+    title,
+    normalizedTitle,
+    author,
+    normalizedAuthor,
+  };
+}
+
+function readExternalMetadata(raw) {
+  const subjects = raw.subjects ?? raw.categories ?? raw.tags ?? [];
+  const colorHex = Number(raw.colorHex ?? 0xFF2C3E50);
+
+  return {
+    description: readDescription(raw.description),
+    rating: readRating(raw.rating),
+    reviewsCount: readNonNegativeInteger(raw.reviewsCount),
+    category: mapSubjectsToCategory(subjects, raw.category),
+    ...readExternalPageMetadata(raw),
+    image: upgradeCoverUrl(
+      raw.image ??
+        raw.coverUrl ??
+        raw.formats?.['image/jpeg'] ??
+        raw.imageLinks?.thumbnail
+    ),
+    colorHex: Number.isFinite(colorHex) ? colorHex : 0xFF2C3E50,
+    tags: cleanTextList(raw.tags ?? subjects),
+  };
+}
+
+function readExternalPageMetadata(raw) {
+  const pages = readNonNegativeInteger(raw.pages ?? raw.pageCount);
+  const hasReadTime = raw.readTimeMinutes !== undefined && raw.readTimeMinutes !== null;
+  return {
+    pages,
+    readTimeMinutes: hasReadTime
+      ? readNonNegativeInteger(raw.readTimeMinutes)
+      : pages > 0
+        ? Math.round(pages * 1.1)
+        : 0,
+  };
+}
+
+function readDescription(rawDescription) {
+  if (typeof rawDescription === 'object' && rawDescription !== null) {
+    return stripHtmlAndCollapseWhitespace(rawDescription.value);
+  }
+  return stripHtmlAndCollapseWhitespace(rawDescription);
+}
+
+function cleanTextList(rawValues) {
+  if (!Array.isArray(rawValues)) return [];
+  return rawValues
+    .map(stripHtmlAndCollapseWhitespace)
+    .filter(Boolean);
+}
+
+function cleanExternalChapters(rawChapters, bookId) {
+  if (!Array.isArray(rawChapters)) return [];
+  return rawChapters.flatMap((rawChapter, index) => {
+    if (!rawChapter || typeof rawChapter !== 'object' || Array.isArray(rawChapter)) {
+      return [];
+    }
+    const content = stripHtmlAndCollapseWhitespace(rawChapter.content);
+    const title = stripHtmlAndCollapseWhitespace(rawChapter.title);
+    if (!title || !content) return [];
+    return [{
+      id: String(rawChapter.id ?? `${bookId}_c${index + 1}`),
+      title,
+      estimatedMinutes: readNonNegativeInteger(rawChapter.estimatedMinutes),
+      content,
+    }];
+  });
+}
+
+function cleanExternalReviews(rawReviews) {
+  if (!Array.isArray(rawReviews)) return [];
+  return rawReviews.map(cleanExternalReview).filter(Boolean);
+}
+
+function cleanExternalReview(review) {
+  if (!review || typeof review !== 'object' || Array.isArray(review)) return null;
+  const id = stripHtmlAndCollapseWhitespace(review.id);
+  const userName = stripHtmlAndCollapseWhitespace(review.userName);
+  const comment = stripHtmlAndCollapseWhitespace(review.comment);
+  const createdAt = typeof review.createdAt === 'string' ? review.createdAt : '';
+  if (!id || !userName || !comment || !Number.isFinite(Date.parse(createdAt))) {
+    return null;
+  }
+  return {
+    id,
+    userName,
+    rating: readRating(review.rating),
+    comment,
+    createdAt,
+    helpfulCount: readNonNegativeInteger(review.helpfulCount),
+  };
+}
+
+function readAudioUrl(raw) {
+  const formats = raw.formats && typeof raw.formats === 'object' ? raw.formats : {};
+  const candidates = [
+    raw.audioUrl,
+    formats['audio/mpeg'],
+    formats['audio/mp4'],
+    formats['audio/ogg'],
+  ];
+  for (const candidate of candidates) {
+    const audioUrl = normalizeHttpUrl(candidate);
+    if (audioUrl) return audioUrl;
+  }
+  return null;
+}
+
+function readExternalAudio(raw) {
+  const audioUrl = readAudioUrl(raw);
+  return {
+    audioUrl,
+    hasAudio: audioUrl !== null,
+    audioDurationMinutes: readNonNegativeInteger(raw.audioDurationMinutes),
+  };
+}
+
+function cleanExternalContent(raw, bookId) {
+  return {
+    keyTakeaways: cleanTextList(raw.keyTakeaways),
+    chapters: cleanExternalChapters(raw.chapters, bookId),
+    reviews: cleanExternalReviews(raw.reviews),
+  };
 }
 
 function mapSubjectsToCategory(subjects = [], fallbackCategory = 'book.categories.all') {
@@ -85,121 +275,14 @@ function mapSubjectsToCategory(subjects = [], fallbackCategory = 'book.categorie
 }
 
 function cleanExternalBook(raw, source = 'external_api') {
-  if (!raw || typeof raw !== 'object') return null;
-
-  const rawTitle = stripHtmlAndCollapseWhitespace(raw.title || 'Untitled');
-  if (!rawTitle) return null;
-
-  let rawAuthor = raw.author;
-  if (!rawAuthor && Array.isArray(raw.authors) && raw.authors.length > 0) {
-    const first = raw.authors[0];
-    rawAuthor = typeof first === 'string' ? first : first?.name;
-  }
-  const author = canonicalizeAuthor(rawAuthor || 'Unknown Author');
-  const normalizedTitle = normalizeKey(rawTitle);
-  const normalizedAuthor = normalizeKey(author);
-
-  const externalId = String(
-    raw.externalId || raw.id || `${normalizedTitle.replace(/\s+/g, '_')}`
-  );
-  const id = String(
-    raw.id ||
-      (externalId.startsWith('api_') || externalId.startsWith('ext_')
-        ? externalId
-        : `api_${externalId}`)
-  );
-
-  const isbn13 = raw.isbn13
-    ? String(raw.isbn13).replace(/[^0-9X]/gi, '')
-    : undefined;
-
-  const rawCover =
-    raw.image ||
-    raw.coverUrl ||
-    raw.formats?.['image/jpeg'] ||
-    raw.imageLinks?.thumbnail;
-  const image = upgradeCoverUrl(rawCover);
-
-  const subjects = raw.subjects || raw.categories || raw.tags || [];
-  const category = mapSubjectsToCategory(subjects, raw.category);
-
-  const pages = Math.max(40, Number(raw.pages || raw.pageCount || 220));
-  const readTimeMinutes = Math.max(
-    20,
-    Number(raw.readTimeMinutes || Math.round(pages * 1.1))
-  );
-  const rating = Number(
-    Math.min(5.0, Math.max(3.5, Number(raw.rating || 4.6))).toFixed(1)
-  );
-  const reviewsCount = Math.max(1, Number(raw.reviewsCount || raw.download_count || 120));
-
-  const description =
-    stripHtmlAndCollapseWhitespace(raw.description) ||
-    `${author}-ийн "${rawTitle}" бүтээл. ReadPack төвлөрсөн номын санд автоматаар цэвэрлэгдэж бүртгэгдсэн дижитал хувилбар.`;
-
-  const chapters =
-    Array.isArray(raw.chapters) && raw.chapters.length > 0
-      ? raw.chapters.map((c, idx) => ({
-          id: String(c.id || `${id}_c${idx + 1}`),
-          title: stripHtmlAndCollapseWhitespace(c.title || `Бүлэг ${idx + 1}`),
-          estimatedMinutes: Math.max(5, Number(c.estimatedMinutes || 12)),
-          content: stripHtmlAndCollapseWhitespace(
-            c.content || `${rawTitle} — ${author}.`
-          ),
-        }))
-      : [
-          {
-            id: `${id}_c1`,
-            title: 'Part 1: The Beginning',
-            estimatedMinutes: 12,
-            content: `A remarkable work by ${author} exploring the depths of human nature, philosophy, and discovery.\n\n"The foundation of knowledge begins with an open mind and relentless curiosity."\n\nThis volume, titled ${rawTitle}, has been curated and cleaned for ReadPack readers.`,
-          },
-          {
-            id: `${id}_c2`,
-            title: 'Part 2: Deeper Horizons',
-            estimatedMinutes: 15,
-            content: `Continuing through ${rawTitle} by ${author}.\n\nEvery turning page reveals new insights into human character and timeless wisdom preserved in the ReadPack central catalog.`,
-          },
-        ];
-
-  const keyTakeaways =
-    Array.isArray(raw.keyTakeaways) && raw.keyTakeaways.length > 0
-      ? raw.keyTakeaways.map((k) => stripHtmlAndCollapseWhitespace(k))
-      : [
-          `${rawTitle} номын гол үзэл санаа ба практик хэрэглээ.`,
-          `${author}-ийн дэвшүүлсэн суурь зарчмууд.`,
-        ];
-
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const identity = readExternalIdentity(raw, source);
+  if (!identity) return null;
   return {
-    id,
-    externalSource: raw.externalSource || source,
-    externalId,
-    isbn13,
-    title: rawTitle,
-    normalizedTitle,
-    author,
-    normalizedAuthor,
-    description,
-    rating,
-    reviewsCount,
-    category,
-    pages,
-    readTimeMinutes,
-    image,
-    colorHex: Number(raw.colorHex || 0xFF2C3E50),
-    progress: Number(raw.progress || 0.0),
-    currentPage: Number(raw.currentPage || 0),
-    currentChapterIndex: Number(raw.currentChapterIndex || 0),
-    isSaved: Boolean(raw.isSaved || false),
-    isFavorite: Boolean(raw.isFavorite || false),
-    hasAudio: raw.hasAudio !== undefined ? Boolean(raw.hasAudio) : true,
-    audioDurationMinutes: Number(raw.audioDurationMinutes || readTimeMinutes),
-    keyTakeaways,
-    tags: Array.isArray(raw.tags) && raw.tags.length > 0
-      ? raw.tags
-      : ['Curated', category.replace('book.categories.', '')],
-    chapters,
-    reviews: Array.isArray(raw.reviews) ? raw.reviews : [],
+    ...identity,
+    ...readExternalMetadata(raw),
+    ...readExternalAudio(raw),
+    ...cleanExternalContent(raw, identity.id),
   };
 }
 
@@ -231,4 +314,5 @@ module.exports = {
   mapSubjectsToCategory,
   cleanExternalBook,
   deduplicateBooks,
+  readAudioUrl,
 };

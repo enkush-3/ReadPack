@@ -5,6 +5,9 @@ import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/page_loading_skeleton.dart';
 
 class StreakDetailPage extends StatefulWidget {
   const StreakDetailPage({super.key});
@@ -122,7 +125,24 @@ class _StreakDetailPageState extends State<StreakDetailPage>
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
+      body: bookProvider.isLoading
+          ? const PageLoadingSkeleton()
+          : bookProvider.errorMessage != null
+              ? ErrorStateView(
+                  errorMessage: bookProvider.errorMessage!,
+                  onRetry: bookProvider.retryInitialization,
+                )
+              : currentStreak == 0 &&
+                      bestStreak == 0 &&
+                      profile.totalWeeklyMinutes == 0
+                  ? EmptyStateView(
+                      icon: Icons.local_fire_department_outlined,
+                      title: l10n?.t('streak.no_history_title') ??
+                          'Уншлагын түүх алга байна',
+                      message: l10n?.t('streak.no_history_desc') ??
+                          'Уншиж эхэлсний дараа цуврал уншлага болон амжилтууд энд харагдана.',
+                    )
+                  : SingleChildScrollView(
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),

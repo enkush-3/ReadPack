@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:readpack/core/providers/book_provider.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/page_loading_skeleton.dart';
 
 class ReadingSchedulePage extends StatefulWidget {
   const ReadingSchedulePage({super.key});
@@ -29,7 +32,7 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
     return List.generate(7, (idx) {
       return {
         'day': labels[idx],
-        'minutes': idx < weeklyMinutes.length ? weeklyMinutes[idx] : 30,
+        'minutes': idx < weeklyMinutes.length ? weeklyMinutes[idx] : 0,
         'isToday': idx == todayIndex,
       };
     });
@@ -72,7 +75,14 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
+      body: bookProvider.isLoading
+          ? const PageLoadingSkeleton()
+          : bookProvider.errorMessage != null
+              ? ErrorStateView(
+                  errorMessage: bookProvider.errorMessage!,
+                  onRetry: bookProvider.retryInitialization,
+                )
+              : SingleChildScrollView(
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),
@@ -97,7 +107,15 @@ class _ReadingSchedulePageState extends State<ReadingSchedulePage> {
                   color: colorScheme.primary.withValues(alpha: 0.2),
                 ),
               ),
-              child: Column(
+              child: totalWeekly == 0
+                  ? EmptyStateView(
+                      icon: Icons.auto_stories_outlined,
+                      title: l10n?.t('schedule.no_activity_title') ??
+                          'Уншлагын түүх алга байна',
+                      message: l10n?.t('schedule.no_activity_desc') ??
+                          'Уншиж эхэлсний дараа долоо хоногийн идэвх энд харагдана.',
+                    )
+                  : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(

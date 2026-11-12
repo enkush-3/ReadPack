@@ -129,13 +129,14 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-              ] else if (bookProvider.errorMessage != null) ...[
+              ] else if (bookProvider.errorMessage != null &&
+                  bookProvider.books.isEmpty) ...[
                 // 3. Error State Handling
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: ErrorStateView(
                     errorMessage: bookProvider.errorMessage!,
-                    onRetry: () => bookProvider.refresh(),
+                    onRetry: bookProvider.retryInitialization,
                   ),
                 ),
               ] else ...[

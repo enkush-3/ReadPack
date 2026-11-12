@@ -5,6 +5,7 @@ import 'package:readpack/core/routes/routes.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
 import 'package:readpack/shared/widgets/animated_pressable.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
 
 class BookDetailOverviewTab extends StatefulWidget {
   final Book currentBook;
@@ -49,8 +50,8 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
           : 'Ювал Ной Харари нь Оксфордын их сургуулийн түүхийн ухааны доктор, дэлхийн түүх ба ирээдүйн чиг хандлагыг тодорхойлогч философич юм.';
     } else {
       bio = isEn
-          ? '${currentBook.author} is an internationally acclaimed author celebrated for insightful and transformative works.'
-          : '${currentBook.author} нь олон улсын шилдэг бүтээлүүдээрээ уншигчдын талархлыг хүлээсэн нэр хүндтэй зохиолч юм.';
+          ? 'Author biography is not provided in the catalog.'
+          : 'Сан дотор зохиолчийн намтар мэдээлэл алга байна.';
     }
 
     final allBooks = context.watch<BookProvider>().books;
@@ -234,18 +235,29 @@ class _BookDetailOverviewTabState extends State<BookDetailOverviewTab> {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          currentBook.description,
-          maxLines: _isDescriptionExpanded ? null : 4,
-          overflow: _isDescriptionExpanded
-              ? TextOverflow.visible
-              : TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 14,
-            color: colorScheme.onSurface.withValues(alpha: 0.75),
-            height: 1.6,
+        if (currentBook.description.trim().isEmpty)
+          EmptyStateView(
+            icon: Icons.description_outlined,
+            title: l10n?.locale.languageCode == 'en'
+                ? 'Description not provided'
+                : 'Номын тайлбар алга байна',
+            message: l10n?.locale.languageCode == 'en'
+                ? 'The catalog does not include a description for this book.'
+                : 'Санд энэ номын тайлбар бүртгэгдээгүй байна.',
+          )
+        else
+          Text(
+            currentBook.description,
+            maxLines: _isDescriptionExpanded ? null : 4,
+            overflow: _isDescriptionExpanded
+                ? TextOverflow.visible
+                : TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 14,
+              color: colorScheme.onSurface.withValues(alpha: 0.75),
+              height: 1.6,
+            ),
           ),
-        ),
         if (currentBook.description.length > 150)
           GestureDetector(
             onTap: () {

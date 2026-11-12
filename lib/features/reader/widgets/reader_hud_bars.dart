@@ -9,6 +9,7 @@ class ReaderTopHud extends StatelessWidget {
   final Color readerTextColor;
   final Book book;
   final bool isAudioPlaying;
+  final bool canReadCurrentChapter;
   final VoidCallback onBack;
   final VoidCallback onOpenToc;
   final VoidCallback onOpenAppearance;
@@ -23,6 +24,7 @@ class ReaderTopHud extends StatelessWidget {
     required this.readerTextColor,
     required this.book,
     required this.isAudioPlaying,
+    required this.canReadCurrentChapter,
     required this.onBack,
     required this.onOpenToc,
     required this.onOpenAppearance,
@@ -119,9 +121,7 @@ class ReaderTopHud extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (book.chapters.any(
-                  (chapter) => chapter.content.trim().isNotEmpty,
-                ))
+                if (canReadCurrentChapter)
                   AnimatedPressable(
                     onTap: onToggleAudio,
                     child: Padding(
@@ -137,17 +137,18 @@ class ReaderTopHud extends StatelessWidget {
                       ),
                     ),
                   ),
-                AnimatedPressable(
-                  onTap: onAddBookmark,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.bookmark_add_rounded,
-                      size: 20,
-                      color: readerTextColor,
+                if (canReadCurrentChapter)
+                  AnimatedPressable(
+                    onTap: onAddBookmark,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.bookmark_add_rounded,
+                        size: 20,
+                        color: readerTextColor,
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ],

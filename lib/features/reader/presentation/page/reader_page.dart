@@ -17,6 +17,9 @@ import 'package:readpack/features/reader/widgets/reader_theme_helpers.dart';
 import 'package:readpack/features/reader/widgets/reader_toc_sheet.dart';
 import 'package:readpack/helper/translation.dart';
 import 'package:readpack/models/book.dart';
+import 'package:readpack/shared/widgets/empty_state_view.dart';
+import 'package:readpack/shared/widgets/error_state_view.dart';
+import 'package:readpack/shared/widgets/skeleton_loader.dart';
 
 class ReaderPage extends StatefulWidget {
   final Book book;
@@ -60,6 +63,20 @@ class _ReaderPageState extends State<ReaderPage>
       .toString()
       .contains('TestWidgetsFlutterBinding');
 
+  Book get _activeBook {
+    final provider = context.read<BookProvider>();
+    return provider.books.firstWhere(
+      (book) => book.id == widget.book.id,
+      orElse: () => widget.book,
+    );
+  }
+
+  int _chapterIndexFor(Book book) => book.chapters.isEmpty
+      ? 0
+      : _currentChapterIndex.clamp(0, book.chapters.length - 1);
+
+  int _progressPageCount(Book book) => book.pages > 0 ? book.pages : 1;
+
   @override
   void initState() {
     super.initState();
@@ -81,7 +98,7 @@ class _ReaderPageState extends State<ReaderPage>
 
     _initChapterAudio();
 
-    if (widget.openAudioInitially && _canReadAloud) {
+    if (widget.openAudioInitially && _canReadCurrentChapter) {
       _startAudio();
     }
 
@@ -101,8 +118,9 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _initChapterAudio() {
-    if (widget.book.chapters.isEmpty) return;
-    final currentCh = widget.book.chapters[_currentChapterIndex];
+    final book = _activeBook;
+    if (book.chapters.isEmpty) return;
+    final currentCh = book.chapters[_chapterIndexFor(book)];
     final wordCount = currentCh.content
         .split(RegExp(r'\s+'))
         .where((word) => word.isNotEmpty)
@@ -116,15 +134,21 @@ class _ReaderPageState extends State<ReaderPage>
     });
   }
 
-  bool get _canReadAloud =>
-      widget.book.chapters.any((chapter) => chapter.content.trim().isNotEmpty);
+  bool get _canReadCurrentChapter {
+    final book = _activeBook;
+    final chapters = book.chapters;
+    return chapters.isNotEmpty &&
+        chapters[_chapterIndexFor(book)].content.trim().isNotEmpty;
+  }
 
   Future<void> _startAudio() async {
-    if (!_canReadAloud || widget.book.chapters.isEmpty) return;
+    if (!_canReadCurrentChapter) return;
+    final book = _activeBook;
+    final chapterIndex = _chapterIndexFor(book);
     setState(() => _isAudioPlaying = true);
     if (_isTesting) return;
 
-    final currentChapter = widget.book.chapters[_currentChapterIndex];
+    final currentChapter = book.chapters[chapterIndex];
     final text = currentChapter.content;
     var start = _audioCharacterPosition.clamp(0, text.length).toInt();
     if (start >= text.length) {
@@ -152,7 +176,7 @@ class _ReaderPageState extends State<ReaderPage>
       });
       _tts.setCompletionHandler(() {
         if (!mounted) return;
-        if (_currentChapterIndex < widget.book.chapters.length - 1) {
+        if (chapterIndex < book.chapters.length - 1) {
           _goToChapter(_currentChapterIndex + 1);
         } else {
           setState(() => _isAudioPlaying = false);
@@ -182,8 +206,9 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _syncAudioWithText() {
-    if (widget.book.chapters.isEmpty) return;
-    final currentChapter = widget.book.chapters[_currentChapterIndex];
+    final book = _activeBook;
+    if (book.chapters.isEmpty) return;
+    final currentChapter = book.chapters[_chapterIndexFor(book)];
     final paragraphs = currentChapter.content.split('\n\n');
     final paragraphSentences = paragraphs.map((p) {
       final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(p);
@@ -235,9 +260,10 @@ class _ReaderPageState extends State<ReaderPage>
     final progress = _audioTotalSeconds <= 0
         ? 0.0
         : (seconds / _audioTotalSeconds).clamp(0.0, 1.0);
-    final currentText = widget.book.chapters.isEmpty
+    final book = _activeBook;
+    final currentText = book.chapters.isEmpty
         ? ''
-        : widget.book.chapters[_currentChapterIndex].content;
+        : book.chapters[_chapterIndexFor(book)].content;
     setState(() {
       _audioCurrentSeconds = progress * _audioTotalSeconds;
       _audioCharacterPosition = (progress * currentText.length).round();
@@ -381,7 +407,7 @@ class _ReaderPageState extends State<ReaderPage>
   void _showSearchSheet() {
     ReaderSearchSheet.show(
       context: context,
-      book: widget.book,
+      book: _activeBook,
       onSelectChapter: (cIdx) => _goToChapter(cIdx),
     );
   }
@@ -392,11 +418,10 @@ class _ReaderPageState extends State<ReaderPage>
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
+    final book = _activeBook;
     final maxScroll = _scrollController.position.maxScrollExtent;
     final curScroll = _scrollController.offset;
-    final totalChapters = widget.book.chapters.isEmpty
-        ? 1
-        : widget.book.chapters.length;
+    final totalChapters = book.chapters.isEmpty ? 1 : book.chapters.length;
 
     if (maxScroll <= 0) return;
     final chapterFraction = (curScroll / maxScroll).clamp(0.0, 1.0);
@@ -412,12 +437,12 @@ class _ReaderPageState extends State<ReaderPage>
 
     if ((overallProgress - _lastReportedProgress).abs() > 0.04) {
       _lastReportedProgress = overallProgress;
-      final estimatedPage = (overallProgress * widget.book.pages).toInt().clamp(
+      final estimatedPage = (overallProgress * book.pages).toInt().clamp(
         1,
-        widget.book.pages,
+        _progressPageCount(book),
       );
       context.read<BookProvider>().updateReadingPosition(
-        widget.book.id,
+        book.id,
         currentPage: estimatedPage,
         progress: overallProgress,
         currentChapterIndex: _currentChapterIndex,
@@ -426,26 +451,25 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _reportPaginatedProgress([int? pageIndex, int? totalPages]) {
+    final book = _activeBook;
     final curPage = pageIndex ?? _currentPageInChapter;
     final totalP =
         totalPages ??
-        (widget.book.chapters.isEmpty
+        (book.chapters.isEmpty
             ? 1
             : ReaderThemeHelpers.paginateChapter(
-                widget.book.chapters[_currentChapterIndex].content,
+                book.chapters[_chapterIndexFor(book)].content,
               ).length);
-    final totalChapters = widget.book.chapters.isEmpty
-        ? 1
-        : widget.book.chapters.length;
+    final totalChapters = book.chapters.isEmpty ? 1 : book.chapters.length;
     final chapterFraction = totalP > 0 ? ((curPage + 1) / totalP) : 0.0;
     final overallProgress =
         ((_currentChapterIndex + chapterFraction) / totalChapters).clamp(
           0.0,
           1.0,
         );
-    final estimatedPage = (overallProgress * widget.book.pages).toInt().clamp(
+    final estimatedPage = (overallProgress * book.pages).toInt().clamp(
       1,
-      widget.book.pages,
+      _progressPageCount(book),
     );
 
     setState(() {
@@ -455,7 +479,7 @@ class _ReaderPageState extends State<ReaderPage>
     if ((overallProgress - _lastReportedProgress).abs() > 0.02) {
       _lastReportedProgress = overallProgress;
       context.read<BookProvider>().updateReadingPosition(
-        widget.book.id,
+        book.id,
         currentPage: estimatedPage,
         progress: overallProgress,
         currentChapterIndex: _currentChapterIndex,
@@ -464,11 +488,12 @@ class _ReaderPageState extends State<ReaderPage>
   }
 
   void _goToChapter(int index, {int initialPage = 0}) {
-    if (widget.book.chapters.isEmpty) return;
+    final book = _activeBook;
+    if (book.chapters.isEmpty) return;
     final wasPlaying = _isAudioPlaying;
     final stopped = _isTesting ? Future<void>.value() : _tts.stop();
     setState(() {
-      _currentChapterIndex = index.clamp(0, widget.book.chapters.length - 1);
+      _currentChapterIndex = index.clamp(0, book.chapters.length - 1);
       _currentPageInChapter = initialPage;
     });
     _initChapterAudio();
@@ -494,7 +519,7 @@ class _ReaderPageState extends State<ReaderPage>
     ReaderBookmarkModal.show(
       context: context,
       paragraphText: paragraphText,
-      book: widget.book,
+      book: _activeBook,
       currentChapterIndex: _currentChapterIndex,
       scrollProgress: _scrollProgress,
     );
@@ -508,7 +533,7 @@ class _ReaderPageState extends State<ReaderPage>
   void _showTableOfContents() {
     ReaderTocSheet.show(
       context: context,
-      book: widget.book,
+      book: _activeBook,
       currentChapterIndex: _currentChapterIndex,
       onSelectChapter: (idx) => _goToChapter(idx),
     );
@@ -516,9 +541,11 @@ class _ReaderPageState extends State<ReaderPage>
 
   @override
   Widget build(BuildContext context) {
+    final bookProvider = context.watch<BookProvider>();
     final themeProvider = context.watch<ThemeProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context);
+    final currentBook = _activeBook;
 
     final readerBg = ReaderThemeHelpers.getReaderBg(
       themeProvider.readerTheme,
@@ -529,20 +556,15 @@ class _ReaderPageState extends State<ReaderPage>
       isDark,
     );
 
-    final chapters = widget.book.chapters;
+    final chapters = currentBook.chapters;
     final hasChapters = chapters.isNotEmpty;
-    final currentChapter = hasChapters
-        ? chapters[_currentChapterIndex]
-        : BookChapter(
-            id: 'c0',
-            title: l10n?.t('reader.chapters') ?? 'Агуулга',
-            content:
-                l10n?.t('common.loading') ??
-                'Номын агуулга ачаалагдаж байна...',
-            estimatedMinutes: 5,
-          );
+    final currentChapterIndex = _chapterIndexFor(currentBook);
+    final currentChapter = hasChapters ? chapters[currentChapterIndex] : null;
+    final canReadCurrentChapter =
+        currentChapter?.content.trim().isNotEmpty ?? false;
 
-    final paragraphs = currentChapter.content.split('\n\n');
+    final paragraphs =
+        currentChapter?.content.split('\n\n') ?? const <String>[];
     final paragraphSentences = paragraphs.map((p) {
       final matches = RegExp(r'[^.!?]+[.!?]*\s*').allMatches(p);
       final list = matches
@@ -579,11 +601,44 @@ class _ReaderPageState extends State<ReaderPage>
       body: SafeArea(
         child: Stack(
           children: [
-            if (themeProvider.isPaginated)
+            if (!canReadCurrentChapter && bookProvider.isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SkeletonLoader(width: 220, height: 28),
+                      SizedBox(height: 16),
+                      SkeletonLoader(width: double.infinity, height: 18),
+                      SizedBox(height: 8),
+                      SkeletonLoader(width: double.infinity, height: 18),
+                      SizedBox(height: 8),
+                      SkeletonLoader(width: 260, height: 18),
+                    ],
+                  ),
+                ),
+              )
+            else if (!canReadCurrentChapter &&
+                bookProvider.errorMessage != null)
+              ErrorStateView(
+                errorMessage: bookProvider.errorMessage!,
+                onRetry: bookProvider.retryInitialization,
+              )
+            else if (!canReadCurrentChapter)
+              EmptyStateView(
+                icon: Icons.menu_book_rounded,
+                title:
+                    l10n?.t('reader.no_chapters') ?? 'Унших бүлэг алга байна',
+                message:
+                    l10n?.t('reader.no_chapters_desc') ??
+                    'Энэ номын бүрэн текст уншигчид байхгүй байна.',
+              )
+            else if (themeProvider.isPaginated)
               ReaderPageView(
-                book: widget.book,
-                currentChapter: currentChapter,
-                currentChapterIndex: _currentChapterIndex,
+                book: currentBook,
+                currentChapter: currentChapter!,
+                currentChapterIndex: currentChapterIndex,
                 currentPageInChapter: _currentPageInChapter,
                 chapters: chapters,
                 pageController: _pageController,
@@ -608,9 +663,9 @@ class _ReaderPageState extends State<ReaderPage>
               )
             else
               ReaderScrollView(
-                book: widget.book,
-                currentChapter: currentChapter,
-                currentChapterIndex: _currentChapterIndex,
+                book: currentBook,
+                currentChapter: currentChapter!,
+                currentChapterIndex: currentChapterIndex,
                 paragraphs: paragraphs,
                 activeAudioParagraph: activeAudioParagraph,
                 activeAudioSentence: activeAudioSentence,
@@ -627,14 +682,15 @@ class _ReaderPageState extends State<ReaderPage>
               showControls: _showControls,
               readerBg: readerBg,
               readerTextColor: readerTextColor,
-              book: widget.book,
+              book: currentBook,
               isAudioPlaying: _isAudioPlaying,
               onBack: () => Navigator.of(context).pop(),
               onOpenSearch: _showSearchSheet,
               onOpenToc: _showTableOfContents,
               onOpenAppearance: _showAppearanceSheet,
+              canReadCurrentChapter: canReadCurrentChapter,
               onToggleAudio: () {
-                if (!_canReadAloud) return;
+                if (!canReadCurrentChapter) return;
                 if (_isAudioPlaying) {
                   _pauseAudio();
                 } else {
@@ -642,6 +698,10 @@ class _ReaderPageState extends State<ReaderPage>
                 }
               },
               onAddBookmark: () {
+                if (currentChapter == null ||
+                    currentChapter.content.trim().isEmpty) {
+                  return;
+                }
                 String quote;
                 if (themeProvider.isPaginated) {
                   final pages = ReaderThemeHelpers.paginateChapter(
@@ -663,13 +723,15 @@ class _ReaderPageState extends State<ReaderPage>
                         .clamp(0, paragraphs.length - 1);
                     quote = paragraphs[targetIndex];
                   } else {
-                    quote = widget.book.title;
+                    quote = currentBook.title;
                   }
                 }
                 _showHighlightModal(quote);
               },
             ),
-            if (_canReadAloud && (_isAudioPlaying || _audioCurrentSeconds > 0))
+            if (currentChapter != null &&
+                canReadCurrentChapter &&
+                (_isAudioPlaying || _audioCurrentSeconds > 0))
               ReaderAudioBar(
                 currentChapter: currentChapter,
                 isAudioPlaying: _isAudioPlaying,
@@ -711,18 +773,19 @@ class _ReaderPageState extends State<ReaderPage>
                 },
                 l10n: l10n,
               ),
-            ReaderBottomHud(
-              showControls: _showControls,
-              readerBg: readerBg,
-              readerTextColor: readerTextColor,
-              isPaginated: themeProvider.isPaginated,
-              scrollProgress: _scrollProgress,
-              currentChapterIndex: _currentChapterIndex,
-              currentPageInChapter: _currentPageInChapter,
-              currentChapter: currentChapter,
-              chapters: chapters,
-              l10n: l10n,
-            ),
+            if (currentChapter != null && canReadCurrentChapter)
+              ReaderBottomHud(
+                showControls: _showControls,
+                readerBg: readerBg,
+                readerTextColor: readerTextColor,
+                isPaginated: themeProvider.isPaginated,
+                scrollProgress: _scrollProgress,
+                currentChapterIndex: currentChapterIndex,
+                currentPageInChapter: _currentPageInChapter,
+                currentChapter: currentChapter,
+                chapters: chapters,
+                l10n: l10n,
+              ),
           ],
         ),
       ),
