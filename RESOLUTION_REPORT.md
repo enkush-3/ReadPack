@@ -1,32 +1,34 @@
-# ReadPack — Бодит каталог ба өгөгдлийн бүрэн бүтэн байдлын засвар
+# ReadPack — Ажиллагаа ба өгөгдлийн бүрэн бүтэн байдлын засвар
 
 **Огноо:** 2026-11-12
 **Горим:** MODE D — Dynamic Issue-Driven Fixer
-**Төлөв:** Засвар, шалгалт, локал commit дууссан; GitHub руу push хийгээгүй.
+**Төлөв:** Засвар, шалгалт, код ба security review дууссан; локал Git дээр commit хийсэн. GitHub руу push хийгээгүй.
 
 ## Энэ багцын шийдвэрлэсэн асуудлууд
 
 - Гадаад каталогоос эх сурвалжид байгаагүй үнэлгээ, тойм, хуудасны тоо, хавтас, тайлбар, бүлэг, гол санаа, аудиог зохиомлоор үүсгэдэг байсныг арилгав. Тодорхойгүй утгыг хоосон/тэг/null-аар хадгалж, Reader-д эх текстгүй үед унших боломжтой мэт хуурамч бүлэг харуулахгүй.
 - Каталогийн өгөгдөлд хэрэглэгчийн bookmark, уншлагын явц, дуртай, бүлгийн төлөв холилддогийг засав. `/books/sync` хэрэглэгчийн ном гэж найдвартай тэмдэглэж, хүсэлтээр хуурамчаар төв seed болгохыг хаав; танигдах хуучин синтетик талбаруудыг хадгалалт болон хариунаас цэвэрлэнэ.
 - JSON fallback store унших/бичих алдааг нууж, эвдэрсэн өгөгдлийг дарж бичдэгийг засав. Атомик бичилт хийж, persistence амжилтгүй бол санах ой дахь төлөвийг өөрчлөхгүй.
-- Шинэ хэрэглэгчид хоосон bookmark, notification, collection, хайлтын түүхтэй эхэлнэ. Remote номын хэрэглэгчийн төлөв дахин эхлэхэд сэргээгдэж, уншлагын ахиц хадгалагдана. Каталогийн алдааг initialization алдаанаас тусгаарлав.
-- Reader болон каталогийн UI-д хоосон/үл мэдэгдэх төлөв, ачаалж буй skeleton, алдааны/retry төлөвүүдийг бүрдүүлэв. Backend Docker bootstrap, Compose болон integration тохиргооны баримт бичгийг шинэчлэв.
+- Шинэ хэрэглэгчид хоосон bookmark, notification, collection, хайлтын түүхтэй эхэлнэ. Каталогийн хуучин seed дээрх зохиомол save/favorite/progress-ийг унтрааж, бүх локал activity-г account бүрийн тусдаа preference key-д хадгална. Session баталгаажаагүй үед account cache огт ачаалахгүй. Хуучин activity өмнөх хадгалсан профайлын owner ID баталгаажсан аккаунттай таарсан үед л шилжинэ; owner тодорхойгүй өгөгдөл quarantine хэвээр байна.
+- Review-оор олдсон sparse sync алдааг засав: эх сурвалжид байхгүй утга rich catalog мэдээллийг устгахгүй. Search-ийн remote fetch алдааг “үр дүн олдсонгүй” гэж нуухгүй, retry товч харуулна. Query солиход хуучин хүсэлтийн үр дүнг үл тоож, retry болон бичилтийн debounce хугацаанд loading төлөв харуулна.
+- Reader болон каталогийн UI-д хоосон/үл мэдэгдэх төлөв, ачаалж буй skeleton, алдааны/retry төлөвүүдийг бүрдүүлэв. Backend production MongoDB тасрахад JSON fallback руу шилжихгүй; fallback зөвхөн production бус орчинд `ALLOW_JSON_FALLBACK=true` үед ажиллана. Docker Compose fallback-ийг хааж, API болон MongoDB-г localhost-д bind хийнэ. Docker install нь npm lockfile ашиглана.
 
 ## Шалгалт
 
 - `flutter analyze` — асуудалгүй.
-- `flutter test` — 124 тест амжилттай.
-- Backend `npm test` — 22 тест амжилттай.
+- `flutter test` — 131 тест амжилттай.
+- Backend `npm test` — 25 тест амжилттай.
+- Тусгаарласан орчинд `npm ci --dry-run` — lockfile dependency graph-ийг хүлээн авч амжилттай.
 - `docker compose config --quiet` — амжилттай.
-- Android debug APK — тусгаарлагдсан түр worktree-д амжилттай build хийв.
+- Android debug APK — `2cfde67` commit-оос тусгаарласан worktree-д амжилттай build хийв. Flutter plugin-уудаас ирээдүйн Kotlin Gradle Plugin compatibility анхааруулга гарсан ч одоогийн build амжилттай.
 - `git diff --check` — whitespace алдаагүй.
 - Docker image build хийгдээгүй: орчинд Docker daemon/socket байхгүй.
 
 ## Үлдсэн тохиргоо ба хязгаарлалт
 
-SMTP, Twilio, Firebase, OAuth, production MongoDB зэрэг гадаад үйлчилгээнд deployment credential шаардлагатай; заавар нь [`docs/INTEGRATION_SETUP.md`](docs/INTEGRATION_SETUP.md)-д бий. Метадатаар ирсэн номд текстэн бүлэг байхгүй бол Reader хоосон төлөв харуулна. Хуучин өгөгдлийн тоон үзүүлэлт синтетик гэдгийг илтгэх marker-гүй үед эх сурвалжийн утгаас ялгаж чадахгүй тул хадгална. Refresh алдаа гарсан зарим дэлгэц cache/curated контентыг үлдээх ба тусгай inline refresh алдааны мэдэгдэл харуулахгүй.
+SMTP, Twilio, Firebase, OAuth, production MongoDB зэрэг гадаад үйлчилгээнд deployment credential шаардлагатай; заавар нь [`docs/INTEGRATION_SETUP.md`](docs/INTEGRATION_SETUP.md)-д бий. Метадатаар ирсэн номд текстэн бүлэг байхгүй бол Reader хоосон төлөв харуулна. Хуучин өгөгдлийн тоон үзүүлэлт синтетик гэдгийг илтгэх marker-гүй үед эх сурвалжийн утгаас ялгаж чадахгүй тул хадгална. Owner-гүй эсвэл өмнөх профайл guest байсан legacy activity-г аль нэг аккаунтад таамгаар оноохгүй; тухайн мэдээлэл unscoped preference-д quarantine хэвээр үлдэнэ. Docker image build-ийг орчинд Docker daemon/socket байхгүй тул ажиллуулаагүй.
 
-**Локал commit-ууд:** `1c9e370`, `1b64b69`, `5a209cf`, `2afd443`. Push хийгээгүй.
+**Локал commit:** `2cfde67` — `fix: make account and catalog flows reliable`. Push хийгээгүй.
 
 ---
 
